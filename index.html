@@ -187,14 +187,25 @@
             </section>
 
             <section id="config" class="content-section">
-                <div class="header"><h1>Configuración</h1></div>
-                <div class="dashboard-grid">
+                       <div class="dashboard-grid">
+                    <!-- COLUMNA IZQUIERDA: DEBUG EXPANDIDO -->
+                    <div class="card" style="grid-row: span 2;">
+                        <p class="card-title">Debug: Reporte de Errores (Temporal)</p>
+                        <div class="error-log" id="error-console" style="height: 480px;">
+                            [System] Iniciando consola de depuración v12...
+                            [System] Esperando telemetría de webhooks...
+                        </div>
+                        <button class="btn-outline" style="margin-top:1rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar Logs</button>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: INFO TÉCNICA -->
                     <div class="card">
                         <p class="card-title">Base de Datos & Conexión</p>
                         <p>Sheet ID: <strong>14Go...p-_Fo</strong></p>
                         <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Estado API: <span style="color:#22c55e">● ONLINE</span></p>
                         <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU V12.0 Pro</strong></p>
                     </div>
+
                     <div class="card">
                         <p class="card-title">Diagnóstico de Tuberías (Engine)</p>
                         <div id="health-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1rem;">
@@ -205,14 +216,7 @@
                         </div>
                         <button class="btn-premium" style="margin-top:1.5rem; font-size:0.8rem; width:100%" onclick="pingEngine()">🚀 Lanzar Diagnóstico Real</button>
                     </div>
-
-                    <div class="card">
-                        <p class="card-title">Debug: Reporte de Errores (Temporal)</p>
-                        <div class="error-log" id="error-console">
-                            [System] Iniciando consola de depuración v12...
-                            [System] Esperando telemetría de webhooks...
-                        </div>
-                        <button class="btn-outline" style="margin-top:1rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar Logs</button>
+                </div>a limpia.'">Limpiar Logs</button>
                     </div>
                 </div>
             </section>
