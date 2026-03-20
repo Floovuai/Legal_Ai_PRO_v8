@@ -705,7 +705,7 @@
                                 <div style="display:flex;gap:10px;align-items:center;">
                                     <span style="font-size:0.7rem;color:var(--gold);text-transform:uppercase;font-weight:800;letter-spacing:1px;">RAMA: ${esc(c.rama)}</span>
                                     <span style="width:4px;height:4px;background:var(--border);border-radius:50%;"></span>
-                                    <span style="font-size:0.75rem;color:var(--silver);">Vencimiento: ${esc(c.venc)}</span>
+                                    <span style="font-size:0.75rem;color:var(--silver);">Vencimiento: ${(c.venc && c.venc !== 'S/D' && c.venc !== 'N/A') ? esc(c.venc) : '<em>Sin fecha definida</em>'}</span>
                                 </div>
                             </div>
                             <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:20px;">Recibido: ${esc(c.date)}</span>
@@ -934,8 +934,9 @@
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
-            if (!clientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
-                showToast('Ingresa un email válido para el cliente.', 'error'); return;
+            // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
+            if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
+                showToast('El email del cliente no tiene un formato válido.', 'error'); return;
             }
 
             const overlay = document.getElementById('loader');
