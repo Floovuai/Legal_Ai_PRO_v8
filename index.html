@@ -413,13 +413,21 @@
             i.classList.add('active');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.getElementById(i.dataset.tab).classList.add('active');
-            // F5-06: solo llamar loadRealData, que internamente llama updateUI
-            if (i.dataset.tab === 'dashboard' || i.dataset.tab === 'expedientes' || i.dataset.tab === 'asignaciones') {
+
+            if (i.dataset.tab === 'abogados') {
+                // FIX-NAV-1: si ya tenemos abogados en memoria solo re-renderiza,
+                // de lo contrario hace la petición completa (primera visita o si falló el arranque)
+                if (lawyers.length > 0) {
+                    renderLawyers();
+                    updateUI();
+                } else {
+                    loadLawyers();
+                }
+            } else if (i.dataset.tab === 'dashboard' || i.dataset.tab === 'expedientes' || i.dataset.tab === 'asignaciones') {
                 loadRealData();
             } else {
                 updateUI();
             }
-            if (i.dataset.tab === 'abogados') loadLawyers();
         });
 
         // Caché de elementos DOM estáticos (F5-02)
@@ -430,7 +438,8 @@
         }
 
         // Carga el directorio de abogados directamente desde la hoja ABOGADOS
-        // Columnas del sheet: Nombre | Email | Especialidad | Estado
+        // n8n (nodo Normalizar Abogados) ya devuelve: { name, email, especialidad }
+        // También soporta columnas crudas del sheet: Nombre | Email | Especialidad | Estado
         async function loadLawyers() {
             const container = document.getElementById('lawyer-list-full');
             if (container) container.innerHTML = `<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando directorio...</p>`;
@@ -438,23 +447,27 @@
             try {
                 const res = await authFetch(N8N_GET_LAWYERS, { method: 'POST' });
                 if (res.ok) {
-                    const txt = await res.text();
-                    const rawData = txt ? JSON.parse(txt) : [];
+                    let rawData = [];
+                    try {
+                        const txt = await res.text();
+                        rawData = txt ? JSON.parse(txt) : [];
+                    } catch(parseErr) {
+                        logError(`⚠️ Error parseando respuesta de abogados: ${parseErr.message}`);
+                    }
+
                     const rows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
 
-                    // Leer columnas exactas de la hoja ABOGADOS
-                    // Solo incluir abogados con Estado = Activo (o sin estado definido)
+                    // FIX-LAW-1: acepta tanto la salida normalizada de n8n (name/email/especialidad)
+                    // como las columnas crudas del sheet (Nombre/Email/Especialidad).
+                    // FIX-LAW-2: el filtro de Estado ya lo aplica n8n; aquí solo descartamos filas vacías.
+                    // FIX-LAW-3: email ya NO es obligatorio para no perder abogados sin email en el sheet.
                     lawyers = rows
-                        .filter(row => {
-                            const estado = (row['Estado'] || row['estado'] || 'Activo').trim();
-                            return estado === 'Activo' || estado === 'activo' || estado === '';
-                        })
                         .map(row => ({
-                            name:         row['Nombre']       || row['nombre']       || '',
-                            email:        row['Email']        || row['email']        || '',
-                            especialidad: row['Especialidad'] || row['especialidad'] || ''
+                            name:         row['name']         || row['Nombre']       || row['nombre']       || '',
+                            email:        row['email']        || row['Email']        || '',
+                            especialidad: row['especialidad'] || row['Especialidad'] || ''
                         }))
-                        .filter(l => l.name); // descartar filas vacías
+                        .filter(l => l.name.trim()); // solo descartar filas completamente vacías
 
                     renderLawyers();
                     updateUI(); // refrescar dropdowns de asignación con los nuevos abogados
@@ -476,8 +489,17 @@
             try {
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST' });
                 if (res.ok) {
-                    const txt = await res.text();
-                    const rawData = txt ? JSON.parse(txt) : [];
+                    // FIX-DATA-1: parseo defensivo; si el JSON viene malformado, muestra error sin romper la UI
+                    let rawData = [];
+                    try {
+                        const txt = await res.text();
+                        rawData = txt ? JSON.parse(txt) : [];
+                    } catch(parseErr) {
+                        logError(`⚠️ Respuesta no es JSON válido: ${parseErr.message}`);
+                        el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Respuesta inválida de n8n.</td></tr>`;
+                        el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de formato.</td></tr>`;
+                        return;
+                    }
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
                     db = normalizedRows.map(row => {
                         // FASE 2: leer fecha de vencimiento desde múltiples campos posibles
@@ -802,7 +824,11 @@
         }
 
         function renderLawyers() {
+            // FIX-RENDER-1: no usar el caché _els para lawyer-list-full ya que su
+            // contenido se sobreescribe y el DOM se mantiene estable; sí hacemos
+            // getElementById directo para estar seguros.
             const container = document.getElementById('lawyer-list-full');
+            if (!container) return;
             if (!lawyers.length) {
                 container.innerHTML = `<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">Sin abogados registrados.</p>`;
                 return;
@@ -811,7 +837,7 @@
                 <div style="padding:1rem;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <strong style="color:var(--gold);">${esc(l.name)}</strong><br>
-                        <small style="color:var(--silver)">${esc(l.email)} | ${esc(l.especialidad)}</small>
+                        <small style="color:var(--silver)">${esc(l.email || '—')} | ${esc(l.especialidad || '—')}</small>
                     </div>
                     <button class="btn-delete" onclick="deleteLawyer(${i})">Eliminar</button>
                 </div>
@@ -823,9 +849,11 @@
             const email = document.getElementById('new-law-email').value.trim();
             const spec  = document.getElementById('new-law-spec').value;
 
-            // F4-04: toast en vez de alert()
-            if (!name || !email) { showToast('Completa nombre y email antes de guardar.', 'error'); return; }
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('El email no tiene un formato válido.', 'error'); return; }
+            if (!name) { showToast('El nombre del abogado es obligatorio.', 'error'); return; }
+            // FIX-ADD-1: email es opcional (puede no tenerlo en el sheet), pero si se ingresa debe ser válido
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showToast('El email ingresado no tiene un formato válido.', 'error'); return;
+            }
 
             logError(`Guardando abogado: ${name}...`);
             try {
@@ -839,8 +867,9 @@
                     updateUI();
                     showToast(`Abogado ${name} guardado correctamente.`, 'ok');
                     logError(`✓ Abogado guardado en Google Sheets.`);
-                    document.getElementById('new-law-name').value = '';
+                    document.getElementById('new-law-name').value  = '';
                     document.getElementById('new-law-email').value = '';
+                    document.getElementById('new-law-spec').selectedIndex = 0;
                 } else {
                     showToast(`Error del servidor: ${res.status}`, 'error');
                 }
@@ -974,9 +1003,19 @@
             }
         }
 
-        // Carga inicial: primero abogados, luego casos
-        // Así los dropdowns de asignación ya tienen opciones cuando se renderizan
-        loadLawyers().then(() => loadRealData());
+        // FIX-INIT-1: carga inicial con Promise.allSettled — si loadLawyers falla,
+        // loadRealData igual se ejecuta (y viceversa). Evita pantalla en blanco por
+        // un fallo aislado en uno de los endpoints.
+        Promise.allSettled([
+            loadLawyers(),
+            loadRealData()
+        ]).then(results => {
+            results.forEach((r, i) => {
+                if (r.status === 'rejected') {
+                    logError(`⚠️ Error en carga inicial [${i === 0 ? 'abogados' : 'casos'}]: ${r.reason}`);
+                }
+            });
+        });
     </script>
 </body>
 </html>
