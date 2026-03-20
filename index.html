@@ -282,7 +282,8 @@
             try {
                 const res = await fetch(N8N_GET_DATA, { method: 'POST' });
                 if(res.ok) {
-                    const rawData = await res.json();
+                    const txt = await res.text();
+                    const rawData = txt ? JSON.parse(txt) : [];
                     
                     // Normalización de datos del Google Sheet (v12)
                     // Aseguramos que rawData sea un array (n8n a veces manda objeto único si hay solo 1 fila)
