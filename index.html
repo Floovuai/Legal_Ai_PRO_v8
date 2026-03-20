@@ -329,7 +329,7 @@
                     db = normalizedRows.map(row => ({
                         date: row.Fecha || 'N/A',
                         rama: row.Rama || 'General',
-                        partes: row.Partes || 'Sin Partes',
+                        partes: row.Partes || row.nombre_cliente || 'Sin Partes',
                         venc: row['Fecha de Vencimiento'] || 'S/D',
                         status: row['Estado Alerta'] === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
                         desc: row['Resumen del Documento'] || 'No hay resumen disponible.',
@@ -637,7 +637,7 @@
                 const res = await fetch(N8N_LAWYER_SAVE, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ name, email, specialty: spec })
+                    body: JSON.stringify({ nombre: name, email: email, especialidad: spec })
                 });
                 if(res.ok) {
                     lawyers.push({name, email, especialidad: spec});
