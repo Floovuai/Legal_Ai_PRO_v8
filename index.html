@@ -544,7 +544,9 @@
                 });
 
                 if (response.ok) {
+                    const resData = await response.json();
                     log(`✓ n8n: Recepción confirmada.`);
+                    if(resData.debug) log(`📡 Centinela: ${resData.debug}`);
                     log(`✓ Enviando informe real a ${lawyerObj.email}...`);
                     log(`✓ Operación Finalizada con Éxito.`);
                     
