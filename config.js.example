@@ -29,6 +29,7 @@ window.FLOOVU_CONFIG = {
     FORCE_SYNC:    'https://TU-INSTANCIA.easypanel.host/webhook/floovu-force-sync',
     GET_DATA:      'https://TU-INSTANCIA.easypanel.host/webhook/floovu-get-data',
     HEALTH_CHECK:  'https://TU-INSTANCIA.easypanel.host/webhook/floovu-health-check',
+    GET_LAWYERS:   'https://TU-INSTANCIA.easypanel.host/webhook/floovu-get-abogados',
   }
 
 };

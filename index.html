@@ -373,7 +373,7 @@
 
     <script>
         let db = [];
-        const lawyers = [...(window.FLOOVU_CONFIG.INITIAL_LAWYERS || [])];
+        let lawyers = [];   // Se carga desde Google Sheets — no hardcodeado en config.js
 
         // Mostrar email de cuenta en sidebar (viene de config.js, no del HTML)
         const _accountEl = document.getElementById('sidebar-account-email');
@@ -388,6 +388,7 @@
         const N8N_GET_DATA        = WEBHOOKS.GET_DATA;
         const N8N_HEALTH_CHECK    = WEBHOOKS.HEALTH_CHECK;
         const N8N_LAWYER_DELETE   = WEBHOOKS.LAWYER_DELETE;
+        const N8N_GET_LAWYERS     = WEBHOOKS.GET_LAWYERS;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -421,7 +422,7 @@
             } else {
                 updateUI();
             }
-            if (i.dataset.tab === 'abogados') renderLawyers();
+            if (i.dataset.tab === 'abogados') loadLawyers();
         });
 
         // Caché de elementos DOM estáticos (F5-02)
@@ -429,6 +430,46 @@
         function el(id) {
             if (!_els[id]) _els[id] = document.getElementById(id);
             return _els[id];
+        }
+
+        // Carga el directorio de abogados directamente desde la hoja ABOGADOS
+        // Columnas del sheet: Nombre | Email | Especialidad | Estado
+        async function loadLawyers() {
+            const container = document.getElementById('lawyer-list-full');
+            if (container) container.innerHTML = `<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando directorio...</p>`;
+
+            try {
+                const res = await authFetch(N8N_GET_LAWYERS, { method: 'POST' });
+                if (res.ok) {
+                    const txt = await res.text();
+                    const rawData = txt ? JSON.parse(txt) : [];
+                    const rows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+
+                    // Leer columnas exactas de la hoja ABOGADOS
+                    // Solo incluir abogados con Estado = Activo (o sin estado definido)
+                    lawyers = rows
+                        .filter(row => {
+                            const estado = (row['Estado'] || row['estado'] || 'Activo').trim();
+                            return estado === 'Activo' || estado === 'activo' || estado === '';
+                        })
+                        .map(row => ({
+                            name:         row['Nombre']       || row['nombre']       || '',
+                            email:        row['Email']        || row['email']        || '',
+                            especialidad: row['Especialidad'] || row['especialidad'] || ''
+                        }))
+                        .filter(l => l.name); // descartar filas vacías
+
+                    renderLawyers();
+                    updateUI(); // refrescar dropdowns de asignación con los nuevos abogados
+                    logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
+                } else {
+                    logError(`Error al cargar abogados: HTTP ${res.status}`);
+                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${res.status}).</p>`;
+                }
+            } catch(e) {
+                logError(`Error al cargar abogados: ${e.message}`);
+                if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ Sin conexión con n8n.</p>`;
+            }
         }
 
         async function loadRealData() {
@@ -896,8 +937,8 @@
             }
         }
 
-        // Carga inicial al arrancar
-        loadRealData();
+        // Carga inicial al arrancar — datos y abogados en paralelo
+        Promise.all([loadRealData(), loadLawyers()]);
     </script>
 </body>
 </html>
