@@ -187,7 +187,8 @@
             </section>
 
             <section id="config" class="content-section">
-                       <div class="dashboard-grid">
+                <div class="header"><h1>Configuración</h1></div>
+                <div class="dashboard-grid">
                     <!-- COLUMNA IZQUIERDA: DEBUG EXPANDIDO -->
                     <div class="card" style="grid-row: span 2;">
                         <p class="card-title">Debug: Reporte de Errores (Temporal)</p>
@@ -215,8 +216,6 @@
                             <div class="health-item">🤖 AI AI: <span id="h-ai" style="color:var(--silver)">-</span></div>
                         </div>
                         <button class="btn-premium" style="margin-top:1.5rem; font-size:0.8rem; width:100%" onclick="pingEngine()">🚀 Lanzar Diagnóstico Real</button>
-                    </div>
-                </div>a limpia.'">Limpiar Logs</button>
                     </div>
                 </div>
             </section>
@@ -442,11 +441,15 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        row_number: 2,
+                        row_number: parseInt(caseItem.token) || 2,
+                        'Nombre Cliente': caseItem.partes,
+                        'Abogado Responsable': lawyerName,
+                        'Email Abogado': lawyerObj.email,
+                        'Estado Alerta': 'ASIGNADO',
+                        email_cliente: "cliente@demo.com",
                         nombre_cliente: caseItem.partes,
                         abogado_responsable: lawyerName,
                         email_abogado: lawyerObj.email,
-                        email_cliente: "cliente@demo.com",
                         asunto: `Asignación de Caso: ${caseItem.partes}`,
                         tipo_documento: "Demanda",
                         rama: caseItem.rama,
