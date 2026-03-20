@@ -474,9 +474,10 @@
                         <div class="asig-actions">
                             <button class="btn-outline" onclick="toggleDesc(${index})">📂 Ver Resumen</button>
                             <div style="flex-grow:1; display:flex; gap:12px; align-items:center;">
-                                <select id="law-sel-${index}" style="max-width:300px;">
+                                <select id="law-sel-${index}" style="max-width:200px;">
                                     ${lawyers.map(l => `<option value="${l.name}">${l.name}</option>`).join('')}
                                 </select>
+                                <input type="email" id="cli-em-${index}" placeholder="Email del Cliente" style="max-width:180px; background:rgba(255,255,255,0.05); color:white; border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.8rem;">
                                 <button class="btn-asig-main" onclick="finish(${index})">⚖️ Confirmar Asignación</button>
                             </div>
                         </div>
@@ -503,6 +504,7 @@
         async function finish(idx) {
             const caseItem = db.filter(c => c.status === 'PENDIENTE')[idx];
             const lawyerName = document.getElementById(`law-sel-${idx}`).value;
+            const clientEmail = document.getElementById(`cli-em-${idx}`).value;
             const lawyerObj = lawyers.find(l => l.name === lawyerName);
             
             const overlay = document.getElementById('loader');
@@ -524,12 +526,13 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        row_number: parseInt(caseItem.token) || 2,
+                        row_number: parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
                         'Nombre Cliente': caseItem.partes,
                         'Abogado Responsable': lawyerName,
                         'Email Abogado': lawyerObj.email,
                         'Estado Alerta': 'ASIGNADO',
-                        email_cliente: "cliente@demo.com",
+                        email_cliente: clientEmail,
+                        email_cli: clientEmail,
                         nombre_cliente: caseItem.partes,
                         abogado_responsable: lawyerName,
                         email_abogado: lawyerObj.email,
