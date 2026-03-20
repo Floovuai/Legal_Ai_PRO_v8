@@ -14,12 +14,12 @@
 window.FLOOVU_CONFIG = {
 
   // Email de la cuenta administradora
-  ACCOUNT_EMAIL: 'admin@tudominio.com',
+  ACCOUNT_EMAIL: 'chvaldiviezo@gmail.com',
 
   // Token secreto — genera uno aleatorio largo (mínimo 32 caracteres)
   // Ejemplo: crypto.randomUUID() en la consola del navegador
   // Este mismo token debes configurarlo en el nodo "Validar Auth (Shared)" del workflow.
-  API_SECRET: 'PON_AQUI_UN_TOKEN_SECRETO_LARGO_Y_ALEATORIO',
+  API_SECRET: 'Hangar89*',
 
   // Endpoints de n8n (copia las URLs de tu instancia)
   WEBHOOKS: {
@@ -29,7 +29,6 @@ window.FLOOVU_CONFIG = {
     FORCE_SYNC:    'https://TU-INSTANCIA.easypanel.host/webhook/floovu-force-sync',
     GET_DATA:      'https://TU-INSTANCIA.easypanel.host/webhook/floovu-get-data',
     HEALTH_CHECK:  'https://TU-INSTANCIA.easypanel.host/webhook/floovu-health-check',
-    GET_LAWYERS:   'https://TU-INSTANCIA.easypanel.host/webhook/floovu-get-abogados',
   }
 
 };
