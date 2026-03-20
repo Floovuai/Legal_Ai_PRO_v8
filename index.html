@@ -523,7 +523,8 @@
             try {
                 const res = await fetch(N8N_FORCE_SYNC, { method: 'POST' });
                 if(res.ok) {
-                    const realCase = await res.json();
+                    const txt = await res.text();
+                    const realCase = txt ? JSON.parse(txt) : null;
                     if(realCase && realCase.partes) {
                         logError(`✓ Caso detectado: ${realCase.partes}`);
                         startAIProcessing(realCase);
@@ -606,7 +607,8 @@
             try {
                 const res = await fetch(N8N_HEALTH_CHECK, { method: 'POST' });
                 if(res.ok) {
-                    const health = await res.json();
+                    const txt = await res.text();
+                    const health = txt ? JSON.parse(txt) : {};
                     document.getElementById('h-web').innerHTML = "🟢 OK";
                     document.getElementById('h-gmail').innerHTML = health.gmail ? "🟢 OK" : "🔴 ERROR";
                     document.getElementById('h-sheet').innerHTML = health.sheet ? "🟢 OK" : "🔴 ERROR";
