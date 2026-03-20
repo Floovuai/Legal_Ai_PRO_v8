@@ -101,6 +101,7 @@
                 <div class="nav-item" data-tab="abogados">👨‍⚖️ Abogados</div>
                 <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
                 <div class="nav-item" data-tab="config">⚙️ Configuración</div>
+                <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
             </nav>
 
             <div style="margin-top:auto; padding:20px; background:var(--gold-dim); border-radius:12px; border:1px solid var(--gold); font-size:0.8rem;">
@@ -220,6 +221,27 @@
                 </div>
             </section>
 
+            <section id="version" class="content-section">
+                <div class="header"><h1>Capacidades del Sistema (PRO v12.1)</h1></div>
+                <div class="dashboard-grid">
+                    <div class="card" style="grid-row: span 2;">
+                        <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
+                        <p style="color:var(--silver); line-height:1.6; font-size: 0.9rem; margin-top: 10px;">
+                            El sistema <b>Legal AI PRO v12.1</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales. 
+                            Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
+                        </p>
+                        <ul style="color:var(--silver); line-height:1.8; font-size: 0.85rem; padding-left: 20px; margin-top: 15px;">
+                            <li style="margin-bottom:8px;">✅ <b>Extracción Automatizada de Correos:</b> Lee bandejas, procesa PDFs adjuntos y marca como leído nativamente para prevenir duplicados.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Análisis A.I. y Estrategia:</b> Genera resúmenes precisos, enumera pasos estratégicos por rama jurídica, y calcula tiempos operativos ahorrados.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Agendamiento Dinámico Inteligente:</b> Crea citas en el Google Calendar corporativo sumando a los abogados asignados. Resiliente a pérdidas de memoria tras su confirmación.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Bóveda Centralizada (Registro Legal):</b> Unifica información y seguimiento en una sola hoja matriz en Google Sheets con identificadores únicos (Tokens).</li>
+                            <li style="margin-bottom:8px;">✅ <b>Informes Corporativos Dinámicos:</b> Recupera y protege el Informe de AI Premium para enviarlo por correo idéntico a su diseño visual desde n8n.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Dashboard "Stress-Free":</b> Sistema de colores y alertas diseñado para reducir fatiga visual manteniendo control de mando preciso.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -265,7 +287,6 @@
                     // Normalización de datos del Google Sheet (v12)
                     // Aseguramos que rawData sea un array (n8n a veces manda objeto único si hay solo 1 fila)
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
-                    
                     db = normalizedRows.map(row => ({
                         date: row.Fecha || 'N/A',
                         rama: row.Rama || 'General',
@@ -275,9 +296,9 @@
                         desc: row['Resumen del Documento'] || 'No hay resumen disponible.',
                         token: row.row_number || 'FLV-EX-00',
                         lawyer: row['Abogado asignado'] || null,
-                        priority: row.Prioridad || 'Media'
+                        priority: row.Prioridad || 'Media',
+                        informe_html: row.informe_html || row['Informe HTML'] || "<!--ABOGADO_BLOCK-->"
                     }));
-
 
                     updateUI();
                     logError(`✓ ${db.length} casos reales cargados desde Google Sheets.`);
@@ -457,7 +478,7 @@
                         'Fecha de Vencimiento': caseItem.venc,
                         token: caseItem.token,
                         case_description: caseItem.desc,
-                        informe_html: "<!--ABOGADO_BLOCK-->"
+                        informe_html: caseItem.informe_html || "<!--ABOGADO_BLOCK-->"
                     })
                 });
 
