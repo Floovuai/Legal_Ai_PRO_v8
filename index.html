@@ -215,8 +215,8 @@
                     <div class="card full-width">
                         <p class="card-title">📨 Entradas Recientes (API Sync)</p>
                         <table>
-                            <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th></tr></thead>
-                            <tbody id="dash-rows"><tr><td colspan="4" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
+                            <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>ABOGADO</th></tr></thead>
+                            <tbody id="dash-rows"><tr><td colspan="5" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -470,8 +470,7 @@
         }
 
         async function loadRealData() {
-            // F2-05: indicador visual de carga
-            el('dash-rows').innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
+            el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
             el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Cargando...</td></tr>`;
             logError("Sincronizando base de datos real...");
             try {
@@ -480,36 +479,60 @@
                     const txt = await res.text();
                     const rawData = txt ? JSON.parse(txt) : [];
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
-                    db = normalizedRows.map(row => ({
-                        date:         row.Fecha || 'N/A',
-                        rama:         row.Rama || 'General',
-                        partes:       row.Partes || row.nombre_cliente || 'Sin Partes',
-                        venc:         row['Fecha de Vencimiento'] || 'S/D',
-                        // F3-03: normalizar status antes de comparar
-                        status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
-                        desc:         row['Resumen del Documento'] || 'No hay resumen disponible.',
-                        // F3-02: leer campo token correcto
-                        token:        row.token || row.Token || row.row_number || 'FLV-EX-00',
-                        // F3-01: leer campo abogado con nombre correcto
-                        lawyer:       row['abogado_responsable'] || row['Abogado Responsable'] || row['Abogado asignado'] || null,
-                        priority:     row.Prioridad || 'Media',
-                        // F2-10: usar campo real de ahorro en minutos
-                        ahorroMin:    parseFloat(row['Ahorro Humano (min)'] || '0') || 0,
-                        score:        parseFloat(row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] || '0') || 0,
-                        // F3-05: guardar tipo real del documento
-                        tipo:         row['Tipo de Documento'] || '',
-                        informe_html: row.informe_html || row['Informe HTML'] || "<!--ABOGADO_BLOCK-->"
-                    }));
+                    db = normalizedRows.map(row => {
+                        // FASE 2: leer fecha de vencimiento desde múltiples campos posibles
+                        const venc = row['Fecha de Vencimiento'] || row['vencimiento'] ||
+                                     row['vencimiento_explicito'] || row['Vencimiento'] || 'S/D';
+
+                        // FASE 3: guardar fecha con hora — el sheet solo trae fecha,
+                        // añadimos la hora actual de recepción en el cliente
+                        const fechaRaw = row.Fecha || row.fecha || '';
+                        const dateStr  = fechaRaw
+                            ? `${fechaRaw} ${new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'})}`
+                            : new Date().toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+                        // FASE 4: score robusto — acepta string, number, con o sin tilde
+                        const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
+                                         row['score'] || row['Score'] || '0';
+                        const score = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
+
+                        // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
+                        let desc = row['Resumen del Documento'] || row['resumen'] || '';
+                        // Eliminar bloque [[[DATA_START]]]...[[[DATA_END]]]
+                        desc = desc.replace(/\[\[\[DATA_START\]\]\][\s\S]*?\[\[\[DATA_END\]\]\]/g, '').trim();
+                        // Convertir **texto** en etiquetas bold y limpiar asteriscos sueltos
+                        desc = desc
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                            .trim();
+                        if (!desc) desc = 'Sin resumen disponible.';
+
+                        return {
+                            date:         dateStr,
+                            dateOnly:     fechaRaw || new Date().toLocaleDateString('es-CO'),
+                            rama:         row.Rama  || row.rama  || 'General',
+                            partes:       row.Partes || row.partes || row.nombre_cliente || 'Sin Partes',
+                            venc,
+                            status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
+                            desc,
+                            token:        row.token || row.Token || row.row_number || 'FLV-EX-00',
+                            lawyer:       row['abogado_responsable'] || row['Abogado Responsable'] || row['Abogado asignado'] || null,
+                            priority:     row.Prioridad || row.prioridad || 'Media',
+                            ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
+                            score,
+                            tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
+                            informe_html: row.informe_html || row['Informe HTML'] || ''
+                        };
+                    });
                     updateUI();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
-                    // F2-05: mostrar error visible en la tabla
-                    el('dash-rows').innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
+                    el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
                     el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de sincronización.</td></tr>`;
                     logError(`Error de sincronización: HTTP ${res.status}`);
                 }
             } catch(e) {
-                el('dash-rows').innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n. Verifica que el workflow esté activo.</td></tr>`;
+                el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n.</td></tr>`;
                 el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión.</td></tr>`;
                 logError(`Error de sincronización: ${e.message}`);
             }
@@ -536,7 +559,7 @@
         function updateUI() {
             if (!db.length) {
                 el('chart-area').innerHTML      = `<span class="empty-icon">📊</span>Sin datos`;
-                el('dash-rows').innerHTML       = `<tr><td colspan="4" class="empty-state">No se reconoce actividad reciente</td></tr>`;
+                el('dash-rows').innerHTML       = `<tr><td colspan="5" class="empty-state">No se reconoce actividad reciente</td></tr>`;
                 el('dash-deadlines').innerHTML  = `<span class="empty-icon">📅</span>Sin actividad`;
                 el('asig-content').innerHTML    = `<span class="empty-icon">⚖️</span>Sin casos pendientes de despacho`;
                 el('exp-rows').innerHTML        = `<tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr>`;
@@ -546,15 +569,16 @@
                 return;
             }
 
-            // F2-10: KPIs con datos reales
+            // KPIs
             const totalMinutos = db.reduce((acc, c) => acc + (c.ahorroMin || 0), 0);
             const totalHours   = totalMinutos > 0 ? (totalMinutos / 60).toFixed(1) : (db.length * 2.5).toFixed(1);
             const scores       = db.filter(c => c.score > 0).map(c => c.score);
-            const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : '—';
+            // FASE 4: mostrar score aunque sea de un solo caso
+            const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : null;
             el('kpi-hours').innerText = `${totalHours}h`;
-            el('kpi-score').innerText = avgScore !== '—' ? `${avgScore}/10` : '—';
+            el('kpi-score').innerText = avgScore ? `${avgScore}/10` : '—';
 
-            // F2-07: gráfico con proporciones reales por rama
+            // Gráfico rama jurídica
             const ramaCount = {};
             db.forEach(c => { ramaCount[c.rama] = (ramaCount[c.rama] || 0) + 1; });
             const ramaLabels = Object.keys(ramaCount);
@@ -562,16 +586,9 @@
             const colores    = ['#c5a059','#e5c17b','#94a3b8','#475569','#1e40af','#15803d','#b91c1c'];
             const chartConfig = {
                 type: 'doughnut',
-                data: {
-                    labels: ramaLabels,
-                    datasets: [{ data: ramaData, backgroundColor: colores.slice(0, ramaLabels.length), borderWidth: 0 }]
-                },
-                options: {
-                    cutoutPercentage: 75,
-                    legend: { position: 'bottom', labels: { fontColor: '#94a3b8', fontSize: 10, padding: 16 } }
-                }
+                data: { labels: ramaLabels, datasets: [{ data: ramaData, backgroundColor: colores.slice(0, ramaLabels.length), borderWidth: 0 }] },
+                options: { cutoutPercentage: 75, legend: { position: 'bottom', labels: { fontColor: '#94a3b8', fontSize: 10, padding: 16 } } }
             };
-            // F5-03: solo regenerar gráfico si los datos cambiaron
             const chartSig = JSON.stringify(ramaCount);
             if (el('chart-area').dataset.sig !== chartSig) {
                 el('chart-area').dataset.sig = chartSig;
@@ -579,19 +596,33 @@
                 el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`;
             }
 
-            // Dashboard rows — texto escapado para XSS (F1-04)
+            // FASE 6: entradas recientes — 5 columnas incluyendo Abogado
             el('dash-rows').innerHTML = db.slice(0, 5).map(c =>
                 `<tr>
                     <td>${esc(c.date)}</td>
-                    <td><span style="color:var(--gold);font-weight:700;">${esc(c.priority.toUpperCase())}</span></td>
+                    <td><span style="color:var(--gold);font-weight:700;">${esc((c.priority||'Media').toUpperCase())}</span></td>
                     <td>${esc(c.partes)}</td>
                     <td>${esc(c.rama)}</td>
+                    <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
                 </tr>`
             ).join('');
 
-            // Próximos vencimientos — ordenados por fecha
-            const conVenc = db.filter(c => c.venc && c.venc !== 'S/D' && /^\d{4}-\d{2}-\d{2}$/.test(c.venc))
-                             .sort((a,b) => a.venc.localeCompare(b.venc));
+            // FASE 5: vencimientos — acepta YYYY-MM-DD y DD/MM/YYYY y texto libre
+            function parseVenc(v) {
+                if (!v || v === 'S/D' || v === 'N/A') return null;
+                // YYYY-MM-DD
+                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+                // DD/MM/YYYY → YYYY-MM-DD para ordenar
+                const m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+                if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+                // Texto como "27 de marzo de 2026" — mostrar tal cual, sin ordenar
+                return v;
+            }
+            const conVenc = db
+                .map(c => ({ ...c, vencSort: parseVenc(c.venc) }))
+                .filter(c => c.vencSort)
+                .sort((a,b) => (a.vencSort > b.vencSort ? 1 : -1));
+
             if (conVenc.length) {
                 el('dash-deadlines').innerHTML = conVenc.slice(0, 3).map(c =>
                     `<div style="padding:0.75rem 1rem;background:rgba(212,175,55,0.08);border-radius:8px;border-left:3px solid var(--gold);margin-bottom:8px;">
@@ -603,7 +634,7 @@
                 el('dash-deadlines').innerHTML = `<span class="empty-icon">📅</span><span style="color:var(--silver)">Sin vencimientos próximos</span>`;
             }
 
-            // F2-09: Agenda Judicial — poblar con datos reales
+            // Agenda Judicial
             if (conVenc.length) {
                 el('cal-content').innerHTML = conVenc.map(c =>
                     `<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid var(--border);">
@@ -621,7 +652,7 @@
                 el('cal-content').innerHTML = `<span class="empty-icon">⏳</span>No hay vencimientos con fecha definida`;
             }
 
-            // Asignaciones — F2-02: usar token como ID estable en los elementos DOM
+            // FASE 1: Asignaciones — dropdown espera a que lawyers esté cargado
             const pend = db.filter(c => c.status === 'PENDIENTE');
             const badge = el('asig-badge');
             badge.innerText = pend.length;
@@ -632,6 +663,18 @@
                 asigContent.classList.remove('empty-state');
                 asigContent.innerHTML = pend.map(c => {
                     const tok = esc(c.token);
+                    // Si aún no hay abogados cargados, mostrar placeholder
+                    const lawyerOptions = lawyers.length
+                        ? lawyers.map(l => `<option value="${esc(l.name)}">${esc(l.name)}</option>`).join('')
+                        : `<option value="">Cargando abogados...</option>`;
+
+                    // FASE 8: formatear desc — párrafos separados, sin markdown crudo
+                    const descFormatted = c.desc
+                        .split(/\n+/)
+                        .filter(p => p.trim())
+                        .map(p => `<p style="margin:0 0 8px;font-size:0.82rem;color:var(--silver);line-height:1.6;">${p}</p>`)
+                        .join('');
+
                     return `
                     <div class="asig-card">
                         <div class="asig-header">
@@ -647,18 +690,15 @@
                         </div>
                         <div class="asig-actions">
                             <button class="btn-outline" onclick="toggleDesc('${tok}')">📂 Ver Resumen</button>
-                            <div style="flex-grow:1;display:flex;gap:12px;align-items:center;">
-                                <select id="law-sel-${tok}" style="max-width:200px;">
-                                    ${lawyers.map(l => `<option value="${esc(l.name)}">${esc(l.name)}</option>`).join('')}
-                                </select>
+                            <div style="flex-grow:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                                <select id="law-sel-${tok}" style="max-width:200px;">${lawyerOptions}</select>
                                 <input type="email" id="cli-em-${tok}" placeholder="Email del Cliente"
-                                    style="max-width:180px;background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
+                                    style="max-width:200px;background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
                                 <button class="btn-asig-main" onclick="finish('${tok}')">⚖️ Confirmar Asignación</button>
                             </div>
                         </div>
                         <div id="desc-panel-${tok}" class="asig-desc-panel" style="display:none;">
-                            <strong>REQUERIMIENTO PRINCIPAL:</strong><br>
-                            ${esc(c.desc)}
+                            ${descFormatted}
                         </div>
                     </div>`;
                 }).join('');
@@ -677,7 +717,7 @@
                     <td>${esc(c.date)}</td>
                     <td>${esc(c.rama)}</td>
                     <td>${esc(c.partes)}</td>
-                    <td>${esc(c.lawyer || 'PENDIENTE')}</td>
+                    <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
                     <td>${esc(c.venc)}</td>
                 </tr>`
             ).join('');
@@ -934,8 +974,9 @@
             }
         }
 
-        // Carga inicial al arrancar — datos y abogados en paralelo
-        Promise.all([loadRealData(), loadLawyers()]);
+        // Carga inicial: primero abogados, luego casos
+        // Así los dropdowns de asignación ya tienen opciones cuando se renderizan
+        loadLawyers().then(() => loadRealData());
     </script>
 </body>
 </html>
