@@ -121,10 +121,10 @@
             <!-- BANNER GMAIL TRIGGER -->
             <div class="notification-banner" id="mail-notification" style="background: linear-gradient(90deg, #0c0f16 0%, #1a1f2c 100%); border-color: var(--border);">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: var(--gold-dim); padding: 12px; border-radius: 50%; color: var(--gold); border: 1px solid var(--gold);">⚡</div>
+                    <img src="https://i.postimg.cc/8C78LzZ1/Logo-Floovu-Gold.png" style="width:50px; height:auto; border-radius:10px;">
                     <div>
-                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Sistema LEGAL AI v12</p>
-                        <p style="font-size: 0.85rem; color: var(--silver);">Estado: Operativo | Listo para procesar bandeja de Gmail</p>
+                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Sistema LEGAL AI v14.2</p>
+                        <p style="font-size: 0.85rem; color: var(--silver);">Estado: Operativo | Reporte Centinela Activo</p>
                     </div>
                 </div>
                 <button class="btn-premium" onclick="forceGmailSync()" style="box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);">🚀 Encendido / Procesar Gmail</button>
@@ -638,6 +638,7 @@
                 if(res.ok) {
                     lawyers.push({name, email, especialidad: spec});
                     renderLawyers();
+                    updateUI(); // Garantizar que aparezca en el desplegable de asignación
                     logError("Abogado guardado en Google Sheets.");
                     document.getElementById('new-law-name').value = '';
                     document.getElementById('new-law-email').value = '';
@@ -659,6 +660,7 @@
                 if(res.ok) {
                     lawyers.splice(idx, 1);
                     renderLawyers();
+                    updateUI(); // Sincronizar desplegables
                     logError("Abogado eliminado del sistema.");
                 }
             } catch(e) { logError(`Error al eliminar: ${e.message}`); }
