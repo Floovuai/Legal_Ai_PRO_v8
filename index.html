@@ -751,24 +751,50 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
-
     <script>
-    // Verificar que config.js cargó correctamente
-    if (typeof window.FLOOVU_CONFIG === 'undefined') {
-        document.body.innerHTML = `
-            <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:monospace;background:#0a0a0b;color:#ff4757;">
-                <div style="text-align:center;border:1px solid #ff4757;padding:2rem 3rem;border-radius:12px;max-width:480px;">
-                    <p style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;">⚠️ config.js no encontrado</p>
-                    <p style="color:#888;font-size:0.85rem;line-height:1.6;">
-                        Crea el archivo <strong style="color:#fff">config.js</strong> junto al index.html
-                        con las URLs de los webhooks de n8n.<br><br>
-                        Consulta <strong style="color:#fff">config.js.example</strong> como plantilla.
-                    </p>
-                </div>
-            </div>`;
-        throw new Error('FLOOVU: config.js no encontrado. El sistema no puede arrancar sin configuración.');
-    }
+    // ══════════════════════════════════════════════════════════
+    // FLOOVU Legal AI PRO v8 — Configuración integrada
+    // ══════════════════════════════════════════════════════════
+    window.FLOOVU_CONFIG = {
+
+        ACCOUNT_EMAIL: 'floovuai@gmail.com',
+
+        API_SECRET: 'sFD:qws/r>%:?v_HaQ14_hUGc*X0n*',
+
+        // ── Usuarios del sistema ──────────────────────────────
+        // Genera los hash con hash-generator.html
+        // Para agregar un cliente: duplica el bloque y pega el hash
+        USERS: [
+            {
+                username: 'Floovu_admin',
+                hash: 'PEGA_AQUI_EL_HASH_DE_TU_CONTRASEÑA',
+                role: 'admin',
+                name: 'Floovu Automation',
+                email: 'floovuai@gmail.com'
+            },
+            {
+                username: 'operador_test',
+                hash: 'PEGA_AQUI_EL_HASH_DE_LA_CONTRASEÑA_TEST',
+                role: 'operator',
+                name: 'Usuario Test',
+                email: 'test@floovu.com'
+            }
+        ],
+
+        // ── Webhooks de n8n ───────────────────────────────────
+        WEBHOOKS: {
+            ASSIGN:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-cliente',
+            LAWYER_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-abogado',
+            LAWYER_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-abogado',
+            FORCE_SYNC:    'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-force-sync',
+            GET_DATA:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-data',
+            HEALTH_CHECK:  'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-health-check',
+            GET_LAWYERS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-abogados',
+            GET_CLIENTS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-clientes',
+            CLIENT_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
+            CLIENT_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente'
+        }
+    };
     </script>
 
     <script>
