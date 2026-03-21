@@ -321,7 +321,20 @@
 
             <section id="calendario" class="content-section">
                 <div class="header"><h1>Agenda Judicial</h1></div>
-                <div class="card" style="max-width: 800px; margin:0 auto;"><p class="card-title">Términos Procesales</p><div id="cal-content" class="empty-state"><span class="empty-icon">⏳</span>No hay vencimientos agendados</div></div>
+                <div class="card">
+                    <p class="card-title">Términos Procesales</p>
+                    <table>
+                        <thead><tr>
+                            <th>FECHA</th>
+                            <th>PARTES</th>
+                            <th>RAMA</th>
+                            <th>TIPO</th>
+                            <th>ABOGADO</th>
+                            <th>VENCIMIENTO</th>
+                        </tr></thead>
+                        <tbody id="cal-content"><tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
+                    </table>
+                </div>
             </section>
 
             <section id="abogados" class="content-section">
@@ -676,7 +689,7 @@
                 el('dash-deadlines').innerHTML  = `<span class="empty-icon">📅</span>Sin actividad`;
                 el('asig-content').innerHTML    = `<span class="empty-icon">⚖️</span>Sin casos pendientes de despacho`;
                 el('exp-rows').innerHTML        = `<tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr>`;
-                el('cal-content').innerHTML     = `<span class="empty-icon">⏳</span>No hay vencimientos agendados`;
+                el('cal-content').innerHTML     = `<tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr>`;
                 el('kpi-hours').innerText       = '0h';
                 el('kpi-score').innerText       = '—';
                 return;
@@ -751,19 +764,17 @@
             // Agenda Judicial
             if (conVenc.length) {
                 el('cal-content').innerHTML = conVenc.map(c =>
-                    `<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid var(--border);">
-                        <div>
-                            <p style="font-weight:600;color:var(--white);font-size:0.9rem;">${esc(c.partes)}</p>
-                            <p style="color:var(--silver);font-size:0.78rem;margin-top:2px;">${esc(c.rama)} · ${esc(c.tipo || 'Documento')}</p>
-                        </div>
-                        <div style="text-align:right;">
-                            <p style="font-family:monospace;color:var(--gold);font-size:0.85rem;font-weight:700;">${esc(c.venc)}</p>
-                            <p style="color:${c.lawyer ? 'var(--gold)' : 'var(--silver)'};font-size:0.72rem;font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Sin asignar')}</p>
-                        </div>
-                    </div>`
+                    `<tr>
+                        <td style="color:var(--gold);font-family:monospace;font-size:0.82rem;font-weight:700;">${esc(c.venc)}</td>
+                        <td style="font-weight:600;color:var(--white);">${esc(c.partes)}</td>
+                        <td>${esc(c.rama)}</td>
+                        <td style="color:var(--silver);font-size:0.82rem;">${esc(c.tipo || '—')}</td>
+                        <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Sin asignar')}</td>
+                        <td style="color:var(--gold);font-family:monospace;">${esc(c.venc)}</td>
+                    </tr>`
                 ).join('');
             } else {
-                el('cal-content').innerHTML = `<span class="empty-icon">⏳</span>No hay vencimientos con fecha definida`;
+                el('cal-content').innerHTML = `<tr><td colspan="6" class="empty-state">No hay vencimientos con fecha definida</td></tr>`;
             }
 
             // FASE 1: Asignaciones — dropdown espera a que lawyers esté cargado
