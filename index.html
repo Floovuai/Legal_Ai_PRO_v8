@@ -915,8 +915,9 @@
             HEALTH_CHECK:  'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-health-check',
             GET_LAWYERS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-abogados',
             GET_CLIENTS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-clientes',
-            CLIENT_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
-            CLIENT_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente'
+            CLIENT_SAVE:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
+            CLIENT_DELETE:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente',
+            GET_CLIENT_MAILS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails'
         }
     };
     </script>
@@ -1102,8 +1103,9 @@
         const N8N_LAWYER_DELETE   = WEBHOOKS.LAWYER_DELETE;
         const N8N_GET_LAWYERS     = WEBHOOKS.GET_LAWYERS;
         const N8N_GET_CLIENTS     = WEBHOOKS.GET_CLIENTS;
-        const N8N_CLIENT_SAVE     = WEBHOOKS.CLIENT_SAVE;
-        const N8N_CLIENT_DELETE   = WEBHOOKS.CLIENT_DELETE;
+        const N8N_CLIENT_SAVE       = WEBHOOKS.CLIENT_SAVE;
+        const N8N_CLIENT_DELETE     = WEBHOOKS.CLIENT_DELETE;
+        const N8N_GET_CLIENT_MAILS  = WEBHOOKS.GET_CLIENT_MAILS;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -1472,6 +1474,7 @@
                         </div>
                         <div class="asig-actions">
                             <button class="btn-outline" onclick="toggleDesc('${tok}')">📂 Ver Resumen</button>
+                            <button class="btn-outline" style="color:var(--gold);border-color:var(--gold);" onclick="fetchClientMails('${tok}', '${esc(c.partes)}')">📧 Correos del Cliente</button>
                             <div style="flex-grow:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                                 <select id="law-sel-${tok}" style="max-width:200px;">${lawyerOptions}</select>
                                 <input type="email" id="cli-em-${tok}" placeholder="Email del Cliente"
@@ -1482,6 +1485,7 @@
                         <div id="desc-panel-${tok}" class="asig-desc-panel" style="display:none;">
                             ${descFormatted}
                         </div>
+                        <div id="mails-panel-${tok}" style="display:none;margin-top:1rem;padding:1rem;background:rgba(0,0,0,0.3);border-radius:8px;border-left:3px solid var(--gold);"></div>
                     </div>`;
                 }).join('');
             } else {
@@ -1558,7 +1562,10 @@
             document.getElementById('mail-notification').style.opacity = '0.5';
             showTerminal(["Conectando con n8n...", "Solicitando escaneo de Gmail..."]);
             try {
-                const res = await authFetch(N8N_FORCE_SYNC, { method: 'POST' });
+                const res = await authFetch(N8N_FORCE_SYNC, {
+                    method: 'POST',
+                    body: JSON.stringify({ email: currentUser ? currentUser.email : '' })
+                });
                 if (res.ok) {
                     const txt = await res.text();
                     const realCase = txt ? JSON.parse(txt) : null;
@@ -1866,8 +1873,8 @@
                             <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
                             <td><span style="font-size:0.68rem;padding:2px 8px;border-radius:20px;background:${c._source === 'directorio' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.05)'};color:${c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${c._source === 'directorio' ? 'Directorio' : 'Registro'}</span></td>
                             <td style="display:flex;gap:6px;align-items:center;">
-                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})">✏️</button>
-                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})">🗑</button>` : ''}
+                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})" title="Editar">✏️</button>
+                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})" title="Eliminar">🗑</button>` : ''}
                         </td>
                         </tr>`).join('')}
                     </tbody>
@@ -1989,6 +1996,100 @@
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
                 }
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
+        }
+
+        async function fetchClientMails(tok, clientName) {
+            const panel = document.getElementById(`mails-panel-${tok}`);
+            if (!panel) return;
+
+            // Toggle: si ya está abierto, cerrar
+            if (panel.style.display !== 'none') {
+                panel.style.display = 'none';
+                return;
+            }
+
+            // Buscar email del cliente: primero del campo ingresado, luego del directorio
+            let clientEmail = (document.getElementById(`cli-em-${tok}`) || {}).value || '';
+            if (!clientEmail) {
+                const found = allClientRows.find(r =>
+                    r.nombre && clientName &&
+                    r.nombre.toLowerCase().trim() === clientName.toLowerCase().trim()
+                );
+                clientEmail = found ? (found.email || '') : '';
+            }
+
+            if (!clientEmail) {
+                panel.style.display = 'block';
+                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#f97316;">⚠️ Ingresá el email del cliente en el campo de arriba para buscar sus correos.</p>`;
+                return;
+            }
+
+            panel.style.display = 'block';
+            panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">⏳ Buscando correos con PDF de <strong style="color:var(--gold);">${esc(clientEmail)}</strong>...</p>`;
+
+            try {
+                const res = await authFetch(N8N_GET_CLIENT_MAILS, {
+                    method: 'POST',
+                    body: JSON.stringify({ email: clientEmail, nombre: clientName })
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const mails = Array.isArray(data) ? data : (data.mails || data.emails || []);
+
+                if (!mails.length) {
+                    panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">📭 No se encontraron correos con PDF de <strong>${esc(clientEmail)}</strong>.</p>`;
+                    return;
+                }
+
+                // Mostrar lista y disparar procesamiento automático en paralelo
+                panel.innerHTML = `
+                    <p style="margin:0 0 10px;font-size:0.75rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;">
+                        📧 ${mails.length} correo(s) encontrado(s) — procesando automáticamente...
+                    </p>
+                    ${mails.map(m => `
+                        <div id="mail-row-${esc(m.messageId)}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:1rem;">
+                            <div style="min-width:0;flex:1;">
+                                <p style="margin:0;font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${esc(m.subject || '(Sin asunto)')}</p>
+                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">📅 ${esc(m.date || '—')}${m.attachments ? ` · 📎 ${m.attachments} adjunto(s)` : ''}</p>
+                            </div>
+                            <span id="mail-status-${esc(m.messageId)}" style="font-size:0.72rem;color:var(--silver);flex-shrink:0;">⏳ Enviando...</span>
+                        </div>`).join('')}`;
+
+                // Procesar cada correo automáticamente sin esperar al anterior
+                mails.forEach(async (m) => {
+                    const statusEl = document.getElementById(`mail-status-${m.messageId}`);
+                    try {
+                        const r = await authFetch(N8N_FORCE_SYNC, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                messageId:      m.messageId,
+                                nombre_cliente: clientName,
+                                email_cliente:  clientEmail,
+                                fuente:         'perfil_cliente'
+                            })
+                        });
+                        if (statusEl) {
+                            if (r.ok) {
+                                statusEl.textContent = '✅ Guardado';
+                                statusEl.style.color = '#22c55e';
+                            } else {
+                                statusEl.textContent = `⚠️ Error ${r.status}`;
+                                statusEl.style.color = '#f97316';
+                            }
+                        }
+                    } catch(e) {
+                        if (statusEl) { statusEl.textContent = '🔴 Falló'; statusEl.style.color = '#ef4444'; }
+                        logError(`Error procesando correo ${m.messageId}: ${e.message}`);
+                    }
+                });
+
+                showToast(`${mails.length} correo(s) de ${clientName} enviados al Registro Legal.`, 'ok');
+                logError(`✓ ${mails.length} correos de ${clientEmail} procesados automáticamente.`);
+
+            } catch(e) {
+                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#ef4444;">🔴 Error al conectar con n8n: ${esc(e.message)}</p>`;
+                logError(`Error buscando correos: ${e.message}`);
+            }
         }
 
         async function assignLawyerFromClients(idx, lawyerName) {
