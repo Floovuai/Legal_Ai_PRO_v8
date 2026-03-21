@@ -136,7 +136,7 @@
         .kpi-card { background: linear-gradient(145deg, #0c0f16 0%, #151a26 100%); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; text-align: center; border-bottom: 3px solid var(--gold); }
         .kpi-value { font-family: 'Playfair Display', Georgia, serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); margin: 0.5rem 0; }
         .kpi-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--silver); font-weight: 700; }
-        .kpi-sub { font-size: 0.75rem; color: #475569; }
+        .kpi-sub { font-size: 0.72rem; color: var(--gold); font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.6; }
 
         /* F4-02: diseño responsivo */
         @media (max-width: 768px) {
@@ -161,6 +161,7 @@
 
                 <div class="nav-item" data-tab="expedientes">📁 Registro Legal</div>
                 <div class="nav-item" data-tab="abogados">👨‍⚖️ Abogados</div>
+                <div class="nav-item" data-tab="clientes">👥 Clientes</div>
                 <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
                 <div class="nav-item" data-tab="config">⚙️ Configuración</div>
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
@@ -232,6 +233,40 @@
                 <div class="card">
                     <p class="card-title">Google Sheets (Registro Legal)</p>
                     <table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table>
+                </div>
+            </section>
+
+            <section id="clientes" class="content-section">
+                <div class="header"><h1>Directorio de Clientes</h1></div>
+                <div class="card">
+                    <p class="card-title">Registros Activos</p>
+                    <div id="client-list-container">
+                        <p style="color:var(--silver);text-align:center;padding:2rem;">⏳ Cargando clientes...</p>
+                    </div>
+                </div>
+
+                <!-- Modal edición cliente -->
+                <div class="overlay" id="client-edit-modal">
+                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:480px;width:90%;">
+                        <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">✏️ Editar Cliente</p>
+                        <input type="hidden" id="edit-client-token">
+                        <div class="form-group">
+                            <label for="edit-client-nombre">Nombre del Cliente</label>
+                            <input type="text" id="edit-client-nombre">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-client-abogado">Abogado Asignado</label>
+                            <select id="edit-client-abogado"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-client-email-abogado">Email del Abogado</label>
+                            <input type="email" id="edit-client-email-abogado" readonly style="opacity:0.6;cursor:not-allowed;">
+                        </div>
+                        <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                            <button class="btn-outline" style="flex:1" onclick="closeClientModal()">Cancelar</button>
+                            <button class="btn-premium" style="flex:1" onclick="saveClientEdit()">💾 Guardar Cambios</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -423,14 +458,9 @@
             document.getElementById(i.dataset.tab).classList.add('active');
 
             if (i.dataset.tab === 'abogados') {
-                // FIX-NAV-1: si ya tenemos abogados en memoria solo re-renderiza,
-                // de lo contrario hace la petición completa (primera visita o si falló el arranque)
-                if (lawyers.length > 0) {
-                    renderLawyers();
-                    updateUI();
-                } else {
-                    loadLawyers();
-                }
+                if (lawyers.length > 0) { renderLawyers(); updateUI(); } else { loadLawyers(); }
+            } else if (i.dataset.tab === 'clientes') {
+                renderClients();
             } else if (i.dataset.tab === 'dashboard' || i.dataset.tab === 'expedientes' || i.dataset.tab === 'asignaciones') {
                 loadRealData();
             } else {
@@ -1019,6 +1049,112 @@
                 btn.onclick = () => overlay.classList.remove('visible');
                 term.appendChild(btn);
             }
+        }
+
+        // ══════════════════════════════════════════
+        // CLIENTES — funciones
+        // ══════════════════════════════════════════
+        function renderClients() {
+            const container = document.getElementById('client-list-container');
+            if (!container) return;
+            if (!db.length) {
+                container.innerHTML = '<p style="color:var(--silver);text-align:center;padding:2rem;">Sin clientes registrados.</p>';
+                return;
+            }
+            container.innerHTML = `
+                <table>
+                    <thead><tr>
+                        <th>TOKEN</th>
+                        <th>CLIENTE</th>
+                        <th>ABOGADO ASIGNADO</th>
+                        <th>EMAIL ABOGADO</th>
+                        <th>ESTADO</th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody>
+                        ${db.map(c => `
+                        <tr>
+                            <td style="color:var(--gold);font-family:monospace;font-size:0.8rem;">${esc(c.token)}</td>
+                            <td>${esc(c.partes)}</td>
+                            <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
+                            <td style="color:var(--silver);font-size:0.82rem;">${esc(getLawyerEmail(c.lawyer))}</td>
+                            <td><span style="font-size:0.72rem;font-weight:700;color:${c.status==='ASIGNADO'?'#22c55e':'var(--gold)'};">${esc(c.status)}</span></td>
+                            <td><button class="btn-outline" style="font-size:0.75rem;padding:0 10px;height:30px;" onclick="openClientModal('${esc(c.token)}')">✏️ Editar</button></td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function getLawyerEmail(lawyerName) {
+            if (!lawyerName) return '—';
+            const l = lawyers.find(x => x.name === lawyerName);
+            return l ? l.email : '—';
+        }
+
+        function openClientModal(token) {
+            const c = db.find(x => x.token === token);
+            if (!c) return;
+            document.getElementById('edit-client-token').value = token;
+            document.getElementById('edit-client-nombre').value = c.partes || '';
+            // Poblar dropdown de abogados
+            const sel = document.getElementById('edit-client-abogado');
+            sel.innerHTML = lawyers.map(l => `<option value="${esc(l.name)}" ${l.name === c.lawyer ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
+            // Email del abogado actual
+            document.getElementById('edit-client-email-abogado').value = getLawyerEmail(c.lawyer);
+            // Actualizar email al cambiar abogado
+            sel.onchange = () => {
+                const selected = lawyers.find(l => l.name === sel.value);
+                document.getElementById('edit-client-email-abogado').value = selected ? selected.email : '';
+            };
+            document.getElementById('client-edit-modal').classList.add('visible');
+        }
+
+        function closeClientModal() {
+            document.getElementById('client-edit-modal').classList.remove('visible');
+        }
+
+        async function saveClientEdit() {
+            const token       = document.getElementById('edit-client-token').value;
+            const nombre      = document.getElementById('edit-client-nombre').value.trim();
+            const abogadoName = document.getElementById('edit-client-abogado').value;
+            const emailAbog   = document.getElementById('edit-client-email-abogado').value;
+            const caseItem    = db.find(c => c.token === token);
+            if (!caseItem || !nombre) { showToast('Completa todos los campos.', 'error'); return; }
+            const lawyerObj   = lawyers.find(l => l.name === abogadoName);
+            logError(`Actualizando cliente: ${nombre}...`);
+            try {
+                const res = await authFetch(N8N_ASSIGN_WEBHOOK, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        token,
+                        row_number:            caseItem.row_number || null,
+                        'Nombre Cliente':      nombre,
+                        'Abogado Responsable': abogadoName,
+                        'Email Abogado':       emailAbog,
+                        'Estado Alerta':       caseItem.status === 'ASIGNADO' ? 'ASIGNADO' : 'PENDIENTE_ASIGNACION',
+                        abogado_responsable:   abogadoName,
+                        email_abogado:         emailAbog,
+                        nombre_cliente:        nombre,
+                        tipo_documento:        caseItem.tipo || caseItem.rama || 'General',
+                        rama:                  caseItem.rama,
+                        vencimiento:           caseItem.venc,
+                        'Fecha de Vencimiento': caseItem.venc,
+                        case_description:      caseItem.desc,
+                        informe_html:          caseItem.informe_html || '<!--FLOOVU_AB_PLACEHOLDER-->'
+                    })
+                });
+                if (res.ok) {
+                    caseItem.partes = nombre;
+                    caseItem.lawyer = abogadoName;
+                    renderClients();
+                    updateUI();
+                    closeClientModal();
+                    showToast(`Cliente ${nombre} actualizado.`, 'ok');
+                    logError(`✓ Cliente actualizado en el sistema.`);
+                } else {
+                    showToast(`Error del servidor: ${res.status}`, 'error');
+                }
+            } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
         // FIX-INIT-1: carga inicial con Promise.allSettled — si loadLawyers falla,
