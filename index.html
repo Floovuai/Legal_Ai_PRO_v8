@@ -44,31 +44,9 @@
             top: 0;
             height: 100vh;
         }
-        .brand {
-            margin-bottom: 3.5rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1rem;
-            line-height: 1.2;
-        }
-        .brand-main {
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 1.55rem;
-            font-weight: 900;
-            color: var(--gold);
-            letter-spacing: 1px;
-            display: block;
-        }
-        .brand-sub {
-            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--gold-bright);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            display: block;
-            margin-top: 4px;
-            opacity: 0.85;
-        }
+        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; line-height: 1.1; }
+        .brand-main { display: block; }
+        .brand-sub { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-size: 0.7rem; font-weight: 600; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 3px; opacity: 0.8; }
 
         .nav-item { padding: 14px 18px; border-radius: 12px; margin-bottom: 6px; cursor: pointer; transition: 0.3s; color: var(--silver); font-size: 0.95rem; display: flex; align-items: center; gap: 12px; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -173,7 +151,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <h2 class="brand"><span class="brand-main">Floovu Legal AI PRO</span><span class="brand-sub">v8 &bull; Master Elite</span></h2>
+            <h2 class="brand"><span class="brand-main">FLOOVU</span><span class="brand-sub">Legal AI PRO v8</span></h2>
             <nav>
                 <div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
@@ -537,7 +515,8 @@
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
                         const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
-                                         row['score'] || row['Score'] || '0';
+                                         row['Score Auto-Evaluación'] || row['score'] ||
+                                         row['Score'] || row['score_ia'] || row['IA Score'] || '0';
                         const score = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
 
                         // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
