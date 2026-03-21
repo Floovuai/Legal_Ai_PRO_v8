@@ -243,7 +243,6 @@
         .login-brand h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.6rem; color: var(--gold); margin: 0.5rem 0 0; }
         .login-brand p { font-size: 0.7rem; color: var(--silver); letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 0; }
         .login-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #ef4444; margin-bottom: 1rem; display: none; }
-        .login-blocked { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #ef4444; margin-bottom: 1rem; display: none; text-align: center; }
         .login-btn { width: 100%; background: var(--gold); color: #0c0f16; border: none; border-radius: 10px; padding: 14px; font-size: 0.9rem; font-weight: 800; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; margin-top: 1rem; transition: opacity 0.2s; }
         .login-btn:hover { opacity: 0.9; }
         .login-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -269,7 +268,6 @@
                 <p>Legal AI PRO v8</p>
             </div>
             <div class="login-error" id="login-error"></div>
-            <div class="login-blocked" id="login-blocked"></div>
             <div class="form-group">
                 <label for="login-user">Usuario</label>
                 <input type="text" id="login-user" placeholder="Tu usuario" autocomplete="username">
@@ -957,23 +955,10 @@
             const username = document.getElementById('login-user').value.trim().toLowerCase();
             const password = document.getElementById('login-pass').value;
             const errEl    = document.getElementById('login-error');
-            const blockEl  = document.getElementById('login-blocked');
             const btn      = document.getElementById('login-btn');
 
             errEl.style.display = 'none';
             blockEl.style.display = 'none';
-
-            // Verificar bloqueo
-            const blockKey = 'floovu_block';
-            const blockData = JSON.parse(sessionStorage.getItem(blockKey) || '{"attempts":0,"until":0}');
-            if (blockData.until > Date.now()) {
-                const mins = Math.ceil((blockData.until - Date.now()) / 60000);
-                blockEl.textContent = `Sistema bloqueado. Intenta en ${mins} minuto${mins > 1 ? 's' : ''}.`;
-                blockEl.style.display = 'block';
-                btn.disabled = true;
-                setTimeout(() => { btn.disabled = false; blockEl.style.display = 'none'; }, blockData.until - Date.now());
-                return;
-            }
 
             if (!username || !password) {
                 errEl.textContent = 'Completa usuario y contraseña.';
@@ -988,20 +973,7 @@
             const user = FLOOVU_USERS.find(u => u.username === username && u.hash === hash);
 
             if (!user) {
-                blockData.attempts = (blockData.attempts || 0) + 1;
-                if (blockData.attempts >= 3) {
-                    blockData.until = Date.now() + 15 * 60 * 1000; // 15 minutos
-                    blockData.attempts = 0;
-                    sessionStorage.setItem(blockKey, JSON.stringify(blockData));
-                    blockEl.textContent = 'Demasiados intentos. Sistema bloqueado por 15 minutos.';
-                    blockEl.style.display = 'block';
-                    btn.disabled = true;
-                    btn.textContent = 'Ingresar al Sistema';
-                    return;
-                }
-                sessionStorage.setItem(blockKey, JSON.stringify(blockData));
-                const left = 3 - blockData.attempts;
-                errEl.textContent = `Usuario o contraseña incorrectos. ${left} intento${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}.`;
+                errEl.textContent = 'Usuario o contraseña incorrectos.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Ingresar al Sistema';
@@ -1009,7 +981,6 @@
             }
 
             // Login exitoso
-            sessionStorage.removeItem(blockKey);
             currentUser = user;
             sessionStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
 
