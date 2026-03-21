@@ -44,9 +44,31 @@
             top: 0;
             height: 100vh;
         }
-        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-        /* F3-04: versión unificada a v25.0 */
-        .version-tag { font-size: 0.6rem; background: var(--gold); color: #000; padding: 2px 8px; border-radius: 4px; vertical-align: middle; margin-left: 10px; font-weight: 900; }
+        .brand {
+            margin-bottom: 3.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            line-height: 1.2;
+        }
+        .brand-main {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.55rem;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: 1px;
+            display: block;
+        }
+        .brand-sub {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--gold-bright);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: block;
+            margin-top: 4px;
+            opacity: 0.85;
+        }
 
         .nav-item { padding: 14px 18px; border-radius: 12px; margin-bottom: 6px; cursor: pointer; transition: 0.3s; color: var(--silver); font-size: 0.95rem; display: flex; align-items: center; gap: 12px; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -151,7 +173,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <h2 class="brand">FLO<span>OVU</span> <span class="version-tag">v25.0 MASTER ELITE</span></h2>
+            <h2 class="brand"><span class="brand-main">Floovu Legal AI PRO</span><span class="brand-sub">v8 &bull; Master Elite</span></h2>
             <nav>
                 <div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
@@ -175,11 +197,11 @@
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <img src="https://img.icons8.com/color/120/scales.png" style="width:50px; height:auto; border-bottom: 2px solid var(--gold); padding-bottom: 5px;">
                     <div>
-                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Cerebro Master Elite v25.0 [Sync Ready]</p>
+                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Floovu Legal AI PRO v8</p>
                         <p style="font-size: 0.85rem; color: var(--silver);">Estado: Operativo | Reporte Centinela Activo</p>
                     </div>
                 </div>
-                <button class="btn-premium" onclick="forceGmailSync()" style="box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);">🚀 Encendido (v25 Elite) / Procesar Gmail</button>
+                <button class="btn-premium" onclick="forceGmailSync()" style="box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);">Procesar Gmail</button>
             </div>
 
 
