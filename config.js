@@ -1,29 +1,48 @@
 // ============================================================
-//  FLOOVU — Configuración de conexión
-//  ⚠️  Este archivo NO debe subirse a GitHub.
-//      Asegúrate de que esté en .gitignore
+// FLOOVU LEGAL AI PRO v8 — Archivo de Configuración
+// ============================================================
+// INSTRUCCIONES:
+// 1. Reemplaza BASE_URL con la URL base de tu instancia de n8n
+//    Ejemplo: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook'
+// 2. Reemplaza el API_SECRET con el mismo valor que tienes en
+//    todos los nodos "Validar Auth" de n8n (actualmente: Hangar89*)
+// 3. Reemplaza ACCOUNT_EMAIL con el email de la cuenta activa
 // ============================================================
 
 window.FLOOVU_CONFIG = {
 
-  // Email de la cuenta administradora (se muestra en el sidebar)
-  ACCOUNT_EMAIL: 'chvaldiviezo@gmail.com',
+    // ── Autenticación ──────────────────────────────────────
+    API_SECRET: 'Hangar89*',
 
-  // Token secreto compartido con n8n
-  API_SECRET: 'Hangar89*',
+    // ── Email de la cuenta activa (se muestra en el sidebar) ──
+    ACCOUNT_EMAIL: 'chvaldiviezo@gmail.com',
 
-  // Los abogados se cargan automáticamente desde Google Sheets al iniciar.
-  // No hace falta configurarlos aquí — agrégalos desde la sección Abogados del panel.
+    // ── Webhooks ───────────────────────────────────────────
+    // Reemplaza BASE_URL con tu URL base de n8n
+    WEBHOOKS: (function() {
+        const BASE_URL = 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook';
+        return {
+            // Procesamiento de Gmail
+            FORCE_SYNC:     BASE_URL + '/floovu-force-sync',
 
-  // Endpoints de n8n
-  WEBHOOKS: {
-    ASSIGN:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-cliente',
-    LAWYER_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-abogado',
-    LAWYER_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-abogado',
-    FORCE_SYNC:    'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-force-sync',
-    GET_DATA:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-data',
-    HEALTH_CHECK:  'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-health-check',
-    GET_LAWYERS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-abogados',
-  }
+            // Datos del Registro Legal
+            GET_DATA:       BASE_URL + '/floovu-get-data',
 
+            // Asignación de casos
+            ASSIGN:         BASE_URL + '/floovu-asignar-cliente',
+
+            // Abogados
+            GET_LAWYERS:    BASE_URL + '/floovu-get-abogados',
+            LAWYER_SAVE:    BASE_URL + '/floovu-guardar-abogado',
+            LAWYER_DELETE:  BASE_URL + '/floovu-eliminar-abogado',
+
+            // Clientes
+            GET_CLIENTS:    BASE_URL + '/floovu-get-clientes',
+            CLIENT_SAVE:    BASE_URL + '/floovu-guardar-cliente',
+            CLIENT_DELETE:  BASE_URL + '/floovu-eliminar-cliente',
+
+            // Sistema
+            HEALTH_CHECK:   BASE_URL + '/floovu-health-check',
+        };
+    })()
 };
