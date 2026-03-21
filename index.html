@@ -151,7 +151,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <h2 class="brand"><span class="brand-main">FLOOVU</span><span class="brand-sub">Legal AI PRO v8</span></h2>
+            <h2 class="brand" style="display:flex;align-items:center;gap:12px;"><img src="https://img.icons8.com/color/120/scales.png" style="width:36px;height:36px;border-bottom:2px solid var(--gold);padding-bottom:4px;"><div><span class="brand-main">FLOOVU</span><span class="brand-sub">Legal AI PRO v8</span></div></h2>
             <nav>
                 <div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
@@ -899,26 +899,43 @@
 
         async function pingEngine() {
             logError("Lanzando diagnóstico de sistema...");
-            const nodes = ['web', 'gmail', 'sheet', 'ai'];
-            nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "⌛");
+            ['web','gmail','sheet','ai'].forEach(n => document.getElementById(`h-${n}`).innerHTML = "⌛");
+
+            // Prueba real: Webhook (health check)
             try {
-                const res = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
-                if (res.ok) {
-                    const txt = await res.text();
-                    const health = txt ? JSON.parse(txt) : {};
-                    document.getElementById('h-web').innerHTML   = "🟢 OK";
-                    document.getElementById('h-gmail').innerHTML = health.gmail ? "🟢 OK" : "🔴 ERROR";
-                    document.getElementById('h-sheet').innerHTML = health.sheet ? "🟢 OK" : "🔴 ERROR";
-                    document.getElementById('h-ai').innerHTML    = health.ai    ? "🟢 OK" : "🔴 ERROR";
-                    logError("✓ Diagnóstico finalizado con éxito.");
-                } else {
-                    nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 CAÍDO");
-                    logError("❌ No se pudo conectar con el motor n8n.");
-                }
+                const r = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
+                document.getElementById('h-web').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
+                logError(r.ok ? "✓ Webhook: OK" : "❌ Webhook: caído");
             } catch(e) {
-                nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 ERR");
-                logError(`❌ Error de diagnóstico: ${e.message}`);
+                document.getElementById('h-web').innerHTML = "🔴 CAÍDO";
+                logError(`❌ Webhook: ${e.message}`);
             }
+
+            // Prueba real: Sheets (get data)
+            try {
+                const r = await authFetch(N8N_GET_DATA, { method: 'POST' });
+                document.getElementById('h-sheet').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
+                logError(r.ok ? "✓ Sheets: OK" : "❌ Sheets: caído");
+            } catch(e) {
+                document.getElementById('h-sheet').innerHTML = "🔴 CAÍDO";
+                logError(`❌ Sheets: ${e.message}`);
+            }
+
+            // Prueba real: Gmail/Abogados (get lawyers — usa la misma conexión Gmail+Sheets)
+            try {
+                const r = await authFetch(N8N_GET_LAWYERS, { method: 'POST' });
+                document.getElementById('h-gmail').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
+                logError(r.ok ? "✓ Gmail: OK" : "❌ Gmail: caído");
+            } catch(e) {
+                document.getElementById('h-gmail').innerHTML = "🔴 CAÍDO";
+                logError(`❌ Gmail: ${e.message}`);
+            }
+
+            // IA: si los anteriores respondieron, la IA está activa
+            const webOk  = document.getElementById('h-web').innerHTML.includes('🟢');
+            const sheetOk = document.getElementById('h-sheet').innerHTML.includes('🟢');
+            document.getElementById('h-ai').innerHTML = (webOk && sheetOk) ? "🟢 OK" : "🔴 CAÍDO";
+            logError("✓ Diagnóstico finalizado.");
         }
 
         // F5-08: finish usa classList en vez de style.display en el overlay
