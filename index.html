@@ -775,22 +775,8 @@
         // ══════════════════════════════════════════
         // SISTEMA DE AUTENTICACIÓN Y ROLES
         // ══════════════════════════════════════════
-        const FLOOVU_USERS = [
-            {
-                username: 'agencia',
-                hash: '646a3ffe897c32f202492cd142e15ab6933352f7db4deab95eaf7c24c3c5b436',
-                role: 'admin',
-                name: 'FLOOVU Agencia',
-                email: 'chvaldiviezo@gmail.com'
-            },
-            {
-                username: 'operador',
-                hash: '39c62f9cb6cfc56ac96d3bd34d3cd407c1863b706569fb44376d8981a8ab8a4a',
-                role: 'operator',
-                name: 'Usuario Operador',
-                email: 'operador@floovu.com'
-            }
-        ];
+        // Usuarios cargados desde config.js — nunca hardcodeados en el HTML
+        const FLOOVU_USERS = (window.FLOOVU_CONFIG && window.FLOOVU_CONFIG.USERS) || [];
 
         // Pestañas visibles por rol
         const ROLE_TABS = {

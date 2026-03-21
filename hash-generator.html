@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLOOVU — Generador de Contraseñas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #10141d 0%, #05070a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #fff;
+        }
+        .container { width: 100%; max-width: 560px; }
+        .brand {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .brand img { width: 52px; height: 52px; margin-bottom: 0.75rem; }
+        .brand h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 1.8rem;
+            color: #C9A84C;
+        }
+        .brand p {
+            font-size: 0.7rem;
+            color: #64748b;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        .card {
+            background: #0c0f16;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            border-bottom: 3px solid #C9A84C;
+            margin-bottom: 1.5rem;
+        }
+        .card-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 14px;
+            background: #C9A84C;
+            border-radius: 2px;
+            display: block;
+        }
+        .form-group { margin-bottom: 1.2rem; }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        input:focus { border-color: #C9A84C; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn {
+            width: 100%;
+            background: #C9A84C;
+            color: #0c0f16;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin-top: 0.5rem;
+        }
+        .btn:hover { opacity: 0.88; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(197,160,89,0.4);
+            color: #C9A84C;
+        }
+        .btn-outline:hover { background: rgba(197,160,89,0.08); opacity: 1; }
+        .hash-result {
+            background: rgba(197,160,89,0.05);
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 1rem;
+            display: none;
+        }
+        .hash-result p { font-size: 0.72rem; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .hash-value {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #C9A84C;
+            word-break: break-all;
+            line-height: 1.6;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .hash-value:hover { color: #fff; }
+        .copy-hint { font-size: 0.68rem; color: #475569; margin-top: 6px; }
+        .copied-toast {
+            display: none;
+            background: rgba(34,197,94,0.15);
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.78rem;
+            color: #22c55e;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .users-list { margin-top: 1.5rem; }
+        .user-row {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .user-info p { font-size: 0.82rem; font-weight: 700; color: #fff; }
+        .user-info span { font-size: 0.72rem; color: #64748b; }
+        .role-badge {
+            font-size: 0.62rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .role-badge.admin { background: rgba(197,160,89,0.15); color: #C9A84C; }
+        .role-badge.operator { background: rgba(99,153,34,0.15); color: #97C459; }
+        .config-output {
+            background: #060810;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 1.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            cursor: pointer;
+        }
+        .config-output:hover { border-color: rgba(197,160,89,0.3); }
+        .note {
+            background: rgba(197,160,89,0.05);
+            border-left: 3px solid #C9A84C;
+            border-radius: 0 8px 8px 0;
+            padding: 10px 14px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-top: 1rem;
+        }
+        .strength-bar { height: 4px; border-radius: 2px; margin-top: 6px; background: rgba(255,255,255,0.05); overflow: hidden; }
+        .strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; width: 0%; }
+        .strength-label { font-size: 0.68rem; margin-top: 4px; }
+        @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="brand">
+        <img src="https://img.icons8.com/color/120/scales.png" alt="FLOOVU">
+        <h1>FLOOVU</h1>
+        <p>Generador de Contraseñas Seguras</p>
+    </div>
+
+    <!-- GENERAR HASH INDIVIDUAL -->
+    <div class="card">
+        <p class="card-title">🔐 Generar Hash de Contraseña</p>
+
+        <div class="form-group">
+            <label for="new-password">Contraseña</label>
+            <input type="password" id="new-password" placeholder="Escribe la contraseña..." oninput="checkStrength(this.value)">
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <p class="strength-label" id="strength-label" style="color:#475569;">—</p>
+        </div>
+        <div class="form-group">
+            <label for="confirm-password">Confirmar Contraseña</label>
+            <input type="password" id="confirm-password" placeholder="Repite la contraseña...">
+        </div>
+
+        <button class="btn" onclick="generateHash()">⚡ Generar Hash SHA-256</button>
+
+        <div class="hash-result" id="hash-result">
+            <p>Hash generado (copia esto al config.js)</p>
+            <div class="hash-value" id="hash-value" onclick="copyHash()" title="Click para copiar"></div>
+            <p class="copy-hint">👆 Click para copiar al portapapeles</p>
+            <div class="copied-toast" id="copied-toast">✅ Hash copiado al portapapeles</div>
+        </div>
+    </div>
+
+    <!-- GESTIÓN DE USUARIOS -->
+    <div class="card">
+        <p class="card-title">👥 Gestionar Usuarios del Sistema</p>
+
+        <div class="row">
+            <div class="form-group">
+                <label for="user-username">Nombre de usuario</label>
+                <input type="text" id="user-username" placeholder="ej: cliente_abc">
+            </div>
+            <div class="form-group">
+                <label for="user-role">Rol</label>
+                <select id="user-role" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 14px;color:#fff;font-size:0.9rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;cursor:pointer;">
+                    <option value="operator">Operador (cliente)</option>
+                    <option value="admin">Admin (agencia)</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label for="user-name">Nombre completo</label>
+                <input type="text" id="user-name" placeholder="ej: Firma Legal ABC">
+            </div>
+            <div class="form-group">
+                <label for="user-email">Email</label>
+                <input type="text" id="user-email" placeholder="ej: contacto@firma.com">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="user-password">Contraseña para este usuario</label>
+            <input type="password" id="user-password" placeholder="Contraseña segura...">
+        </div>
+
+        <button class="btn" onclick="addUser()">➕ Agregar Usuario</button>
+
+        <div class="users-list" id="users-list" style="display:none;">
+            <p style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Usuarios configurados</p>
+            <div id="users-container"></div>
+        </div>
+    </div>
+
+    <!-- GENERAR CONFIG.JS -->
+    <div class="card" id="config-card" style="display:none;">
+        <p class="card-title">📋 Bloque para config.js</p>
+        <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.5rem;">Copia este bloque y pégalo en tu <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">config.js</code>, reemplazando el array USERS existente:</p>
+        <div class="config-output" id="config-output" onclick="copyConfig()" title="Click para copiar"></div>
+        <div class="copied-toast" id="config-copied">✅ Configuración copiada</div>
+        <div class="note">
+            ⚠️ <strong>Recuerda:</strong> el <code>config.js</code> está en tu <code>.gitignore</code> — nunca se sube a GitHub. Solo existe en tu computadora y en el servidor.
+        </div>
+        <button class="btn btn-outline" style="margin-top:1rem;" onclick="copyConfig()">📋 Copiar al portapapeles</button>
+    </div>
+
+</div>
+
+<script>
+    let users = [];
+
+    async function sha256(msg) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function checkStrength(pass) {
+        const fill = document.getElementById('strength-fill');
+        const label = document.getElementById('strength-label');
+        if (!pass) { fill.style.width = '0%'; label.textContent = '—'; label.style.color = '#475569'; return; }
+        let score = 0;
+        if (pass.length >= 8) score++;
+        if (pass.length >= 12) score++;
+        if (/[A-Z]/.test(pass)) score++;
+        if (/[0-9]/.test(pass)) score++;
+        if (/[^A-Za-z0-9]/.test(pass)) score++;
+        const levels = [
+            { w: '20%', c: '#ef4444', t: 'Muy débil' },
+            { w: '40%', c: '#f97316', t: 'Débil' },
+            { w: '60%', c: '#eab308', t: 'Regular' },
+            { w: '80%', c: '#84cc16', t: 'Buena' },
+            { w: '100%', c: '#22c55e', t: 'Excelente' },
+        ];
+        const l = levels[Math.min(score - 1, 4)] || levels[0];
+        fill.style.width = l.w;
+        fill.style.background = l.c;
+        label.textContent = l.t;
+        label.style.color = l.c;
+    }
+
+    async function generateHash() {
+        const pass = document.getElementById('new-password').value;
+        const conf = document.getElementById('confirm-password').value;
+        if (!pass) { alert('Escribe una contraseña primero.'); return; }
+        if (pass !== conf) { alert('Las contraseñas no coinciden.'); return; }
+        const hash = await sha256(pass);
+        document.getElementById('hash-value').textContent = hash;
+        document.getElementById('hash-result').style.display = 'block';
+        document.getElementById('copied-toast').style.display = 'none';
+    }
+
+    async function copyHash() {
+        const hash = document.getElementById('hash-value').textContent;
+        await navigator.clipboard.writeText(hash);
+        const toast = document.getElementById('copied-toast');
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2500);
+    }
+
+    async function addUser() {
+        const username = document.getElementById('user-username').value.trim().toLowerCase();
+        const role     = document.getElementById('user-role').value;
+        const name     = document.getElementById('user-name').value.trim();
+        const email    = document.getElementById('user-email').value.trim();
+        const password = document.getElementById('user-password').value;
+
+        if (!username || !password || !name) { alert('Completa usuario, nombre y contraseña.'); return; }
+        if (users.find(u => u.username === username)) { alert(`El usuario "${username}" ya existe.`); return; }
+
+        const hash = await sha256(password);
+        users.push({ username, hash, role, name, email });
+
+        renderUsers();
+        renderConfig();
+
+        // Limpiar formulario
+        ['user-username','user-name','user-email','user-password'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('user-role').value = 'operator';
+    }
+
+    function removeUser(idx) {
+        users.splice(idx, 1);
+        renderUsers();
+        renderConfig();
+    }
+
+    function renderUsers() {
+        const container = document.getElementById('users-container');
+        const listEl    = document.getElementById('users-list');
+        if (!users.length) { listEl.style.display = 'none'; return; }
+        listEl.style.display = 'block';
+        container.innerHTML = users.map((u, i) => `
+            <div class="user-row">
+                <div class="user-info">
+                    <p>${u.name}</p>
+                    <span>@${u.username} · ${u.email || 'sin email'}</span>
+                </div>
+                <span class="role-badge ${u.role}">${u.role === 'admin' ? 'Agencia' : 'Operador'}</span>
+                <button onclick="removeUser(${i})" style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:4px 10px;font-size:0.72rem;cursor:pointer;">✕</button>
+            </div>
+        `).join('');
+    }
+
+    function renderConfig() {
+        const card = document.getElementById('config-card');
+        const out  = document.getElementById('config-output');
+        if (!users.length) { card.style.display = 'none'; return; }
+        card.style.display = 'block';
+
+        const usersJson = users.map(u => `    {
+      username: '${u.username}',
+      hash: '${u.hash}',
+      role: '${u.role}',
+      name: '${u.name}',
+      email: '${u.email || ''}'
+    }`).join(',\n');
+
+        out.textContent = `// Pega esto en tu config.js, dentro de window.FLOOVU_CONFIG:\n\nUSERS: [\n${usersJson}\n]`;
+    }
+
+    async function copyConfig() {
+        const out = document.getElementById('config-output').textContent;
+        await navigator.clipboard.writeText(out);
+        const toast = document.getElementById('config-copied');
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2500);
+    }
+</script>
+</body>
+</html>
