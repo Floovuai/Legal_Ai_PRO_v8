@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Floovu Legal AI PRO | Enterprise Case Manager</title>
+    <link rel="icon" type="image/png" href="https://img.icons8.com/color/120/scales.png">
     <meta name="description" content="Floovu Legal AI PRO v8 — Sistema de gestión jurídica con IA para recepción, análisis y asignación de casos legales.">
     <meta name="robots" content="noindex, nofollow">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -46,9 +47,9 @@
             top: 0;
             height: 100vh;
         }
-        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-        /* F3-04: versión unificada a v25.0 */
-        .version-tag { font-size: 0.6rem; background: var(--gold); color: #000; padding: 2px 8px; border-radius: 4px; vertical-align: middle; margin-left: 10px; font-weight: 900; }
+        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; line-height: 1.1; }
+        .brand-main { display: block; }
+        .brand-sub { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-size: 0.7rem; font-weight: 600; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 3px; opacity: 0.8; }
 
         .nav-item { padding: 14px 18px; border-radius: 12px; margin-bottom: 6px; cursor: pointer; transition: 0.3s; color: var(--silver); font-size: 0.95rem; display: flex; align-items: center; gap: 12px; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -60,7 +61,7 @@
         .form-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
         .error-log { font-family: monospace; background: #000; padding: 1rem; border-radius: 8px; border: 1px solid #333; height: 150px; overflow-y: auto; font-size: 0.8rem; color: #666; }
 
-        .main-view { padding: 3rem; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #10141d 0%, #05070a 100%); position: relative; }
+        .main-view { padding: 3rem; padding-top: 4.5rem; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #10141d 0%, #05070a 100%); position: relative; }
         .content-section { display: none; }
         .content-section.active { display: block; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -153,7 +154,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <h2 class="brand">FLO<span>OVU</span> <span class="version-tag">v25.0 MASTER ELITE</span></h2>
+            <h2 class="brand" style="display:flex;align-items:center;gap:12px;"><img src="https://img.icons8.com/color/120/scales.png" style="width:36px;height:36px;border-bottom:2px solid var(--gold);padding-bottom:4px;"><div><span class="brand-main">FLOOVU</span><span class="brand-sub">Legal AI PRO v8</span></div></h2>
             <nav>
                 <div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
@@ -173,15 +174,9 @@
 
         <main class="main-view">
             <!-- BANNER GMAIL TRIGGER -->
-            <div class="notification-banner" id="mail-notification" style="background: linear-gradient(90deg, #0c0f16 0%, #1a1f2c 100%); border-color: var(--border);">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <img src="https://img.icons8.com/color/120/scales.png" style="width:50px; height:auto; border-bottom: 2px solid var(--gold); padding-bottom: 5px;">
-                    <div>
-                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Cerebro Master Elite v25.0 [Sync Ready]</p>
-                        <p style="font-size: 0.85rem; color: var(--silver);">Estado: Operativo | Reporte Centinela Activo</p>
-                    </div>
-                </div>
-                <button class="btn-premium" onclick="forceGmailSync()" style="box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);">🚀 Encendido (v25 Elite) / Procesar Gmail</button>
+            <div id="mail-notification" style="position:absolute;top:1.2rem;right:2rem;display:flex;align-items:center;gap:10px;background:rgba(12,15,22,0.85);border:1px solid var(--border);border-radius:10px;padding:8px 14px;backdrop-filter:blur(4px);">
+                <span style="font-size:0.75rem;color:var(--silver);">● <span style="color:#22c55e;">Operativo</span></span>
+                <button class="btn-premium" onclick="forceGmailSync()" style="font-size:0.78rem;padding:7px 16px;border-radius:7px;">Procesar Gmail</button>
             </div>
 
 
@@ -296,7 +291,7 @@
                         <p class="card-title">Base de Datos & Conexión</p>
                         <p>Sheet ID: <strong>14Go...p-_Fo</strong></p>
                         <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Estado API: <span style="color:#22c55e">● ONLINE</span></p>
-                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU v25.0 MASTER ELITE</strong></p>
+                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU Legal AI PRO v8</strong></p>
                     </div>
 
                     <div class="card">
@@ -313,7 +308,7 @@
             </section>
 
             <section id="version" class="content-section">
-                <div class="header"><h1>Capacidades del Sistema (v25.0 MASTER ELITE)</h1></div>
+                <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
                 <div class="dashboard-grid">
                     <div class="card" style="grid-row: span 2;">
                         <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
