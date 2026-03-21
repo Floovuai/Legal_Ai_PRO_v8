@@ -713,13 +713,13 @@
             const chartConfig = {
                 type: 'doughnut',
                 data: { labels: ramaLabels, datasets: [{ data: ramaData, backgroundColor: colores.slice(0, ramaLabels.length), borderWidth: 0 }] },
-                options: { cutoutPercentage: 65, legend: { position: 'bottom', labels: { fontColor: '#e5c17b', fontSize: 14, fontStyle: 'bold', padding: 20 } }, plugins: { datalabels: { display: false } } }
+                options: { cutoutPercentage: 65, legend: { position: 'bottom', labels: { fontColor: '#e5c17b', fontSize: 16, fontStyle: 'bold', padding: 24 } }, plugins: { datalabels: { display: false } } }
             };
             const chartSig = JSON.stringify(ramaCount);
             if (el('chart-area').dataset.sig !== chartSig) {
                 el('chart-area').dataset.sig = chartSig;
-                const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=300&h=280`;
-                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`;
+                const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=600&h=420`;
+                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:340px;width:100%;margin:0 auto;display:block;">`;
             }
 
             // FASE 6: entradas recientes — 5 columnas incluyendo Abogado
