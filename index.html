@@ -288,7 +288,7 @@
                         <p class="card-title">Base de Datos & Conexión</p>
                         <p>Sheet ID: <strong>14Go...p-_Fo</strong></p>
                         <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Estado API: <span style="color:#22c55e">● ONLINE</span></p>
-                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU v25.0 MASTER ELITE</strong></p>
+                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU Legal AI PRO v8</strong></p>
                     </div>
 
                     <div class="card">
@@ -305,7 +305,7 @@
             </section>
 
             <section id="version" class="content-section">
-                <div class="header"><h1>Capacidades del Sistema (v25.0 MASTER ELITE)</h1></div>
+                <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
                 <div class="dashboard-grid">
                     <div class="card" style="grid-row: span 2;">
                         <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
@@ -468,7 +468,7 @@
                     logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
                 } else {
                     logError(`Error al cargar abogados: HTTP ${res.status}`);
-                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${res.status}).</p>`;
+                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${esc(String(res.status))}).</p>`;
                 }
             } catch(e) {
                 logError(`Error al cargar abogados: ${e.message}`);
@@ -545,7 +545,7 @@
                     updateUI();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
-                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
+                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${esc(String(res.status))}). Reintenta.</td></tr>`;
                     el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de sincronización.</td></tr>`;
                     logError(`Error de sincronización: HTTP ${res.status}`);
                 }
@@ -611,7 +611,7 @@
             if (el('chart-area').dataset.sig !== chartSig) {
                 el('chart-area').dataset.sig = chartSig;
                 const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=300&h=280`;
-                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`;
+                el('chart-area').innerHTML = `<img src="${esc(chartUrl)}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`; 
             }
 
             // FASE 6: entradas recientes — 5 columnas incluyendo Abogado
