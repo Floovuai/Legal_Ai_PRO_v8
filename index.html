@@ -410,16 +410,20 @@
                     <div class="card" style="grid-row: span 2;">
                         <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
                         <p style="color:var(--silver); line-height:1.6; font-size: 0.9rem; margin-top: 10px;">
-                            El sistema <b>FLOOVU Legal AI v25.0</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales. 
+                            El sistema <b>FLOOVU Legal AI PRO v8</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
                             Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
                         </p>
                         <ul style="color:var(--silver); line-height:1.8; font-size: 0.85rem; padding-left: 20px; margin-top: 15px;">
                             <li style="margin-bottom:8px;">✅ <b>Extracción Automatizada de Correos:</b> Lee bandejas, procesa PDFs adjuntos y marca como leído nativamente para prevenir duplicados.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Análisis A.I. y Estrategia:</b> Genera resúmenes precisos, enumera pasos estratégicos por rama jurídica, y calcula tiempos operativos ahorrados.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Agendamiento Dinámico Inteligente:</b> Crea citas en el Google Calendar corporativo sumando a los abogados asignados. Resiliente a pérdidas de memoria tras su confirmación.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Bóveda Centralizada (Registro Legal):</b> Unifica información y seguimiento en una sola hoja matriz en Google Sheets con identificadores únicos (Tokens).</li>
-                            <li style="margin-bottom:8px;">✅ <b>Informes Corporativos Dinámicos:</b> Recupera y protege el Informe de AI Premium para enviarlo por correo idéntico a su diseño visual desde n8n.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Dashboard "Stress-Free":</b> Sistema de colores y alertas diseñado para reducir fatiga visual manteniendo control de mando preciso.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Análisis A.I. y Estrategia:</b> Genera resúmenes precisos con score de calidad, patrones jurídicos identificados, ahorro de horas estimado y pasos estratégicos por rama.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Agendamiento Dinámico Inteligente:</b> Crea citas en Google Calendar con fecha de vencimiento calculada automáticamente según plazos procesales colombianos (T+20 días hábiles como fallback).</li>
+                            <li style="margin-bottom:8px;">✅ <b>Bóveda Centralizada (Registro Legal):</b> Unifica información en Google Sheets con tokens únicos, matching por token y row_number para actualizaciones robustas.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Informes Corporativos Dinámicos:</b> Genera y envía informes HTML completos al abogado asignado con vencimiento, estado de calendario y datos del caso.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Directorio de Abogados y Clientes:</b> Gestión independiente de abogados (hoja ABOGADOS) y clientes (hoja CLIENTES) con asignación directa desde el directorio.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Identificación Automática de Clientes:</b> Cruza el texto del documento con el directorio de clientes por nombre, NIT o email antes del análisis IA.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Vigilancia Legal Diaria:</b> Monitoreo automático a las 7AM de fuentes RSS jurídicas colombianas (Ámbito Jurídico, Datos Abiertos Colombia).</li>
+                            <li style="margin-bottom:8px;">✅ <b>Dashboard con KPIs reales:</b> Score IA promedio, horas ahorradas acumuladas, distribución por rama jurídica y agenda de vencimientos procesales.</li>
+                            <li style="margin-bottom:8px;">✅ <b>Emails marcados como leídos:</b> Al confirmar asignación el sistema marca automáticamente el email original como leído usando el messageId del caso.</li>
                         </ul>
                     </div>
                 </div>
@@ -626,7 +630,9 @@
                         let desc = row['Resumen del Documento'] || row['resumen'] || '';
                         // Eliminar bloque [[[DATA_START]]]...[[[DATA_END]]]
                         desc = desc.replace(/\[\[\[DATA_START\]\]\][\s\S]*?\[\[\[DATA_END\]\]\]/g, '').trim();
-                        // Convertir **texto** en etiquetas bold y limpiar asteriscos sueltos
+                        // Eliminar "Bloque JSON" y todo lo que sigue
+                        desc = desc.replace(/Bloque\s*JSON[\s\S]*/i, '').trim();
+                        // Convertir **texto** en etiquetas bold
                         desc = desc
                             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                             .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -798,11 +804,24 @@
 
                     // FASE 8: formatear desc — párrafos separados, sin markdown crudo
                     // FIX-XSS: esc() aplicado a cada párrafo de desc antes de insertar en DOM
-                    const descFormatted = c.desc
-                        .split(/\n+/)
-                        .filter(p => p.trim())
-                        .map(p => `<p style="margin:0 0 8px;font-size:0.82rem;color:var(--silver);line-height:1.6;">${esc(p)}</p>`)
-                        .join('');
+                    const descFormatted = (() => {
+                        // Limpiar "Bloque JSON" y lo que sigue
+                        let cleaned = c.desc
+                            .replace(/Bloque\s*JSON[\s\S]*/i, '')
+                            .replace(/<strong>(.*?)<\/strong>/g, '|||TITLE|||$1|||ENDTITLE|||')
+                            .trim();
+                        return cleaned
+                            .split(/\n+/)
+                            .filter(p => p.trim())
+                            .map(p => {
+                                if (p.includes('|||TITLE|||')) {
+                                    const title = p.replace(/\|\|\|TITLE\|\|\|(.*)\|\|\|ENDTITLE\|\|\|/, '$1');
+                                    return `<p style="margin:8px 0 4px;font-size:0.8rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">${esc(title)}</p>`;
+                                }
+                                return `<p style="margin:0 0 8px;font-size:0.82rem;color:var(--silver);line-height:1.6;">${esc(p)}</p>`;
+                            })
+                            .join('');
+                    })();
 
                     return `
                     <div class="asig-card">
@@ -1188,7 +1207,7 @@
                         <th>NIT / CÉDULA</th>
                         <th>EMAIL</th>
                         <th>TELÉFONO</th>
-                        <th>ABOGADO</th>
+                        <th>ABOGADO ASIGNADO</th>
                         <th>ESTADO</th>
                         <th>ORIGEN</th>
                         <th></th>
@@ -1200,10 +1219,22 @@
                             <td style="color:var(--silver);font-size:0.8rem;">${esc(c.nit || '—')}</td>
                             <td style="color:var(--silver);font-size:0.8rem;">${esc(c.email || '—')}</td>
                             <td style="color:var(--silver);font-size:0.8rem;">${esc(c.telefono || '—')}</td>
-                            <td style="color:${c.abogado && c.abogado !== 'Pendiente' ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado && c.abogado !== 'Pendiente' ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</td>
+                            <td>
+                                ${c._source === 'registro'
+                                    ? `<select id="cli-law-${allClientRows.indexOf(c)}" onchange="assignLawyerFromClients(${allClientRows.indexOf(c)}, this.value)"
+                                        style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.78rem;width:100%;">
+                                        <option value="">— Asignar —</option>
+                                        ${lawyers.map(l => `<option value="${esc(l.name)}" ${c.abogado === l.name ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
+                                      </select>`
+                                    : `<span style="color:${c.abogado && c.abogado !== 'Pendiente' ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado && c.abogado !== 'Pendiente' ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</span>`
+                                }
+                            </td>
                             <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
                             <td><span style="font-size:0.68rem;padding:2px 8px;border-radius:20px;background:${c._source === 'directorio' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.05)'};color:${c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${c._source === 'directorio' ? 'Directorio' : 'Registro'}</span></td>
-                            <td><button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})">✏️</button></td>
+                            <td style="display:flex;gap:6px;align-items:center;">
+                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})">✏️</button>
+                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})">🗑</button>` : ''}
+                        </td>
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
@@ -1326,7 +1357,45 @@
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
-        function getLawyerEmail(lawyerName) {
+        async function assignLawyerFromClients(idx, lawyerName) {
+            const c = allClientRows[idx];
+            if (!c || c._source !== 'registro') return;
+            if (!lawyerName) return;
+            const caseItem = db.find(x => x.token === c.token);
+            if (!caseItem) { showToast('Caso no encontrado en memoria.', 'error'); return; }
+            const lawyerObj = lawyers.find(l => l.name === lawyerName);
+            logError(`Asignando ${lawyerName} al caso ${c.token}...`);
+            try {
+                const res = await authFetch(N8N_ASSIGN_WEBHOOK, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        token:               c.token,
+                        row_number:          caseItem.row_number || null,
+                        nombre_cliente:      c.nombre,
+                        abogado_responsable: lawyerName,
+                        email_abogado:       lawyerObj ? lawyerObj.email : '',
+                        'Estado Alerta':     'ASIGNADO',
+                        rama:                caseItem.rama,
+                        vencimiento:         caseItem.venc,
+                        'Fecha de Vencimiento': caseItem.venc,
+                        case_description:    caseItem.desc,
+                        informe_html:        caseItem.informe_html || '<!--FLOOVU_AB_PLACEHOLDER-->',
+                        messageId:           caseItem.messageId || ''
+                    })
+                });
+                if (res.ok) {
+                    caseItem.lawyer = lawyerName;
+                    c.abogado = lawyerName;
+                    showToast(`${lawyerName} asignado a ${c.nombre}.`, 'ok');
+                    logError(`✓ Asignación completada desde Directorio de Clientes.`);
+                    await loadClients();
+                } else {
+                    showToast(`Error: ${esc(String(res.status))}`, 'error');
+                }
+            } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
+        }
+
+                function getLawyerEmail(lawyerName) {
             if (!lawyerName) return '';
             const l = lawyers.find(x => x.name === lawyerName);
             return l ? l.email : '';
