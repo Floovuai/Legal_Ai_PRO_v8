@@ -702,7 +702,7 @@
             // FASE 4: mostrar score aunque sea de un solo caso
             const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : null;
             el('kpi-hours').innerText = `${totalHours}h`;
-            el('kpi-score').innerText = avgScore ? `${avgScore}/10` : '—';
+            el('kpi-score').innerText = avgScore ? `${avgScore}/10` : 'N/A';
 
             // Gráfico rama jurídica
             const ramaCount = {};
