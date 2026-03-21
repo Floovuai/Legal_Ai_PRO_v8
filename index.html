@@ -215,8 +215,8 @@
                     <div class="card full-width">
                         <p class="card-title">📨 Entradas Recientes (API Sync)</p>
                         <table>
-                            <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>ABOGADO</th></tr></thead>
-                            <tbody id="dash-rows"><tr><td colspan="5" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
+                            <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>VENCIMIENTO</th><th>ABOGADO</th></tr></thead>
+                            <tbody id="dash-rows"><tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -483,7 +483,7 @@
         }
 
         async function loadRealData() {
-            el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
+            el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
             el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Cargando...</td></tr>`;
             logError("Sincronizando base de datos real...");
             try {
@@ -496,7 +496,7 @@
                         rawData = txt ? JSON.parse(txt) : [];
                     } catch(parseErr) {
                         logError(`⚠️ Respuesta no es JSON válido: ${parseErr.message}`);
-                        el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Respuesta inválida de n8n.</td></tr>`;
+                        el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Respuesta inválida de n8n.</td></tr>`;
                         el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de formato.</td></tr>`;
                         return;
                     }
@@ -549,12 +549,12 @@
                     updateUI();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
-                    el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
+                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
                     el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de sincronización.</td></tr>`;
                     logError(`Error de sincronización: HTTP ${res.status}`);
                 }
             } catch(e) {
-                el('dash-rows').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n.</td></tr>`;
+                el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n.</td></tr>`;
                 el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión.</td></tr>`;
                 logError(`Error de sincronización: ${e.message}`);
             }
@@ -581,7 +581,7 @@
         function updateUI() {
             if (!db.length) {
                 el('chart-area').innerHTML      = `<span class="empty-icon">📊</span>Sin datos`;
-                el('dash-rows').innerHTML       = `<tr><td colspan="5" class="empty-state">No se reconoce actividad reciente</td></tr>`;
+                el('dash-rows').innerHTML       = `<tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr>`;
                 el('dash-deadlines').innerHTML  = `<span class="empty-icon">📅</span>Sin actividad`;
                 el('asig-content').innerHTML    = `<span class="empty-icon">⚖️</span>Sin casos pendientes de despacho`;
                 el('exp-rows').innerHTML        = `<tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr>`;
@@ -625,6 +625,7 @@
                     <td><span style="color:var(--gold);font-weight:700;">${esc((c.priority||'Media').toUpperCase())}</span></td>
                     <td>${esc(c.partes)}</td>
                     <td>${esc(c.rama)}</td>
+                    <td style="color:var(--silver);">${(c.venc && c.venc !== 'S/D' && c.venc !== 'N/A') ? esc(c.venc) : '<em>—</em>'}</td>
                     <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
                 </tr>`
             ).join('');
