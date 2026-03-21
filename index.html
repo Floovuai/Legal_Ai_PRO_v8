@@ -139,14 +139,92 @@
         .kpi-sub { font-size: 0.72rem; color: var(--gold); font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.6; }
 
         /* F4-02: diseño responsivo */
+        /* ── NOTEBOOK 1280px ── */
+        @media (max-width: 1280px) {
+            .app-shell { grid-template-columns: 240px 1fr; }
+            .main-view { padding: 2rem; padding-top: 3.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+            .kpi-container { gap: 1.5rem; }
+            .card { padding: 1.5rem; }
+        }
+
+        /* ── TABLET 1024px ── */
+        @media (max-width: 1024px) {
+            .app-shell { grid-template-columns: 200px 1fr; }
+            .sidebar { padding: 1.5rem 0.75rem; }
+            .nav-item { padding: 12px 12px; font-size: 0.85rem; gap: 8px; }
+            .brand { font-size: 1.4rem; margin-bottom: 2rem; }
+            .main-view { padding: 1.5rem; padding-top: 3rem; }
+            .dashboard-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+            .kpi-container { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+            .card { padding: 1.25rem; }
+            .kpi-value { font-size: 2rem; }
+            .header h1 { font-size: 1.8rem; }
+            table { font-size: 0.8rem; }
+            th, td { padding: 10px 12px; }
+            .asig-actions { flex-wrap: wrap; gap: 8px; }
+            .asig-actions select,
+            .asig-actions input[type="email"] { max-width: 160px; }
+        }
+
+        /* ── TABLET PEQUEÑA 768px ── */
         @media (max-width: 768px) {
             .app-shell { grid-template-columns: 1fr; }
-            .sidebar { position: static; height: auto; max-height: 220px; overflow-y: auto; padding: 1.5rem 1rem; }
-            .main-view { padding: 1.5rem; }
-            .dashboard-grid { grid-template-columns: 1fr; }
-            .kpi-container { grid-template-columns: 1fr; }
+            .sidebar {
+                position: static;
+                height: auto;
+                max-height: none;
+                padding: 1rem;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .brand { margin-bottom: 0; font-size: 1.2rem; border-bottom: none; padding-bottom: 0; flex-shrink: 0; }
+            .brand-sub { display: none; }
+            nav { display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; width: 100%; }
+            .nav-item { padding: 8px 12px; font-size: 0.78rem; margin-bottom: 0; border-radius: 8px; }
+            .nav-item.active { border-left: none; border-bottom: 2px solid var(--gold); }
+            .sidebar-account { display: none; }
+            .main-view { padding: 1rem; padding-top: 1.5rem; }
+            .header h1 { font-size: 1.5rem; }
+            .dashboard-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .kpi-container { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+            .kpi-value { font-size: 1.8rem; }
+            .card { padding: 1rem; border-radius: 14px; }
+            .card-title { font-size: 0.7rem; margin-bottom: 1rem; }
+            .asig-card { padding: 1rem; }
+            .asig-header { flex-direction: column; gap: 0.5rem; }
             .asig-actions { flex-direction: column; align-items: stretch; }
-            .header h1 { font-size: 1.6rem; }
+            .asig-actions select,
+            .asig-actions input[type="email"] { max-width: 100%; }
+            table { font-size: 0.75rem; }
+            th, td { padding: 8px 10px; }
+            .btn-outline, .btn-premium, .btn-asig-main { font-size: 0.78rem; padding: 8px 12px; }
+            #lawyer-list-full table th:nth-child(3),
+            #lawyer-list-full table td:nth-child(3) { display: none; }
+        }
+
+        /* ── MÓVIL 480px ── */
+        @media (max-width: 480px) {
+            .kpi-container { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+            .kpi-value { font-size: 1.5rem; }
+            .kpi-label { font-size: 0.6rem; }
+            .kpi-sub { font-size: 0.6rem; }
+            .header h1 { font-size: 1.2rem; }
+            .main-view { padding: 0.75rem; padding-top: 1rem; }
+            nav .nav-item span:not(.badge) {
+                display: none;
+            }
+            nav .nav-item { padding: 8px; font-size: 1.1rem; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .asig-header h3 { font-size: 0.9rem; }
+            .card { padding: 0.875rem; border-radius: 12px; }
+            .dashboard-grid { gap: 0.75rem; }
+            .btn-asig-main { width: 100%; justify-content: center; }
         }
     </style>
 
@@ -246,7 +324,7 @@
                 <!-- Formulario nuevo cliente -->
                 <div class="card" style="margin-bottom:2rem;">
                     <p class="card-title">Nuevo Cliente</p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nombre">Nombre Completo</label>
                         <p style="margin:-4px 0 4px;font-size:0.72rem;color:var(--gold);opacity:0.8;">⚠️ Debe coincidir exactamente con como aparece en los documentos que el cliente envía.</p>
@@ -294,7 +372,7 @@
                         <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">✏️ Editar Cliente</p>
                         <input type="hidden" id="edit-client-idx">
                         <input type="hidden" id="edit-client-source">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
                             <div class="form-group">
                                 <label for="edit-cli-nombre">Nombre Completo</label>
                                 <input type="text" id="edit-cli-nombre">
@@ -411,27 +489,194 @@
 
             <section id="version" class="content-section">
                 <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
-                <div class="dashboard-grid">
-                    <div class="card" style="grid-row: span 2;">
-                        <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
-                        <p style="color:var(--silver); line-height:1.6; font-size: 0.9rem; margin-top: 10px;">
-                            El sistema <b>FLOOVU Legal AI PRO v8</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
-                            Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
-                        </p>
-                        <ul style="color:var(--silver); line-height:1.8; font-size: 0.85rem; padding-left: 20px; margin-top: 15px;">
-                            <li style="margin-bottom:8px;">✅ <b>Extracción Automatizada de Correos:</b> Lee bandejas, procesa PDFs adjuntos y marca como leído nativamente para prevenir duplicados.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Análisis A.I. y Estrategia:</b> Genera resúmenes precisos con score de calidad, patrones jurídicos identificados, ahorro de horas estimado y pasos estratégicos por rama.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Agendamiento Dinámico Inteligente:</b> Crea citas en Google Calendar con fecha de vencimiento calculada automáticamente según plazos procesales colombianos (T+20 días hábiles como fallback).</li>
-                            <li style="margin-bottom:8px;">✅ <b>Bóveda Centralizada (Registro Legal):</b> Unifica información en Google Sheets con tokens únicos, matching por token y row_number para actualizaciones robustas.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Informes Corporativos Dinámicos:</b> Genera y envía informes HTML completos al abogado asignado con vencimiento, estado de calendario y datos del caso.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Directorio de Abogados y Clientes:</b> Gestión independiente de abogados (hoja ABOGADOS) y clientes (hoja CLIENTES) con asignación directa desde el directorio.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Identificación Automática de Clientes:</b> Cruza el texto del documento con el directorio de clientes por nombre, NIT o email antes del análisis IA.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Vigilancia Legal Diaria:</b> Monitoreo automático a las 7AM de fuentes RSS jurídicas colombianas (Ámbito Jurídico, Datos Abiertos Colombia).</li>
-                            <li style="margin-bottom:8px;">✅ <b>Dashboard con KPIs reales:</b> Score IA promedio, horas ahorradas acumuladas, distribución por rama jurídica y agenda de vencimientos procesales.</li>
-                            <li style="margin-bottom:8px;">✅ <b>Emails marcados como leídos:</b> Al confirmar asignación el sistema marca automáticamente el email original como leído usando el messageId del caso.</li>
-                        </ul>
+
+                <!-- Resumen arquitectura -->
+                <div class="card" style="margin-bottom:2rem;">
+                    <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
+                    <p style="color:var(--silver);line-height:1.6;font-size:0.9rem;margin-top:10px;">
+                        El sistema <b>FLOOVU Legal AI PRO v8</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
+                        Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
+                    </p>
+                </div>
+
+                <!-- Diagrama de flujo SVG -->
+                <div class="card" style="margin-bottom:2rem;overflow-x:auto;">
+                    <p class="card-title">🔄 Flujo del Sistema</p>
+                    <svg viewBox="0 0 900 160" style="width:100%;min-width:600px;margin-top:1rem;" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/>
+                            </marker>
+                        </defs>
+                        <!-- Step boxes -->
+                        <!-- 1 Gmail -->
+                        <rect x="10" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="75" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📨</text>
+                        <text x="75" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">GMAIL</text>
+                        <text x="75" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Recepción PDF</text>
+                        <!-- arrow -->
+                        <line x1="140" y1="82" x2="168" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 2 IA -->
+                        <rect x="170" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="235" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">🧠</text>
+                        <text x="235" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">ANÁLISIS IA</text>
+                        <text x="235" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Score + Estrategia</text>
+                        <!-- arrow -->
+                        <line x1="300" y1="82" x2="328" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 3 Clientes -->
+                        <rect x="330" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="395" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">🛡️</text>
+                        <text x="395" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">IDENTIFICACIÓN</text>
+                        <text x="395" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Cliente a defender</text>
+                        <!-- arrow -->
+                        <line x1="460" y1="82" x2="488" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 4 Asignación -->
+                        <rect x="490" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="555" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">⚖️</text>
+                        <text x="555" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">ASIGNACIÓN</text>
+                        <text x="555" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Abogado + Informe</text>
+                        <!-- arrow -->
+                        <line x1="620" y1="82" x2="648" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 5 Calendar + Sheets -->
+                        <rect x="650" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="715" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📅</text>
+                        <text x="715" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">SEGUIMIENTO</text>
+                        <text x="715" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Calendar + Sheets</text>
+                        <!-- arrow -->
+                        <line x1="780" y1="82" x2="808" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 6 Dashboard -->
+                        <rect x="810" y="50" width="80" height="64" rx="10" fill="rgba(197,160,89,0.15)" stroke="#C9A84C" stroke-width="1.5"/>
+                        <text x="850" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📊</text>
+                        <text x="850" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">DASHBOARD</text>
+                        <text x="850" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">KPIs</text>
+                        <!-- Step numbers -->
+                        <circle cx="10" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="10" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">1</text>
+                        <circle cx="170" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="170" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">2</text>
+                        <circle cx="330" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="330" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">3</text>
+                        <circle cx="490" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="490" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">4</text>
+                        <circle cx="650" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="650" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">5</text>
+                        <circle cx="810" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="810" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">6</text>
+                    </svg>
+                </div>
+
+                <!-- GRUPO 1: Automatización e IA -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">⚡ Automatización e Inteligencia Artificial</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📨</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Extracción Automatizada de Correos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Lee bandejas Gmail, extrae PDFs adjuntos, analiza con IA y marca el correo como leído automáticamente para evitar duplicados.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🧠</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Análisis A.I. y Estrategia Legal</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Genera resúmenes con score de calidad 1-10, patrones jurídicos identificados, horas de trabajo ahorradas y pasos estratégicos por rama.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🔍</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Vigilancia Legal Diaria</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Monitoreo automático a las 7AM de fuentes RSS jurídicas colombianas — Ámbito Jurídico y Datos Abiertos Colombia — para alimentar el contexto de la IA.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- GRUPO 2: Gestión de Casos y Clientes -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">⚖️ Gestión de Casos y Clientes</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🛡️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Identificación Automática del Cliente</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Cruza el texto del documento contra el directorio de clientes por nombre, NIT o email. Todo el análisis IA se orienta automáticamente a defender a esa persona.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">👥</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Directorio de Abogados y Clientes</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Gestión independiente con hojas dedicadas en Google Sheets. Asignación de abogados directa desde el directorio de clientes sin ir al despacho.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📄</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Informes Corporativos Dinámicos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Envía informes HTML al abogado asignado con: rama jurídica, fecha de vencimiento, estado del calendario, cliente a defender y token único del caso.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 3: Agenda y Seguimiento -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">📅 Agenda y Seguimiento Procesal</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📅</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Agendamiento Dinámico Inteligente</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Crea citas en Google Calendar con fecha calculada según plazos procesales colombianos. Fallback automático a T+20 días hábiles si no se detecta fecha explícita.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🗄️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Bóveda Centralizada (Registro Legal)</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Registro único en Google Sheets con tokens por caso, matching robusto por token y número de fila. Historial completo de asignaciones y estados.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">✉️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Emails Marcados como Leídos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Al confirmar la asignación, el sistema marca automáticamente el email original como leído usando el messageId guardado, evitando reprocesamiento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 4: Dashboard y Control -->
+                <div style="margin-bottom:1rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">📊 Dashboard y Control Operativo</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📊</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Dashboard con KPIs Reales</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Score IA promedio, horas de trabajo ahorradas acumuladas, distribución de casos por rama jurídica y agenda completa de vencimientos procesales.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📱</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Diseño Responsivo Multi-dispositivo</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Interfaz adaptada para notebook, tablet y teléfono. Sidebar colapsable, tablas con scroll horizontal y navegación optimizada para pantallas pequeñas.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🔐</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Seguridad y Autenticación</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Todos los webhooks protegidos con token secreto <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:0.75rem;">x-floovu-secret</code>. Sanitización XSS en todos los inputs del frontend.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </section>
 
         </main>
