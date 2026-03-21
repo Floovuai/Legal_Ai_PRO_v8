@@ -512,10 +512,11 @@
 
             <section id="config" class="content-section">
                 <div class="header"><h1>Configuración</h1></div>
+
                 <div class="dashboard-grid">
-                    <!-- COLUMNA IZQUIERDA: DEBUG EXPANDIDO -->
+                    <!-- COLUMNA IZQUIERDA: DEBUG -->
                     <div class="card" style="grid-row: span 2;">
-                        <p class="card-title">Debug: Reporte de Errores (Temporal)</p>
+                        <p class="card-title">Debug: Reporte de Errores</p>
                         <div class="error-log" id="error-console" style="height: 480px;">
                             [System] Iniciando consola de depuración v12...
                             [System] Esperando telemetría de webhooks...
@@ -540,6 +541,55 @@
                             <div class="health-item">🤖 IA: <span id="h-ai" style="color:var(--silver)">-</span></div>
                         </div>
                         <button class="btn-premium" style="margin-top:1.5rem; font-size:0.8rem; width:100%" onclick="pingEngine()">🚀 Lanzar Diagnóstico Real</button>
+                    </div>
+                </div>
+
+                <!-- GESTIÓN DE USUARIOS — solo visible para admin -->
+                <div style="margin-top:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">👥 Gestión de Usuarios</p>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+                        <!-- Generador de hash -->
+                        <div class="card">
+                            <p class="card-title">🔐 Generar Hash de Contraseña</p>
+                            <div class="form-group">
+                                <label for="hash-pass">Nueva contraseña</label>
+                                <input type="password" id="hash-pass" placeholder="Escribe la contraseña..." oninput="checkHashStrength(this.value)">
+                                <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:6px;overflow:hidden;">
+                                    <div id="hash-strength-fill" style="height:100%;border-radius:2px;width:0%;transition:width 0.3s,background 0.3s;"></div>
+                                </div>
+                                <p id="hash-strength-label" style="font-size:0.68rem;margin-top:4px;color:#475569;">—</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="hash-pass2">Confirmar contraseña</label>
+                                <input type="password" id="hash-pass2" placeholder="Repite la contraseña...">
+                            </div>
+                            <button class="btn-premium" style="width:100%" onclick="generateHashAdmin()">⚡ Generar Hash SHA-256</button>
+                            <div id="hash-result-admin" style="display:none;margin-top:1rem;background:rgba(197,160,89,0.05);border:1px solid rgba(197,160,89,0.2);border-radius:10px;padding:14px;">
+                                <p style="font-size:0.7rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Hash generado — cópialo al index.html</p>
+                                <p id="hash-value-admin" onclick="copyHashAdmin()" style="font-family:monospace;font-size:0.72rem;color:var(--gold);word-break:break-all;line-height:1.6;cursor:pointer;" title="Click para copiar"></p>
+                                <p style="font-size:0.68rem;color:#475569;margin-top:6px;">👆 Click para copiar</p>
+                                <div id="hash-copied-admin" style="display:none;font-size:0.75rem;color:#22c55e;margin-top:6px;">✅ Copiado al portapapeles</div>
+                            </div>
+                        </div>
+
+                        <!-- Usuarios actuales -->
+                        <div class="card">
+                            <p class="card-title">👤 Usuarios Configurados</p>
+                            <p style="font-size:0.78rem;color:var(--silver);margin-bottom:1rem;line-height:1.5;">Estos usuarios tienen acceso al sistema. Para agregar o modificar usuarios, edita el bloque <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">USERS</code> en el <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">index.html</code>.</p>
+                            <div id="users-list-admin"></div>
+                            <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
+                                <p style="font-size:0.72rem;color:var(--silver);line-height:1.5;">
+                                    <strong style="color:var(--gold);">Para agregar un usuario:</strong><br>
+                                    1. Genera el hash con el generador de la izquierda<br>
+                                    2. Abre el <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">index.html</code> en tu editor<br>
+                                    3. Busca <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">USERS:</code> y agrega el bloque<br>
+                                    4. Sube el archivo a GitHub
+                                </p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -768,18 +818,18 @@
         // Para agregar un cliente: duplica el bloque y pega el hash
         USERS: [
             {
-                username: 'floovu_admin',
-                hash: '0afe54449556726c7eaddb40475f6fd6941f4e85416cdc4a2ccf228254cea26c',
+                username: 'Floovu_admin',
+                hash: 'PEGA_AQUI_EL_HASH_DE_TU_CONTRASEÑA',
                 role: 'admin',
                 name: 'Floovu Automation',
                 email: 'floovuai@gmail.com'
             },
             {
-                username: 'usuario_test',
-                hash: 'd11263c74b1fb6bcd55659d6aafb347ea0dd0605d809594717f1d54efac2fd99',
+                username: 'operador_test',
+                hash: 'PEGA_AQUI_EL_HASH_DE_LA_CONTRASEÑA_TEST',
                 role: 'operator',
-                name: 'Usuario test',
-                email: 'floovutest@gmail.com'
+                name: 'Usuario Test',
+                email: 'test@floovu.com'
             }
         ],
 
@@ -1052,6 +1102,9 @@
 
             if (i.dataset.tab === 'abogados') {
                 if (lawyers.length > 0) { renderLawyers(); updateUI(); } else { loadLawyers(); }
+            } else if (i.dataset.tab === 'config') {
+                renderUsersAdmin();
+                updateUI();
             } else if (i.dataset.tab === 'clientes') {
                 if (clients.length > 0) { renderClients(); } else { loadClients(); }
             } else if (i.dataset.tab === 'dashboard' || i.dataset.tab === 'expedientes' || i.dataset.tab === 'asignaciones') {
@@ -1924,6 +1977,75 @@
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
                 }
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
+        }
+
+                // ══════════════════════════════════════════
+        // GESTIÓN DE USUARIOS — solo para Admin
+        // ══════════════════════════════════════════
+        async function generateHashAdmin() {
+            const pass  = document.getElementById('hash-pass').value;
+            const pass2 = document.getElementById('hash-pass2').value;
+            if (!pass) { showToast('Escribe una contraseña.', 'error'); return; }
+            if (pass !== pass2) { showToast('Las contraseñas no coinciden.', 'error'); return; }
+            const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
+            const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            document.getElementById('hash-value-admin').textContent = hash;
+            document.getElementById('hash-result-admin').style.display = 'block';
+            document.getElementById('hash-copied-admin').style.display = 'none';
+        }
+
+        async function copyHashAdmin() {
+            const hash = document.getElementById('hash-value-admin').textContent;
+            await navigator.clipboard.writeText(hash);
+            const el = document.getElementById('hash-copied-admin');
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 2500);
+        }
+
+        function checkHashStrength(pass) {
+            const fill  = document.getElementById('hash-strength-fill');
+            const label = document.getElementById('hash-strength-label');
+            if (!pass) { fill.style.width = '0%'; label.textContent = '—'; label.style.color = '#475569'; return; }
+            let score = 0;
+            if (pass.length >= 8)  score++;
+            if (pass.length >= 12) score++;
+            if (/[A-Z]/.test(pass)) score++;
+            if (/[0-9]/.test(pass)) score++;
+            if (/[^A-Za-z0-9]/.test(pass)) score++;
+            const levels = [
+                { w: '20%', c: '#ef4444', t: 'Muy débil' },
+                { w: '40%', c: '#f97316', t: 'Débil' },
+                { w: '60%', c: '#eab308', t: 'Regular' },
+                { w: '80%', c: '#84cc16', t: 'Buena' },
+                { w: '100%', c: '#22c55e', t: 'Excelente' },
+            ];
+            const l = levels[Math.min(score - 1, 4)] || levels[0];
+            fill.style.width = l.w;
+            fill.style.background = l.c;
+            label.textContent = l.t;
+            label.style.color = l.c;
+        }
+
+        function renderUsersAdmin() {
+            const container = document.getElementById('users-list-admin');
+            if (!container) return;
+            const users = (window.FLOOVU_CONFIG && window.FLOOVU_CONFIG.USERS) || [];
+            if (!users.length) {
+                container.innerHTML = '<p style="color:var(--silver);font-size:0.8rem;">No hay usuarios configurados.</p>';
+                return;
+            }
+            container.innerHTML = users.map(u => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+                    <div>
+                        <p style="margin:0;font-size:0.82rem;font-weight:700;color:var(--white);">@${esc(u.username)}</p>
+                        <p style="margin:0;font-size:0.72rem;color:var(--silver);">${esc(u.name)} · ${esc(u.email||'')}</p>
+                    </div>
+                    <span style="font-size:0.62rem;padding:3px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;
+                        background:${u.role==='admin' ? 'rgba(197,160,89,0.15)' : 'rgba(99,153,34,0.15)'};
+                        color:${u.role==='admin' ? 'var(--gold)' : '#97C459'};">
+                        ${u.role==='admin' ? 'Agencia' : 'Operador'}
+                    </span>
+                </div>`).join('');
         }
 
                 function getLawyerEmail(lawyerName) {
