@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Floovu Legal AI PRO | Enterprise Case Manager</title>
-    <link rel="icon" type="image/png" href="https://img.icons8.com/color/120/scales.png">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="description" content="Floovu Legal AI PRO v8 — Sistema de gestión jurídica con IA para recepción, análisis y asignación de casos legales.">
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <style>
         :root {
@@ -45,9 +46,9 @@
             top: 0;
             height: 100vh;
         }
-        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; line-height: 1.1; }
-        .brand-main { display: block; }
-        .brand-sub { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-size: 0.7rem; font-weight: 600; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; display: block; margin-top: 3px; opacity: 0.8; }
+        .brand { margin-bottom: 3.5rem; color: var(--gold); font-family: 'Playfair Display', Georgia, serif; font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
+        /* F3-04: versión unificada a v25.0 */
+        .version-tag { font-size: 0.6rem; background: var(--gold); color: #000; padding: 2px 8px; border-radius: 4px; vertical-align: middle; margin-left: 10px; font-weight: 900; }
 
         .nav-item { padding: 14px 18px; border-radius: 12px; margin-bottom: 6px; cursor: pointer; transition: 0.3s; color: var(--silver); font-size: 0.95rem; display: flex; align-items: center; gap: 12px; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
@@ -59,7 +60,7 @@
         .form-card { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
         .error-log { font-family: monospace; background: #000; padding: 1rem; border-radius: 8px; border: 1px solid #333; height: 150px; overflow-y: auto; font-size: 0.8rem; color: #666; }
 
-        .main-view { padding: 3rem; padding-top: 4.5rem; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #10141d 0%, #05070a 100%); position: relative; }
+        .main-view { padding: 3rem; overflow-y: auto; background: radial-gradient(circle at 50% 0%, #10141d 0%, #05070a 100%); position: relative; }
         .content-section { display: none; }
         .content-section.active { display: block; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
@@ -152,7 +153,7 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <h2 class="brand" style="display:flex;align-items:center;gap:12px;"><img src="https://img.icons8.com/color/120/scales.png" style="width:36px;height:36px;border-bottom:2px solid var(--gold);padding-bottom:4px;"><div><span class="brand-main">FLOOVU</span><span class="brand-sub">Legal AI PRO v8</span></div></h2>
+            <h2 class="brand">FLO<span>OVU</span> <span class="version-tag">v25.0 MASTER ELITE</span></h2>
             <nav>
                 <div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
@@ -172,9 +173,15 @@
 
         <main class="main-view">
             <!-- BANNER GMAIL TRIGGER -->
-            <div id="mail-notification" style="position:absolute;top:1.2rem;right:2rem;display:flex;align-items:center;gap:10px;background:rgba(12,15,22,0.85);border:1px solid var(--border);border-radius:10px;padding:8px 14px;backdrop-filter:blur(4px);">
-                <span style="font-size:0.75rem;color:var(--silver);">● <span style="color:#22c55e;">Operativo</span></span>
-                <button class="btn-premium" onclick="forceGmailSync()" style="font-size:0.78rem;padding:7px 16px;border-radius:7px;">Procesar Gmail</button>
+            <div class="notification-banner" id="mail-notification" style="background: linear-gradient(90deg, #0c0f16 0%, #1a1f2c 100%); border-color: var(--border);">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="https://img.icons8.com/color/120/scales.png" style="width:50px; height:auto; border-bottom: 2px solid var(--gold); padding-bottom: 5px;">
+                    <div>
+                        <p style="font-weight: 800; color: #fff; font-size: 1.1rem;">Cerebro Master Elite v25.0 [Sync Ready]</p>
+                        <p style="font-size: 0.85rem; color: var(--silver);">Estado: Operativo | Reporte Centinela Activo</p>
+                    </div>
+                </div>
+                <button class="btn-premium" onclick="forceGmailSync()" style="box-shadow: 0 4px 15px rgba(197, 160, 89, 0.3);">🚀 Encendido (v25 Elite) / Procesar Gmail</button>
             </div>
 
 
@@ -289,7 +296,7 @@
                         <p class="card-title">Base de Datos & Conexión</p>
                         <p>Sheet ID: <strong>14Go...p-_Fo</strong></p>
                         <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Estado API: <span style="color:#22c55e">● ONLINE</span></p>
-                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU Legal AI PRO v8</strong></p>
+                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU v25.0 MASTER ELITE</strong></p>
                     </div>
 
                     <div class="card">
@@ -306,7 +313,7 @@
             </section>
 
             <section id="version" class="content-section">
-                <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
+                <div class="header"><h1>Capacidades del Sistema (v25.0 MASTER ELITE)</h1></div>
                 <div class="dashboard-grid">
                     <div class="card" style="grid-row: span 2;">
                         <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
@@ -394,13 +401,24 @@
         }
 
         // Helper centralizado para todos los fetch — añade el token de autenticación
+        // FIX-TIMEOUT: AbortController con 15s para evitar requests colgados
         async function authFetch(url, options = {}) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
             const headers = {
                 'Content-Type': 'application/json',
                 'x-floovu-secret': API_SECRET,
                 ...(options.headers || {})
             };
-            return fetch(url, { ...options, headers });
+            try {
+                const res = await fetch(url, { ...options, headers, signal: controller.signal });
+                clearTimeout(timer);
+                return res;
+            } catch(e) {
+                clearTimeout(timer);
+                if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (15s). Verifica que n8n esté activo.');
+                throw e;
+            }
         }
 
         document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => {
@@ -469,7 +487,7 @@
                     logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
                 } else {
                     logError(`Error al cargar abogados: HTTP ${res.status}`);
-                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${esc(String(res.status))}).</p>`;
+                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${res.status}).</p>`;
                 }
             } catch(e) {
                 logError(`Error al cargar abogados: ${e.message}`);
@@ -510,8 +528,7 @@
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
                         const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
-                                         row['Score Auto-Evaluación'] || row['score'] ||
-                                         row['Score'] || row['score_ia'] || row['IA Score'] || '0';
+                                         row['score'] || row['Score'] || '0';
                         const score = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
 
                         // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
@@ -546,7 +563,7 @@
                     updateUI();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
-                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${esc(String(res.status))}). Reintenta.</td></tr>`;
+                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
                     el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de sincronización.</td></tr>`;
                     logError(`Error de sincronización: HTTP ${res.status}`);
                 }
@@ -612,7 +629,7 @@
             if (el('chart-area').dataset.sig !== chartSig) {
                 el('chart-area').dataset.sig = chartSig;
                 const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=300&h=280`;
-                el('chart-area').innerHTML = `<img src="${esc(chartUrl)}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`; 
+                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:220px;width:auto;margin:0 auto;display:block;">`;
             }
 
             // FASE 6: entradas recientes — 5 columnas incluyendo Abogado
@@ -674,11 +691,12 @@
 
             // FASE 1: Asignaciones — dropdown espera a que lawyers esté cargado
             const pend = db.filter(c => c.status === 'PENDIENTE');
-            const badge = el('asig-badge');
+            // FIX-CACHE: getElementById directo para elementos que cambian con navegación
+            const badge = document.getElementById('asig-badge');
             badge.innerText = pend.length;
             badge.style.display = pend.length > 0 ? 'inline-block' : 'none';
 
-            const asigContent = el('asig-content');
+            const asigContent = document.getElementById('asig-content');
             if (pend.length) {
                 asigContent.classList.remove('empty-state');
                 asigContent.innerHTML = pend.map(c => {
@@ -689,10 +707,11 @@
                         : `<option value="">Cargando abogados...</option>`;
 
                     // FASE 8: formatear desc — párrafos separados, sin markdown crudo
+                    // FIX-XSS: esc() aplicado a cada párrafo de desc antes de insertar en DOM
                     const descFormatted = c.desc
                         .split(/\n+/)
                         .filter(p => p.trim())
-                        .map(p => `<p style="margin:0 0 8px;font-size:0.82rem;color:var(--silver);line-height:1.6;">${p}</p>`)
+                        .map(p => `<p style="margin:0 0 8px;font-size:0.82rem;color:var(--silver);line-height:1.6;">${esc(p)}</p>`)
                         .join('');
 
                     return `
@@ -848,19 +867,24 @@
             const spec  = document.getElementById('new-law-spec').value;
 
             if (!name) { showToast('El nombre del abogado es obligatorio.', 'error'); return; }
-            // FIX-ADD-1: email es opcional (puede no tenerlo en el sheet), pero si se ingresa debe ser válido
+            // FIX-ADD-1: email es opcional, pero si se ingresa debe ser válido
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 showToast('El email ingresado no tiene un formato válido.', 'error'); return;
             }
 
-            logError(`Guardando abogado: ${name}...`);
+            // FIX-INPUT-ESC: sanitizar inputs antes de enviar a n8n
+            const safeName  = name.replace(/[<>"'&]/g, '');
+            const safeEmail = email.replace(/[<>"'&]/g, '');
+            const safeSpec  = spec.replace(/[<>"'&]/g, '');
+
+            logError(`Guardando abogado: ${safeName}...`);
             try {
                 const res = await authFetch(N8N_LAWYER_SAVE, {
                     method: 'POST',
-                    body: JSON.stringify({ nombre: name, email, especialidad: spec })
+                    body: JSON.stringify({ nombre: safeName, email: safeEmail, especialidad: safeSpec })
                 });
                 if (res.ok) {
-                    lawyers.push({ name, email, especialidad: spec });
+                    lawyers.push({ name: safeName, email: safeEmail, especialidad: safeSpec });
                     renderLawyers();
                     updateUI();
                     showToast(`Abogado ${name} guardado correctamente.`, 'ok');
@@ -900,43 +924,26 @@
 
         async function pingEngine() {
             logError("Lanzando diagnóstico de sistema...");
-            ['web','gmail','sheet','ai'].forEach(n => document.getElementById(`h-${n}`).innerHTML = "⌛");
-
-            // Prueba real: Webhook (health check)
+            const nodes = ['web', 'gmail', 'sheet', 'ai'];
+            nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "⌛");
             try {
-                const r = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
-                document.getElementById('h-web').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
-                logError(r.ok ? "✓ Webhook: OK" : "❌ Webhook: caído");
+                const res = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
+                if (res.ok) {
+                    const txt = await res.text();
+                    const health = txt ? JSON.parse(txt) : {};
+                    document.getElementById('h-web').innerHTML   = "🟢 OK";
+                    document.getElementById('h-gmail').innerHTML = health.gmail ? "🟢 OK" : "🔴 ERROR";
+                    document.getElementById('h-sheet').innerHTML = health.sheet ? "🟢 OK" : "🔴 ERROR";
+                    document.getElementById('h-ai').innerHTML    = health.ai    ? "🟢 OK" : "🔴 ERROR";
+                    logError("✓ Diagnóstico finalizado con éxito.");
+                } else {
+                    nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 CAÍDO");
+                    logError("❌ No se pudo conectar con el motor n8n.");
+                }
             } catch(e) {
-                document.getElementById('h-web').innerHTML = "🔴 CAÍDO";
-                logError(`❌ Webhook: ${e.message}`);
+                nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 ERR");
+                logError(`❌ Error de diagnóstico: ${e.message}`);
             }
-
-            // Prueba real: Sheets (get data)
-            try {
-                const r = await authFetch(N8N_GET_DATA, { method: 'POST' });
-                document.getElementById('h-sheet').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
-                logError(r.ok ? "✓ Sheets: OK" : "❌ Sheets: caído");
-            } catch(e) {
-                document.getElementById('h-sheet').innerHTML = "🔴 CAÍDO";
-                logError(`❌ Sheets: ${e.message}`);
-            }
-
-            // Prueba real: Gmail/Abogados (get lawyers — usa la misma conexión Gmail+Sheets)
-            try {
-                const r = await authFetch(N8N_GET_LAWYERS, { method: 'POST' });
-                document.getElementById('h-gmail').innerHTML = r.ok ? "🟢 OK" : "🔴 CAÍDO";
-                logError(r.ok ? "✓ Gmail: OK" : "❌ Gmail: caído");
-            } catch(e) {
-                document.getElementById('h-gmail').innerHTML = "🔴 CAÍDO";
-                logError(`❌ Gmail: ${e.message}`);
-            }
-
-            // IA: si los anteriores respondieron, la IA está activa
-            const webOk  = document.getElementById('h-web').innerHTML.includes('🟢');
-            const sheetOk = document.getElementById('h-sheet').innerHTML.includes('🟢');
-            document.getElementById('h-ai').innerHTML = (webOk && sheetOk) ? "🟢 OK" : "🔴 CAÍDO";
-            logError("✓ Diagnóstico finalizado.");
         }
 
         // F5-08: finish usa classList en vez de style.display en el overlay
