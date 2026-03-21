@@ -222,6 +222,10 @@
 
             <section id="asignaciones" class="content-section">
                 <div class="header"><h1>Despacho de Casos</h1></div>
+                <div style="background:rgba(197,160,89,0.08);border:1px solid rgba(197,160,89,0.3);border-radius:10px;padding:10px 16px;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:1rem;">⚠️</span>
+                    <p style="margin:0;font-size:0.78rem;color:var(--gold);line-height:1.5;">Para que el sistema identifique automáticamente al cliente a defender, el nombre registrado en el <strong>Directorio de Clientes</strong> debe coincidir exactamente con como aparece en los documentos que esa persona envía.</p>
+                </div>
                 <div id="asig-content" class="empty-state">
                     <span class="empty-icon">⚖️</span>
                     Sin casos pendientes de despacho
@@ -245,6 +249,7 @@
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nombre">Nombre Completo</label>
+                        <p style="margin:-4px 0 4px;font-size:0.72rem;color:var(--gold);opacity:0.8;">⚠️ Debe coincidir exactamente con como aparece en los documentos que el cliente envía.</p>
                             <input type="text" id="new-cli-nombre" placeholder="Ej: Carlos Restrepo Muñoz">
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
