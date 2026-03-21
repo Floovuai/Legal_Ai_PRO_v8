@@ -1558,6 +1558,7 @@
 
         // F2-08 aplicado: forceGmailSync ya no llama startAIProcessing con pasos falsos
         async function forceGmailSync() {
+            console.log('[Floovu] forceGmailSync called, user:', currentUser ? currentUser.email : 'null');
             logError("Iniciando Escaneo de Gmail forzado...");
             document.getElementById('mail-notification').style.opacity = '0.5';
             showTerminal(["Conectando con n8n...", "Solicitando escaneo de Gmail..."]);
