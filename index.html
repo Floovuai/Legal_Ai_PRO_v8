@@ -537,7 +537,8 @@
                             venc,
                             status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
                             desc,
-                            token:        row.token || row.Token || row.row_number || 'FLV-EX-00',
+                            token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
+                            row_number:   row.row_number || null,
                             lawyer:       row['abogado_responsable'] || row['Abogado Responsable'] || row['Abogado asignado'] || null,
                             priority:     row.Prioridad || row.prioridad || 'Media',
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
@@ -957,7 +958,7 @@
                 const response = await authFetch(N8N_ASSIGN_WEBHOOK, {
                     method: 'POST',
                     body: JSON.stringify({
-                        row_number:            parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
+                        row_number:            caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
                         'Nombre Cliente':      caseItem.partes,
                         'Abogado Responsable': lawyerName,
                         'Email Abogado':       lawyerObj.email,
