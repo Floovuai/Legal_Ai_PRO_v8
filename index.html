@@ -238,65 +238,78 @@
 
             <section id="clientes" class="content-section">
                 <div class="header"><h1>Directorio de Clientes</h1></div>
-                <div class="dashboard-grid">
-                    <!-- Formulario nuevo cliente -->
-                    <div class="card">
-                        <p class="card-title">Nuevo Cliente</p>
-                        <div class="form-group">
+
+                <!-- Formulario nuevo cliente -->
+                <div class="card" style="margin-bottom:2rem;">
+                    <p class="card-title">Nuevo Cliente</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nombre">Nombre Completo</label>
                             <input type="text" id="new-cli-nombre" placeholder="Ej: Carlos Restrepo Muñoz">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nit">NIT / RUT / Cédula</label>
                             <input type="text" id="new-cli-nit" placeholder="Ej: 900.123.456-7">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-email">Email</label>
                             <input type="email" id="new-cli-email" placeholder="cliente@empresa.com">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-telefono">Teléfono</label>
                             <input type="text" id="new-cli-telefono" placeholder="+57 300 000 0000">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-notas">Notas</label>
                             <input type="text" id="new-cli-notas" placeholder="Observaciones adicionales">
                         </div>
-                        <button class="btn-premium" style="width:100%" onclick="addClient()">➕ Guardar Cliente</button>
-                    </div>
-                    <!-- Directorio -->
-                    <div class="card">
-                        <p class="card-title">Directorio Activo</p>
-                        <div id="client-list-container">
-                            <p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando...</p>
+                        <div style="display:flex;align-items:flex-end;">
+                            <button class="btn-premium" style="width:100%;height:38px;" onclick="addClient()">➕ Guardar Cliente</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Tabla unificada -->
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                        <p class="card-title" style="margin-bottom:0;">Directorio Activo</p>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="cli-search" placeholder="Buscar cliente..." style="width:200px;height:34px;font-size:0.8rem;" oninput="filterClients(this.value)">
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;" onclick="loadClients()">↻ Recargar</button>
+                        </div>
+                    </div>
+                    <div id="client-list-container">
+                        <p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando...</p>
                     </div>
                 </div>
 
                 <!-- Modal edición cliente -->
                 <div class="overlay" id="client-edit-modal">
-                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:480px;width:90%;">
+                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:520px;width:90%;">
                         <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">✏️ Editar Cliente</p>
-                        <input type="hidden" id="edit-client-nit-original">
-                        <div class="form-group">
-                            <label for="edit-cli-nombre">Nombre Completo</label>
-                            <input type="text" id="edit-cli-nombre">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-cli-nit">NIT / RUT / Cédula</label>
-                            <input type="text" id="edit-cli-nit">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-cli-email">Email</label>
-                            <input type="email" id="edit-cli-email">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-cli-telefono">Teléfono</label>
-                            <input type="text" id="edit-cli-telefono">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-cli-notas">Notas</label>
-                            <input type="text" id="edit-cli-notas">
+                        <input type="hidden" id="edit-client-idx">
+                        <input type="hidden" id="edit-client-source">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div class="form-group">
+                                <label for="edit-cli-nombre">Nombre Completo</label>
+                                <input type="text" id="edit-cli-nombre">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-nit">NIT / RUT / Cédula</label>
+                                <input type="text" id="edit-cli-nit">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-email">Email</label>
+                                <input type="email" id="edit-cli-email">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-telefono">Teléfono</label>
+                                <input type="text" id="edit-cli-telefono">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="edit-cli-notas">Notas</label>
+                                <input type="text" id="edit-cli-notas">
+                            </div>
                         </div>
                         <div style="display:flex;gap:1rem;margin-top:1.5rem;">
                             <button class="btn-outline" style="flex:1" onclick="closeClientModal()">Cancelar</button>
@@ -616,7 +629,7 @@
                             desc,
                             token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
                             row_number:   row.row_number || null,
-                            lawyer:       row['abogado_responsable'] || row['Abogado Responsable'] || row['Abogado asignado'] || null,
+                            lawyer:       row['abogado_responsable'] || null,
                             priority:     row.Prioridad || row.prioridad || 'Media',
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
@@ -745,7 +758,7 @@
                         </div>
                         <div style="text-align:right;">
                             <p style="font-family:monospace;color:var(--gold);font-size:0.85rem;font-weight:700;">${esc(c.venc)}</p>
-                            <p style="color:var(--silver);font-size:0.72rem;">${esc(c.lawyer || 'Sin asignar')}</p>
+                            <p style="color:${c.lawyer ? 'var(--gold)' : 'var(--silver)'};font-size:0.72rem;font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Sin asignar')}</p>
                         </div>
                     </div>`
                 ).join('');
@@ -1044,11 +1057,8 @@
                     body: JSON.stringify({
                         row_number:            caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
                         'Nombre Cliente':      caseItem.partes,
-                        'Abogado Responsable': lawyerName,
-                        'Email Abogado':       lawyerObj.email,
                         'Estado Alerta':       'ASIGNADO',
                         email_cliente:         clientEmail,
-                        email_cli:             clientEmail,
                         nombre_cliente:        caseItem.partes,
                         abogado_responsable:   lawyerName,
                         email_abogado:         lawyerObj.email,
@@ -1091,55 +1101,98 @@
         }
 
         // ══════════════════════════════════════════
-        // CLIENTES — Directorio independiente
+        // CLIENTES — Directorio unificado
+        // Fuente 1: hoja CLIENTES (directorio manual)
+        // Fuente 2: db (casos del Registro Legal)
         // ══════════════════════════════════════════
         let clients = [];
+        let allClientRows = []; // cache para búsqueda
 
         async function loadClients() {
             const container = document.getElementById('client-list-container');
             if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando directorio...</p>';
+            let manualClients = [];
             try {
                 const res = await authFetch(N8N_GET_CLIENTS, { method: 'POST' });
                 if (res.ok) {
                     let raw = [];
                     try { const txt = await res.text(); raw = txt ? JSON.parse(txt) : []; } catch(e) {}
-                    clients = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-                    renderClients();
-                    logError(`✓ ${clients.length} clientes cargados.`);
-                } else {
-                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ Error al cargar clientes (${esc(String(res.status))}).</p>`;
+                    manualClients = (Array.isArray(raw) ? raw : (raw ? [raw] : []))
+                        .map(c => ({ ...c, _source: 'directorio' }));
                 }
-            } catch(e) {
-                if (container) container.innerHTML = '<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ Sin conexión con n8n.</p>';
-                logError(`Error clientes: ${e.message}`);
-            }
+            } catch(e) { logError(`Error cargando clientes: ${e.message}`); }
+
+            // Combinar con casos del Registro Legal
+            const casesAsClients = db.map(c => ({
+                nombre:   c.partes   || '—',
+                nit:      '',
+                email:    getLawyerEmail(c.lawyer),
+                telefono: '',
+                notas:    `Caso: ${c.rama || ''} | Token: ${c.token || ''}`,
+                token:    c.token,
+                abogado:  c.lawyer   || 'Pendiente',
+                venc:     c.venc     || 'S/D',
+                estado:   c.status   || '—',
+                _source:  'registro'
+            }));
+
+            // Unificar — los del directorio primero, luego casos sin match en directorio
+            const nombresDirectorio = new Set(manualClients.map(c => c.nombre.toLowerCase().trim()));
+            const casesNuevos = casesAsClients.filter(c =>
+                !nombresDirectorio.has(c.nombre.toLowerCase().trim())
+            );
+
+            clients = [...manualClients, ...casesNuevos];
+            allClientRows = [...clients];
+            renderClients(clients);
+            logError(`✓ ${manualClients.length} del directorio + ${casesNuevos.length} del registro = ${clients.length} clientes.`);
         }
 
-        function renderClients() {
+        function filterClients(query) {
+            if (!query.trim()) { renderClients(allClientRows); return; }
+            const q = query.toLowerCase();
+            const filtered = allClientRows.filter(c =>
+                (c.nombre || '').toLowerCase().includes(q) ||
+                (c.nit    || '').toLowerCase().includes(q) ||
+                (c.email  || '').toLowerCase().includes(q) ||
+                (c.abogado|| '').toLowerCase().includes(q)
+            );
+            renderClients(filtered);
+        }
+
+        function renderClients(list) {
             const container = document.getElementById('client-list-container');
             if (!container) return;
-            if (!clients.length) {
+            if (!list || !list.length) {
                 container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">Sin clientes registrados.</p>';
                 return;
             }
-            container.innerHTML = clients.map((c, i) => `
-                <div style="padding:1rem;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-                        <div style="flex:1;">
-                            <strong style="color:var(--gold);font-size:0.95rem;">${esc(c.nombre)}</strong>
-                            <div style="display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;">
-                                <small style="color:var(--silver);">🪪 ${esc(c.nit || '—')}</small>
-                                <small style="color:var(--silver);">✉️ ${esc(c.email || '—')}</small>
-                                <small style="color:var(--silver);">📞 ${esc(c.telefono || '—')}</small>
-                            </div>
-                            ${c.notas ? `<small style="color:#475569;display:block;margin-top:4px;font-style:italic;">${esc(c.notas)}</small>` : ''}
-                        </div>
-                        <div style="display:flex;gap:8px;flex-shrink:0;margin-left:12px;">
-                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:30px;" onclick="openClientModal(${i})">✏️ Editar</button>
-                            <button class="btn-delete" onclick="deleteClient(${i})">Eliminar</button>
-                        </div>
-                    </div>
-                </div>`).join('');
+            container.innerHTML = `
+                <table>
+                    <thead><tr>
+                        <th>CLIENTE</th>
+                        <th>NIT / CÉDULA</th>
+                        <th>EMAIL</th>
+                        <th>TELÉFONO</th>
+                        <th>ABOGADO</th>
+                        <th>ESTADO</th>
+                        <th>ORIGEN</th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody>
+                        ${list.map((c, i) => `
+                        <tr>
+                            <td style="font-weight:600;color:var(--white);">${esc(c.nombre || '—')}</td>
+                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.nit || '—')}</td>
+                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.email || '—')}</td>
+                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.telefono || '—')}</td>
+                            <td style="color:${c.abogado && c.abogado !== 'Pendiente' ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado && c.abogado !== 'Pendiente' ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</td>
+                            <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
+                            <td><span style="font-size:0.68rem;padding:2px 8px;border-radius:20px;background:${c._source === 'directorio' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.05)'};color:${c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${c._source === 'directorio' ? 'Directorio' : 'Registro'}</span></td>
+                            <td><button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})">✏️</button></td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
         }
 
         async function addClient() {
@@ -1157,13 +1210,12 @@
                     body: JSON.stringify({ nombre, nit, email, telefono, notas })
                 });
                 if (res.ok) {
-                    clients.push({ nombre, nit, email, telefono, notas });
-                    renderClients();
                     showToast(`${nombre} guardado en el directorio.`, 'ok');
                     logError(`✓ Cliente guardado en Google Sheets.`);
                     ['new-cli-nombre','new-cli-nit','new-cli-email','new-cli-telefono','new-cli-notas'].forEach(id => {
                         document.getElementById(id).value = '';
                     });
+                    await loadClients();
                 } else {
                     showToast(`Error del servidor: ${esc(String(res.status))}`, 'error');
                 }
@@ -1171,14 +1223,15 @@
         }
 
         function openClientModal(idx) {
-            const c = clients[idx];
+            const c = allClientRows[idx];
             if (!c) return;
-            document.getElementById('edit-client-nit-original').value = c.nit || '';
-            document.getElementById('edit-cli-nombre').value   = c.nombre   || '';
-            document.getElementById('edit-cli-nit').value      = c.nit      || '';
-            document.getElementById('edit-cli-email').value    = c.email    || '';
-            document.getElementById('edit-cli-telefono').value = c.telefono || '';
-            document.getElementById('edit-cli-notas').value    = c.notas    || '';
+            document.getElementById('edit-client-idx').value    = idx;
+            document.getElementById('edit-client-source').value = c._source || 'directorio';
+            document.getElementById('edit-cli-nombre').value    = c.nombre   || '';
+            document.getElementById('edit-cli-nit').value       = c.nit      || '';
+            document.getElementById('edit-cli-email').value     = c.email    || '';
+            document.getElementById('edit-cli-telefono').value  = c.telefono || '';
+            document.getElementById('edit-cli-notas').value     = c.notas    || '';
             document.getElementById('client-edit-modal').classList.add('visible');
         }
 
@@ -1187,7 +1240,9 @@
         }
 
         async function saveClientEdit() {
-            const nitOriginal = document.getElementById('edit-client-nit-original').value;
+            const idx      = parseInt(document.getElementById('edit-client-idx').value);
+            const source   = document.getElementById('edit-client-source').value;
+            const original = allClientRows[idx];
             const nombre   = document.getElementById('edit-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
             const nit      = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
             const email    = document.getElementById('edit-cli-email').value.trim();
@@ -1195,49 +1250,75 @@
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
-            logError(`Actualizando cliente: ${nombre}...`);
+            logError(`Actualizando: ${nombre}...`);
             try {
-                // Eliminar el registro viejo y guardar el nuevo (update via delete+save)
-                const resDel = await authFetch(N8N_CLIENT_DELETE, {
-                    method: 'POST', body: JSON.stringify({ nit: nitOriginal })
-                });
-                const resSave = await authFetch(N8N_CLIENT_SAVE, {
-                    method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas })
-                });
-                if (resSave.ok) {
-                    const idx = clients.findIndex(c => c.nit === nitOriginal);
-                    if (idx > -1) clients[idx] = { nombre, nit, email, telefono, notas };
-                    renderClients();
-                    closeClientModal();
-                    showToast(`${nombre} actualizado.`, 'ok');
-                    logError('✓ Cliente actualizado en Google Sheets.');
+                if (source === 'directorio') {
+                    // Directorio manual: delete + save
+                    await authFetch(N8N_CLIENT_DELETE, { method: 'POST', body: JSON.stringify({ nit: original.nit }) });
+                    const res = await authFetch(N8N_CLIENT_SAVE, {
+                        method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas })
+                    });
+                    if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
                 } else {
-                    showToast(`Error al actualizar: ${esc(String(resSave.status))}`, 'error');
+                    // Caso del Registro Legal: actualizar via webhook de asignación
+                    const caseItem = db.find(c => c.token === original.token);
+                    if (caseItem) {
+                        const res = await authFetch(N8N_ASSIGN_WEBHOOK, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                token:                 original.token,
+                                row_number:            caseItem.row_number || null,
+                                'Nombre Cliente':      nombre,
+                                nombre_cliente:        nombre,
+                                abogado_responsable:   caseItem.lawyer || '',
+                                email_abogado:         getLawyerEmail(caseItem.lawyer),
+                                'Estado Alerta':       caseItem.status || 'ASIGNADO',
+                                rama:                  caseItem.rama,
+                                vencimiento:           caseItem.venc,
+                                'Fecha de Vencimiento': caseItem.venc,
+                                case_description:      caseItem.desc,
+                                informe_html:          caseItem.informe_html || '<!--FLOOVU_AB_PLACEHOLDER-->'
+                            })
+                        });
+                        if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
+                        // Actualizar en memoria
+                        if (caseItem) caseItem.partes = nombre;
+                    }
                 }
+                await loadClients();
+                closeClientModal();
+                showToast(`${nombre} actualizado correctamente.`, 'ok');
+                logError('✓ Cliente actualizado.');
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
         async function deleteClient(idx) {
-            const c = clients[idx];
+            const c = allClientRows[idx];
+            if (c._source !== 'directorio') { showToast('Solo se pueden eliminar clientes del directorio manual.', 'error'); return; }
             const ok = await floovuConfirm(`¿Eliminar a ${c.nombre} del directorio?`);
             if (!ok) return;
-            logError(`Eliminando cliente: ${c.nombre}...`);
+            logError(`Eliminando: ${c.nombre}...`);
             try {
                 const res = await authFetch(N8N_CLIENT_DELETE, {
                     method: 'POST', body: JSON.stringify({ nit: c.nit })
                 });
                 if (res.ok) {
-                    clients.splice(idx, 1);
-                    renderClients();
+                    await loadClients();
                     showToast(`${c.nombre} eliminado.`, 'ok');
-                    logError('✓ Cliente eliminado de Google Sheets.');
+                    logError('✓ Cliente eliminado.');
                 } else {
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
                 }
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
-        // FIX-INIT-1: carga inicial con Promise.allSettled — si loadLawyers falla,
+        function getLawyerEmail(lawyerName) {
+            if (!lawyerName) return '';
+            const l = lawyers.find(x => x.name === lawyerName);
+            return l ? l.email : '';
+        }
+
+                // FIX-INIT-1: carga inicial con Promise.allSettled — si loadLawyers falla,
         // loadRealData igual se ejecuta (y viceversa). Evita pantalla en blanco por
         // un fallo aislado en uno de los endpoints.
         Promise.allSettled([
