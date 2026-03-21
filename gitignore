@@ -1,0 +1,21 @@
+# ══════════════════════════════════════════
+# FLOOVU Legal AI PRO v8 — .gitignore
+# ══════════════════════════════════════════
+
+# Archivo de configuración sensible — NUNCA subir al repo
+# Contiene: secret de autenticación, URLs de webhooks, credenciales
+config.js
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
