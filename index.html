@@ -700,7 +700,7 @@
             const chartConfig = {
                 type: 'doughnut',
                 data: { labels: ramaLabels, datasets: [{ data: ramaData, backgroundColor: colores.slice(0, ramaLabels.length), borderWidth: 0 }] },
-                options: { cutoutPercentage: 75, legend: { position: 'bottom', labels: { fontColor: '#94a3b8', fontSize: 10, padding: 16 } } }
+                options: { cutoutPercentage: 65, legend: { position: 'bottom', labels: { fontColor: '#e5c17b', fontSize: 14, fontStyle: 'bold', padding: 20 } }, plugins: { datalabels: { display: false } } }
             };
             const chartSig = JSON.stringify(ramaCount);
             if (el('chart-area').dataset.sig !== chartSig) {
