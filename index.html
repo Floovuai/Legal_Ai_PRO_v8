@@ -276,7 +276,10 @@
             </div>
             <div class="form-group">
                 <label for="login-pass">Contraseña</label>
-                <input type="password" id="login-pass" placeholder="••••••••••" autocomplete="current-password">
+                <div style="position:relative;">
+                    <input type="password" id="login-pass" placeholder="••••••••••" autocomplete="current-password" style="padding-right:40px;">
+                    <button type="button" onclick="togglePassVisibility('login-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
             </div>
             <button class="login-btn" id="login-btn" onclick="doLogin()">Ingresar al Sistema</button>
             <p style="text-align:center;font-size:0.7rem;color:var(--silver);margin-top:1.5rem;opacity:0.5;">FLOOVU Legal AI PRO v8 · Acceso Restringido</p>
@@ -298,13 +301,15 @@
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
             </nav>
 
-            <div style="margin-top:auto; padding:16px; background:var(--gold-dim); border-radius:12px; border:1px solid var(--gold); font-size:0.8rem;">
-                <p style="color:var(--gold); font-weight:700; margin-bottom:4px;">SESIÓN ACTIVA</p>
-                <p id="sidebar-account-email" style="color:var(--silver); font-size:0.78rem; margin-bottom:8px;">—</p>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
-                    <span class="role-badge" id="user-role-badge" style="font-size:0.65rem;">—</span>
-                    <button onclick="doLogout()" style="background:transparent;border:1px solid rgba(197,160,89,0.3);color:var(--silver);border-radius:6px;padding:3px 8px;font-size:0.68rem;cursor:pointer;transition:0.2s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='rgba(197,160,89,0.3)';this.style.color='var(--silver)'">✕ Salir</button>
-                </div>
+            <div style="margin-top:auto;padding:16px;background:var(--gold-dim);border-radius:12px;border:1px solid var(--gold);font-size:0.8rem;">
+                <p style="color:var(--gold);font-weight:700;margin-bottom:4px;">SESIÓN ACTIVA</p>
+                <p id="sidebar-account-email" style="color:var(--silver);font-size:0.78rem;margin-bottom:6px;">—</p>
+                <span class="role-badge" id="user-role-badge" style="font-size:0.65rem;display:inline-block;margin-bottom:10px;">—</span>
+                <button onclick="doLogout()" style="width:100%;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);color:#ef4444;border-radius:8px;padding:8px;font-size:0.78rem;font-weight:700;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:6px;"
+                    onmouseover="this.style.background='rgba(239,68,68,0.2)';this.style.borderColor='#ef4444'"
+                    onmouseout="this.style.background='rgba(239,68,68,0.1)';this.style.borderColor='rgba(239,68,68,0.4)'">
+                    🔒 Cerrar Sesión
+                </button>
             </div>
         </aside>
 
@@ -317,9 +322,11 @@
 
 
             <section id="dashboard" class="content-section active">
-                <div class="header"><h1>Visión General</h1></div>
-                <div class="dashboard-grid">
-                    <!-- INDICADORES CLAVE -->
+                <!-- Título dinámico según rol -->
+                <div class="header"><h1 id="dashboard-title">Visión General</h1></div>
+
+                <!-- ══ DASHBOARD OPERATOR ══ -->
+                <div id="dashboard-operator" class="dashboard-grid">
                     <div class="kpi-container">
                         <div class="kpi-card">
                             <p class="kpi-label">⏳ Horas Ahorradas</p>
@@ -332,25 +339,93 @@
                             <p class="kpi-sub">Precisión de Análisis</p>
                         </div>
                     </div>
-
                     <div class="card">
                         <p class="card-title">Distribución por Rama Jurídica</p>
-                        <div id="chart-area" style="display: flex; justify-items: center; align-items: center; min-height: 250px;">
+                        <div id="chart-area" style="display:flex;justify-items:center;align-items:center;min-height:250px;">
                             <span class="empty-state">Iniciando Gráficos...</span>
                         </div>
                     </div>
-                    
                     <div class="card">
                         <p class="card-title">📅 Próximos Vencimientos</p>
                         <div id="dash-deadlines" class="empty-state"><span class="empty-icon">📅</span>Sin actividad</div>
                     </div>
-
                     <div class="card full-width">
                         <p class="card-title">📨 Entradas Recientes (API Sync)</p>
                         <table>
                             <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>VENCIMIENTO</th><th>ABOGADO</th></tr></thead>
                             <tbody id="dash-rows"><tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- ══ DASHBOARD ADMIN (AGENCIA) ══ -->
+                <div id="dashboard-admin" style="display:none;">
+
+                    <!-- KPIs de uso del producto -->
+                    <div class="kpi-container" style="margin-bottom:2rem;">
+                        <div class="kpi-card">
+                            <p class="kpi-label">📁 Casos Procesados</p>
+                            <div class="kpi-value" id="admin-kpi-casos">--</div>
+                            <p class="kpi-sub">Total en el sistema</p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">🧠 Score IA Global</p>
+                            <div class="kpi-value" id="admin-kpi-score">--</div>
+                            <p class="kpi-sub">Promedio de análisis</p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">⏳ Horas Ahorradas</p>
+                            <div class="kpi-value" id="admin-kpi-hours">--</div>
+                            <p class="kpi-sub">Productividad generada</p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">⚖️ Casos Asignados</p>
+                            <div class="kpi-value" id="admin-kpi-asignados">--</div>
+                            <p class="kpi-sub">Del total procesados</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <!-- Estado de servicios -->
+                        <div class="card">
+                            <p class="card-title">🔌 Estado de Servicios</p>
+                            <div style="display:flex;flex-direction:column;gap:12px;margin-top:0.5rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
+                                    <span style="font-size:0.82rem;color:var(--silver);">🌍 Webhook n8n</span>
+                                    <span id="admin-h-web" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
+                                    <span style="font-size:0.82rem;color:var(--silver);">📧 Gmail</span>
+                                    <span id="admin-h-gmail" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
+                                    <span style="font-size:0.82rem;color:var(--silver);">📊 Google Sheets</span>
+                                    <span id="admin-h-sheet" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
+                                    <span style="font-size:0.82rem;color:var(--silver);">🤖 Motor IA</span>
+                                    <span id="admin-h-ai" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                            </div>
+                            <button class="btn-premium" style="width:100%;margin-top:1rem;font-size:0.8rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
+                        </div>
+
+                        <!-- Distribución de casos -->
+                        <div class="card">
+                            <p class="card-title">📊 Distribución por Rama</p>
+                            <div id="admin-chart-area" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
+                                <span class="empty-state">Sin datos aún</span>
+                            </div>
+                        </div>
+
+                        <!-- Últimas actividades -->
+                        <div class="card full-width" style="grid-column:1/-1;">
+                            <p class="card-title">📋 Últimos Casos Procesados</p>
+                            <table>
+                                <thead><tr><th>FECHA</th><th>RAMA</th><th>TIPO</th><th>SCORE IA</th><th>ESTADO</th><th>HORAS AHORRADAS</th></tr></thead>
+                                <tbody id="admin-dash-rows"><tr><td colspan="6" class="empty-state">Sin actividad reciente</td></tr></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -384,8 +459,8 @@
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nombre">Nombre Completo</label>
-                        <p style="margin:-4px 0 4px;font-size:0.72rem;color:var(--gold);opacity:0.8;">⚠️ Debe coincidir exactamente con como aparece en los documentos que el cliente envía.</p>
                             <input type="text" id="new-cli-nombre" placeholder="Ej: Carlos Restrepo Muñoz">
+                            <p style="margin:5px 0 0;font-size:0.72rem;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">⚠️ Debe coincidir con como aparece en los documentos que envía.</p>
                         </div>
                         <div class="form-group" style="margin-bottom:0;">
                             <label for="new-cli-nit">NIT / RUT / Cédula</label>
@@ -555,7 +630,10 @@
                             <p class="card-title">🔐 Generar Hash de Contraseña</p>
                             <div class="form-group">
                                 <label for="hash-pass">Nueva contraseña</label>
-                                <input type="password" id="hash-pass" placeholder="Escribe la contraseña..." oninput="checkHashStrength(this.value)">
+                                <div style="position:relative;">
+                                    <input type="password" id="hash-pass" placeholder="Escribe la contraseña..." oninput="checkHashStrength(this.value)" style="padding-right:40px;">
+                                    <button type="button" onclick="togglePassVisibility('hash-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                </div>
                                 <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:6px;overflow:hidden;">
                                     <div id="hash-strength-fill" style="height:100%;border-radius:2px;width:0%;transition:width 0.3s,background 0.3s;"></div>
                                 </div>
@@ -563,7 +641,10 @@
                             </div>
                             <div class="form-group">
                                 <label for="hash-pass2">Confirmar contraseña</label>
-                                <input type="password" id="hash-pass2" placeholder="Repite la contraseña...">
+                                <div style="position:relative;">
+                                    <input type="password" id="hash-pass2" placeholder="Repite la contraseña..." style="padding-right:40px;">
+                                    <button type="button" onclick="togglePassVisibility('hash-pass2', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                </div>
                             </div>
                             <button class="btn-premium" style="width:100%" onclick="generateHashAdmin()">⚡ Generar Hash SHA-256</button>
                             <div id="hash-result-admin" style="display:none;margin-top:1rem;background:rgba(197,160,89,0.05);border:1px solid rgba(197,160,89,0.2);border-radius:10px;padding:14px;">
@@ -818,18 +899,18 @@
         // Para agregar un cliente: duplica el bloque y pega el hash
         USERS: [
             {
-                username: 'floovu_admin',
-                hash: '0afe54449556726c7eaddb40475f6fd6941f4e85416cdc4a2ccf228254cea26c',
+                username: 'Floovu_admin',
+                hash: 'PEGA_AQUI_EL_HASH_DE_TU_CONTRASEÑA',
                 role: 'admin',
                 name: 'Floovu Automation',
                 email: 'floovuai@gmail.com'
             },
             {
-                username: 'usuario_test',
-                hash: 'd11263c74b1fb6bcd55659d6aafb347ea0dd0605d809594717f1d54efac2fd99',
+                username: 'operador_test',
+                hash: 'PEGA_AQUI_EL_HASH_DE_LA_CONTRASEÑA_TEST',
                 role: 'operator',
-                name: 'Usuario test',
-                email: 'floovutest@gmail.com'
+                name: 'Usuario Test',
+                email: 'test@floovu.com'
             }
         ],
 
@@ -940,6 +1021,10 @@
             btn.textContent = 'Ingresar al Sistema';
         }
 
+        // Pestañas que ve cada rol
+        const OPERATOR_TABS = ['dashboard','asignaciones','expedientes','abogados','clientes','calendario','version'];
+        const ADMIN_TABS    = ['dashboard','config','version'];
+
         function applyRoleUI(user) {
             // Mostrar nombre y rol en sidebar
             const emailEl = document.getElementById('sidebar-account-email');
@@ -951,35 +1036,31 @@
             }
 
             // Control de pestañas por rol
+            const allowedTabs = user.role === 'admin' ? ADMIN_TABS : OPERATOR_TABS;
             const allTabs = document.querySelectorAll('.nav-item[data-tab]');
             allTabs.forEach(tab => {
                 const tabId = tab.getAttribute('data-tab');
-                if (user.role === 'admin') {
-                    // Admin ve TODO
-                    tab.style.display = 'flex';
-                } else {
-                    // Operator no ve config ni debug
-                    if (ADMIN_ONLY_TABS.includes(tabId)) {
-                        tab.style.display = 'none';
-                    } else {
-                        tab.style.display = 'flex';
-                    }
+                tab.style.display = allowedTabs.includes(tabId) ? 'flex' : 'none';
+            });
+
+            // Ocultar secciones a las que el rol no tiene acceso
+            document.querySelectorAll('.content-section').forEach(section => {
+                if (!allowedTabs.includes(section.id)) {
+                    section.style.display = 'none';
                 }
             });
 
-            // Ocultar secciones restringidas
-            if (user.role === 'operator') {
-                // Ocultar botón Procesar Gmail del operador? No — lo tienen ambos
-                // Ocultar pestaña config si logra acceder directamente
-                const configSection = document.getElementById('config');
-                if (configSection) configSection.style.display = 'none';
-            }
+            // Activar la primera pestaña permitida
+            const firstTab = document.querySelector(`.nav-item[data-tab="${allowedTabs[0]}"]`);
+            if (firstTab) firstTab.click();
 
             // Versión de Capacidades según rol
             renderCapacidadesForRole(user.role);
 
             // Iniciar el sistema
             init();
+            // Mostrar dashboard según rol
+            showDashboardForRole(user.role);
         }
 
         function renderCapacidadesForRole(role) {
@@ -1095,20 +1176,27 @@
         }
 
         document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => {
+            // Verificar que el tab está permitido para el rol actual
+            const tabId = i.dataset.tab;
+            const allowed = currentUser && currentUser.role === 'admin' ? ADMIN_TABS : OPERATOR_TABS;
+            if (!allowed.includes(tabId)) return;
+
             document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
             i.classList.add('active');
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(i.dataset.tab).classList.add('active');
+            const section = document.getElementById(tabId);
+            if (section) { section.style.display = ''; section.classList.add('active'); }
 
-            if (i.dataset.tab === 'abogados') {
+            if (tabId === 'abogados') {
                 if (lawyers.length > 0) { renderLawyers(); updateUI(); } else { loadLawyers(); }
-            } else if (i.dataset.tab === 'config') {
+            } else if (tabId === 'config') {
                 renderUsersAdmin();
                 updateUI();
-            } else if (i.dataset.tab === 'clientes') {
+            } else if (tabId === 'clientes') {
                 if (clients.length > 0) { renderClients(); } else { loadClients(); }
-            } else if (i.dataset.tab === 'dashboard' || i.dataset.tab === 'expedientes' || i.dataset.tab === 'asignaciones') {
+            } else if (tabId === 'dashboard' || tabId === 'expedientes' || tabId === 'asignaciones') {
                 loadRealData();
+                if (tabId === 'dashboard' && currentUser) showDashboardForRole(currentUser.role);
             } else {
                 updateUI();
             }
@@ -2002,7 +2090,19 @@
             setTimeout(() => el.style.display = 'none', 2500);
         }
 
-        function checkHashStrength(pass) {
+        function togglePassVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            }
+        }
+
+                function checkHashStrength(pass) {
             const fill  = document.getElementById('hash-strength-fill');
             const label = document.getElementById('hash-strength-label');
             if (!pass) { fill.style.width = '0%'; label.textContent = '—'; label.style.color = '#475569'; return; }
@@ -2048,6 +2148,103 @@
                 </div>`).join('');
         }
 
+                // ══════════════════════════════════════════
+        // DASHBOARD ADMIN — métricas de agencia
+        // ══════════════════════════════════════════
+        function showDashboardForRole(role) {
+            const opDash    = document.getElementById('dashboard-operator');
+            const adminDash = document.getElementById('dashboard-admin');
+            const title     = document.getElementById('dashboard-title');
+            if (role === 'admin') {
+                if (opDash)    opDash.style.display    = 'none';
+                if (adminDash) adminDash.style.display = 'block';
+                if (title)     title.textContent        = 'Panel de Agencia';
+                renderAdminDashboard();
+            } else {
+                if (opDash)    opDash.style.display    = '';
+                if (adminDash) adminDash.style.display = 'none';
+                if (title)     title.textContent        = 'Visión General';
+            }
+        }
+
+        function renderAdminDashboard() {
+            // KPIs desde db (datos ya cargados)
+            const total     = db.length;
+            const asignados = db.filter(c => c.lawyer && c.lawyer !== 'Pendiente').length;
+            const scores    = db.filter(c => c.score > 0).map(c => c.score);
+            const avgScore  = scores.length ? (scores.reduce((a,b) => a+b,0) / scores.length).toFixed(1) : null;
+            const totalMin  = db.reduce((acc,c) => acc + (c.ahorroMin || 0), 0);
+            const totalHrs  = totalMin > 0 ? (totalMin / 60).toFixed(1) : '0';
+
+            const set = id => v => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            set('admin-kpi-casos')(total || '0');
+            set('admin-kpi-score')(avgScore ? `${avgScore}/10` : 'N/A');
+            set('admin-kpi-hours')(`${totalHrs}h`);
+            set('admin-kpi-asignados')(total ? `${asignados}/${total}` : '0/0');
+
+            // Tabla últimos casos (sin datos privados — solo métricas)
+            const tbody = document.getElementById('admin-dash-rows');
+            if (tbody) {
+                if (!db.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Sin actividad reciente</td></tr>';
+                } else {
+                    tbody.innerHTML = db.slice(0,10).map(c => `<tr>
+                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.date)}</td>
+                        <td>${esc(c.rama)}</td>
+                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.tipo||'—')}</td>
+                        <td style="color:${c.score>0?'var(--gold)':'var(--silver)'};">${c.score > 0 ? c.score+'/10' : '—'}</td>
+                        <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:${c.status==='ASIGNADO'?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='ASIGNADO'?'#22c55e':'var(--silver)'};">${esc(c.status||'—')}</span></td>
+                        <td style="color:var(--silver);">${c.ahorroMin > 0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—'}</td>
+                    </tr>`).join('');
+                }
+            }
+
+            // Gráfico de ramas en admin-chart-area
+            const ramaCount = {};
+            db.forEach(c => { const r = c.rama||'General'; ramaCount[r] = (ramaCount[r]||0)+1; });
+            const ramaLabels = Object.keys(ramaCount);
+            const ramaData   = Object.values(ramaCount);
+            if (ramaLabels.length) {
+                const colores = ['#C9A84C','#639922','#185FA5','#993C1D','#534AB7','#0F6E56'];
+                const chartConfig = {
+                    type: 'doughnut',
+                    data: { labels: ramaLabels, datasets: [{ data: ramaData, backgroundColor: colores.slice(0, ramaLabels.length), borderWidth: 0 }] },
+                    options: { cutoutPercentage: 65, legend: { position: 'bottom', labels: { fontColor: '#e5c17b', fontSize: 16, fontStyle: 'bold', padding: 24 } }, plugins: { datalabels: { display: false } } }
+                };
+                const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=600&h=420`;
+                const adminChart = document.getElementById('admin-chart-area');
+                if (adminChart) adminChart.innerHTML = `<img src="${esc(chartUrl)}" style="max-height:340px;width:100%;margin:0 auto;display:block;">`;
+            }
+        }
+
+        async function pingEngineAdmin() {
+            const ids = ['admin-h-web','admin-h-gmail','admin-h-sheet','admin-h-ai'];
+            const set = (id, txt, color) => {
+                const el = document.getElementById(id);
+                if (el) { el.textContent = txt; el.style.color = color; }
+            };
+            ids.forEach(id => set(id, '⏳ Verificando...', 'var(--silver)'));
+            try {
+                const res = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
+                if (res.ok) {
+                    // n8n responde 200 = el workflow y todos los servicios conectados están operativos
+                    ids.forEach(id => set(id, '● Activo', '#22c55e'));
+                    logError('✓ Health check: todos los servicios operativos');
+                } else {
+                    // Respuesta con error HTTP = n8n activo pero algo falla internamente
+                    set('admin-h-web',   '● Activo', '#22c55e');
+                    set('admin-h-gmail', '⚠ Revisar', '#f97316');
+                    set('admin-h-sheet', '⚠ Revisar', '#f97316');
+                    set('admin-h-ai',    '⚠ Revisar', '#f97316');
+                    logError(`⚠️ Health check respondió ${res.status} — revisar servicios en n8n`);
+                }
+            } catch(e) {
+                // Sin respuesta = n8n caído o sin conexión
+                ids.forEach(id => set(id, '✗ Sin conexión', '#ef4444'));
+                logError(`✗ Health check falló: ${e.message}`);
+            }
+        }
+
                 function getLawyerEmail(lawyerName) {
             if (!lawyerName) return '';
             const l = lawyers.find(x => x.name === lawyerName);
@@ -2066,6 +2263,8 @@
                         logError(`⚠️ Error en carga inicial [${['abogados','casos','clientes'][i]}]: ${r.reason}`);
                     }
                 });
+                // Actualizar dashboard admin si aplica
+                if (currentUser && currentUser.role === 'admin') renderAdminDashboard();
             });
         }
     </script>
