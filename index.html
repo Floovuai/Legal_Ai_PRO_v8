@@ -618,7 +618,8 @@
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
                         const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
-                                         row['score'] || row['Score'] || '0';
+                                         row['score'] || row['Score'] || row.score || '0';
+                        // Score viene del sheet como string — parsearlo correctamente
                         const score = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
 
                         // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
@@ -697,7 +698,7 @@
 
             // KPIs
             const totalMinutos = db.reduce((acc, c) => acc + (c.ahorroMin || 0), 0);
-            const totalHours   = totalMinutos > 0 ? (totalMinutos / 60).toFixed(1) : (db.length * 2.5).toFixed(1);
+            const totalHours   = totalMinutos > 0 ? (totalMinutos / 60).toFixed(1) : '0';
             const scores       = db.filter(c => c.score > 0).map(c => c.score);
             // FASE 4: mostrar score aunque sea de un solo caso
             const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : null;
