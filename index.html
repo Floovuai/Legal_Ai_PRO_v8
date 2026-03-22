@@ -21,6 +21,12 @@
             --border: rgba(255, 255, 255, 0.08);
         }
 
+        html { font-size: 14px; }
+
+        @media (min-width: 1400px) { html { font-size: 13px; } }
+        @media (min-width: 1600px) { html { font-size: 12px; } }
+        @media (min-width: 1920px) { html { font-size: 11px; } }
+
         * { margin:0; padding:0; box-sizing:border-box; }
 
         /* F4-01: overflow:hidden removido — permite scroll en móvil y ventanas pequeñas */
@@ -68,7 +74,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
-        .header h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 2.5rem; }
+        .header h1 { font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-size: 2.5rem; font-weight: 700; letter-spacing: -0.5px; }
 
         .card { background: var(--navy-card); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; height: 100%; transition: 0.3s; }
         .card-title { font-size: 0.75rem; text-transform: uppercase; color: var(--silver); letter-spacing: 2px; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
@@ -131,12 +137,105 @@
         .toast.toast-error { border-color: #ef4444; }
         .toast.toast-ok    { border-color: var(--gold); }
 
-        /* KPI STYLES */
-        .kpi-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; grid-column: 1 / -1; margin-bottom: 2rem; }
-        .kpi-card { background: linear-gradient(145deg, #0c0f16 0%, #151a26 100%); border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem; text-align: center; border-bottom: 3px solid var(--gold); }
-        .kpi-value { font-family: 'Playfair Display', Georgia, serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); margin: 0.5rem 0; }
-        .kpi-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--silver); font-weight: 700; }
-        .kpi-sub { font-size: 0.72rem; color: var(--gold); font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.6; }
+        /* ── KPI V2 ── */
+        :root {
+            --kpi-alert: #f97316;
+            --kpi-ok: #22c55e;
+            --kpi-gold: #c5a059;
+        }
+        .kpi-card-v2 {
+            background: var(--navy-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem 1rem;
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+        .kpi-card-v2:hover {
+            border-color: rgba(197,160,89,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .kpi-card-v2::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 80px; height: 80px;
+            background: radial-gradient(circle at top right, rgba(197,160,89,0.06), transparent 70%);
+            pointer-events: none;
+        }
+        .kpi-card-v2-accent {
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: var(--gold);
+            border-radius: 0 2px 2px 0;
+        }
+        .kpi-v2-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--silver);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .kpi-v2-value {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--gold);
+            line-height: 1;
+            margin-bottom: 0.3rem;
+            letter-spacing: -1px;
+        }
+        .kpi-v2-sub {
+            font-size: 0.65rem;
+            color: var(--silver);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+        }
+        .kpi-v2-bar {
+            height: 2px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .kpi-v2-bar-fill {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 2px;
+            transition: width 1s cubic-bezier(0.16,1,0.3,1);
+        }
+
+        /* Vencimientos con alertas de color */
+        .deadline-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .deadline-item.urgente { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); }
+        .deadline-item.proximo { background: rgba(249,115,22,0.08); border-color: rgba(249,115,22,0.2); }
+        .deadline-item.normal  { background: rgba(197,160,89,0.08); border-color: rgba(197,160,89,0.15); }
+        .deadline-badge {
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+        .deadline-badge.urgente { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .deadline-badge.proximo { background: rgba(249,115,22,0.2); color: #f97316; }
+        .deadline-badge.normal  { background: rgba(197,160,89,0.15); color: var(--gold); }
 
         /* F4-02: diseño responsivo */
         /* ── NOTEBOOK 1280px ── */
@@ -324,36 +423,69 @@
                 <div class="header"><h1 id="dashboard-title">Visión General</h1></div>
 
                 <!-- ══ DASHBOARD OPERATOR ══ -->
-                <div id="dashboard-operator" class="dashboard-grid">
-                    <div class="kpi-container">
-                        <div class="kpi-card">
-                            <p class="kpi-label">⏳ Horas Ahorradas</p>
-                            <div class="kpi-value" id="kpi-hours">--</div>
-                            <p class="kpi-sub">Productividad Acumulada</p>
+                <div id="dashboard-operator">
+
+                    <!-- 4 KPIs -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+
+                        <div class="kpi-card-v2" id="kpi-card-cases">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">CASOS PROCESADOS</p>
+                            <div class="kpi-v2-value" id="kpi-total">--</div>
+                            <p class="kpi-v2-sub">Total en el sistema</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-total" style="width:100%"></div></div>
                         </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">🧠 IA Score Promedio</p>
-                            <div class="kpi-value" id="kpi-score">--</div>
-                            <p class="kpi-sub">Precisión de Análisis</p>
+
+                        <div class="kpi-card-v2" id="kpi-card-pending">
+                            <div class="kpi-card-v2-accent" style="background:var(--kpi-alert)"></div>
+                            <p class="kpi-v2-label">PENDIENTES ASIGNACIÓN</p>
+                            <div class="kpi-v2-value" id="kpi-pending" style="color:var(--kpi-alert)">--</div>
+                            <p class="kpi-v2-sub">Requieren acción</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-pending" style="width:0%;background:var(--kpi-alert)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:var(--kpi-ok)"></div>
+                            <p class="kpi-v2-label">HORAS AHORRADAS</p>
+                            <div class="kpi-v2-value" id="kpi-hours" style="color:var(--kpi-ok)">--</div>
+                            <p class="kpi-v2-sub">Productividad IA</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-hours" style="width:80%;background:var(--kpi-ok)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">IA SCORE PROMEDIO</p>
+                            <div class="kpi-v2-value" id="kpi-score">--</div>
+                            <p class="kpi-v2-sub">Precisión de análisis</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-score" style="width:80%"></div></div>
                         </div>
                     </div>
+
+                    <!-- Fila central -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+
+                        <div class="card">
+                            <p class="card-title">Distribución por Rama Jurídica</p>
+                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
+                                <span class="empty-state">Iniciando Gráficos...</span>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <p class="card-title">⚠️ Próximos Vencimientos</p>
+                            <div id="dash-deadlines" class="empty-state"><span class="empty-icon">📅</span>Sin actividad</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla recientes -->
                     <div class="card">
-                        <p class="card-title">Distribución por Rama Jurídica</p>
-                        <div id="chart-area" style="display:flex;justify-items:center;align-items:center;min-height:250px;">
-                            <span class="empty-state">Iniciando Gráficos...</span>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <p class="card-title">📅 Próximos Vencimientos</p>
-                        <div id="dash-deadlines" class="empty-state"><span class="empty-icon">📅</span>Sin actividad</div>
-                    </div>
-                    <div class="card full-width">
-                        <p class="card-title">📨 Entradas Recientes (API Sync)</p>
+                        <p class="card-title">📡 Entradas Recientes — Procesamiento IA</p>
                         <table>
                             <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>VENCIMIENTO</th><th>ABOGADO</th></tr></thead>
                             <tbody id="dash-rows"><tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
                         </table>
                     </div>
+
                 </div>
 
                 <!-- ══ DASHBOARD ADMIN (AGENCIA) ══ -->
@@ -1330,6 +1462,8 @@
                 el('cal-content').innerHTML     = `<tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr>`;
                 el('kpi-hours').innerText       = '0h';
                 el('kpi-score').innerText       = '—';
+                el('kpi-total').innerText       = '0';
+                el('kpi-pending').innerText     = '0';
                 return;
             }
 
@@ -1337,10 +1471,22 @@
             const totalMinutos = db.reduce((acc, c) => acc + (c.ahorroMin || 0), 0);
             const totalHours   = totalMinutos > 0 ? (totalMinutos / 60).toFixed(1) : '0';
             const scores       = db.filter(c => c.score > 0).map(c => c.score);
-            // FASE 4: mostrar score aunque sea de un solo caso
             const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : null;
-            el('kpi-hours').innerText = `${totalHours}h`;
-            el('kpi-score').innerText = avgScore ? `${avgScore}/10` : 'N/A';
+            const totalCases   = db.length;
+            const pendingCases = db.filter(c => c.status === 'PENDIENTE').length;
+
+            el('kpi-hours').innerText   = `${totalHours}h`;
+            el('kpi-score').innerText   = avgScore ? `${avgScore}/10` : 'N/A';
+            el('kpi-total').innerText   = totalCases;
+            el('kpi-pending').innerText = pendingCases;
+
+            // Barras de progreso KPIs
+            const scoreBar = document.getElementById('kpi-bar-score');
+            const pendBar  = document.getElementById('kpi-bar-pending');
+            const hoursBar = document.getElementById('kpi-bar-hours');
+            if (scoreBar) scoreBar.style.width = avgScore ? `${(parseFloat(avgScore)/10)*100}%` : '0%';
+            if (pendBar)  pendBar.style.width  = totalCases ? `${(pendingCases/totalCases)*100}%` : '0%';
+            if (hoursBar) hoursBar.style.width = totalHours > 0 ? `${Math.min(parseFloat(totalHours)/20*100, 100)}%` : '0%';
 
             // Gráfico rama jurídica
             const ramaCount = {};
@@ -1357,10 +1503,10 @@
             if (el('chart-area').dataset.sig !== chartSig) {
                 el('chart-area').dataset.sig = chartSig;
                 const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}&w=600&h=420`;
-                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:340px;width:100%;margin:0 auto;display:block;">`;
+                el('chart-area').innerHTML = `<img src="${chartUrl}" style="max-height:300px;width:100%;margin:0 auto;display:block;">`;
             }
 
-            // FASE 6: entradas recientes — 5 columnas incluyendo Abogado
+            // Entradas recientes
             el('dash-rows').innerHTML = db.slice(0, 5).map(c =>
                 `<tr>
                     <td>${esc(c.date)}</td>
@@ -1372,31 +1518,35 @@
                 </tr>`
             ).join('');
 
-            // FASE 5: vencimientos — acepta YYYY-MM-DD y DD/MM/YYYY y texto libre
+            // Vencimientos con alertas de color
             function parseVenc(v) {
                 if (!v || v === 'S/D' || v === 'N/A') return null;
-                // YYYY-MM-DD
                 if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-                // DD/MM/YYYY → YYYY-MM-DD para ordenar
                 const m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
                 if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-                // Texto como "27 de marzo de 2026" — mostrar tal cual, sin ordenar
                 return v;
             }
+            const today = new Date(); today.setHours(0,0,0,0);
             const conVenc = db
                 .map(c => ({ ...c, vencSort: parseVenc(c.venc) }))
                 .filter(c => c.vencSort)
                 .sort((a,b) => (a.vencSort > b.vencSort ? 1 : -1));
 
             if (conVenc.length) {
-                el('dash-deadlines').innerHTML = conVenc.slice(0, 3).map(c =>
-                    `<div style="padding:0.75rem 1rem;background:rgba(212,175,55,0.08);border-radius:8px;border-left:3px solid var(--gold);margin-bottom:8px;">
-                        <strong style="color:var(--gold);">${esc(c.venc)}</strong>
-                        <span style="color:var(--silver);font-size:0.8rem;margin-left:8px;">${esc(c.partes)}</span>
-                    </div>`
-                ).join('');
+                el('dash-deadlines').innerHTML = conVenc.slice(0, 5).map(c => {
+                    const diff = c.vencSort ? Math.ceil((new Date(c.vencSort) - today) / 86400000) : 99;
+                    const level = diff <= 3 ? 'urgente' : diff <= 10 ? 'proximo' : 'normal';
+                    const badge = diff <= 0 ? 'VENCIDO' : diff <= 3 ? `${diff}d` : diff <= 10 ? `${diff} días` : c.venc;
+                    return `<div class="deadline-item ${level}">
+                        <span class="deadline-badge ${level}">${esc(badge)}</span>
+                        <div style="min-width:0;flex:1;">
+                            <p style="margin:0;font-size:0.82rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.partes)}</p>
+                            <p style="margin:2px 0 0;font-size:0.7rem;color:var(--silver);">${esc(c.rama)} · ${esc(c.tipo || '—')}</p>
+                        </div>
+                    </div>`;
+                }).join('');
             } else {
-                el('dash-deadlines').innerHTML = `<span class="empty-icon">📅</span><span style="color:var(--silver)">Sin vencimientos próximos</span>`;
+                el('dash-deadlines').innerHTML = `<div style="text-align:center;padding:2rem;color:var(--silver);font-size:0.85rem;opacity:0.5;">Sin vencimientos próximos</div>`;
             }
 
             // Agenda Judicial
@@ -1415,9 +1565,8 @@
                 el('cal-content').innerHTML = `<tr><td colspan="6" class="empty-state">No hay vencimientos con fecha definida</td></tr>`;
             }
 
-            // FASE 1: Asignaciones — dropdown espera a que lawyers esté cargado
+            // Asignaciones
             const pend = db.filter(c => c.status === 'PENDIENTE');
-            // FIX-CACHE: getElementById directo para elementos que cambian con navegación
             const badge = document.getElementById('asig-badge');
             badge.innerText = pend.length;
             badge.style.display = pend.length > 0 ? 'inline-block' : 'none';
