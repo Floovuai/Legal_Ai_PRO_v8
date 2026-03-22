@@ -1122,7 +1122,7 @@
         // FIX-TIMEOUT: AbortController con 15s para evitar requests colgados
         async function authFetch(url, options = {}) {
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 15000);
+            const timer = setTimeout(() => controller.abort(), 60000);
             const headers = {
                 'Content-Type': 'application/json',
                 'x-floovu-secret': API_SECRET,
@@ -1568,19 +1568,13 @@
                     body: JSON.stringify({ email: currentUser ? currentUser.email : '' })
                 });
                 if (res.ok) {
-                    const txt = await res.text();
-                    const realCase = txt ? JSON.parse(txt) : null;
-                    if (realCase && realCase.partes) {
-                        logError(`✓ Caso detectado: ${realCase.partes}`);
-                        // Deduplicar por token antes de insertar (F2-06)
-                        const exists = db.some(c => c.token === (realCase.token || realCase.messageId));
-                        if (!exists) {
-                            db.unshift(realCase);
-                        }
-                        updateUI();
-                    } else {
-                        logError("Escaneo finalizado. Sin casos nuevos.");
-                    }
+                    // El pipeline corre async en n8n — esperamos hasta 30s y recargamos datos
+                    logError('✓ Escaneo iniciado. Procesando en segundo plano...');
+                    showToast('Gmail procesándose. Los casos nuevos aparecerán en segundos.', 'ok');
+                    setTimeout(async () => {
+                        await loadRealData();
+                        logError('✓ Datos actualizados.');
+                    }, 8000);
                 } else {
                     logError(`Error Sync: ${res.status}`);
                 }
