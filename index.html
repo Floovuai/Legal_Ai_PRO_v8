@@ -768,11 +768,11 @@
             border: 1px solid rgba(201,168,76,0.35);
             border-radius: 10px;
             padding: 13px;
-            font-size: 0.68rem;
+            font-size: 0.82rem;
             font-weight: 700;
             font-family: 'Plus Jakarta Sans', sans-serif;
             cursor: pointer;
-            letter-spacing: 4px;
+            letter-spacing: 1px;
             text-transform: uppercase;
             margin-top: 1.25rem;
             transition: all 0.3s;
@@ -829,11 +829,15 @@
                 }
             }
 
-            // Registrar esta sesión
+            // Registrar esta sesión con perfil completo
             await set(sessionRef, {
-                token:    SESSION_TOKEN,
-                lastSeen: Date.now(),
-                userAgent: navigator.userAgent.substring(0, 80)
+                token:     SESSION_TOKEN,
+                lastSeen:  Date.now(),
+                loginTime: Date.now(),
+                userAgent: navigator.userAgent.substring(0, 80),
+                name:      (window._sessionProfile && window._sessionProfile.name)  || username,
+                email:     (window._sessionProfile && window._sessionProfile.email) || '',
+                role:      (window._sessionProfile && window._sessionProfile.role)  || '',
             });
 
             // Heartbeat cada 15 segundos
@@ -841,15 +845,18 @@
                 // Verificar que nuestra sesión sigue siendo la activa
                 const snap = await get(sessionRef);
                 if (snap.exists() && snap.val().token !== SESSION_TOKEN) {
-                    // Nos expulsaron desde otro dispositivo
                     clearInterval(heartbeatInterval);
                     window.firebaseHandleExpulsion();
                     return;
                 }
                 await set(sessionRef, {
-                    token:    SESSION_TOKEN,
-                    lastSeen: Date.now(),
-                    userAgent: navigator.userAgent.substring(0, 80)
+                    token:     SESSION_TOKEN,
+                    lastSeen:  Date.now(),
+                    loginTime: snap.val().loginTime || Date.now(),
+                    userAgent: navigator.userAgent.substring(0, 80),
+                    name:      (window._sessionProfile && window._sessionProfile.name)  || username,
+                    email:     (window._sessionProfile && window._sessionProfile.email) || '',
+                    role:      (window._sessionProfile && window._sessionProfile.role)  || '',
                 });
             }, 15000);
 
@@ -1675,6 +1682,8 @@
                 const btn = document.getElementById('login-btn');
                 if (btn) { btn.disabled = true; btn.textContent = 'Verificando sesión...'; }
                 try {
+                    // Pasar perfil completo a Firebase
+                    window._sessionProfile = { name: user.name, email: user.email || '', role: user.role };
                     const result = await window.firebaseRegisterSession(user.username);
                     if (result.blocked) {
                         const errEl = document.getElementById('login-error');
