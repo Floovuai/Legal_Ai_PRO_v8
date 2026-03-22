@@ -974,7 +974,17 @@
 
             <section id="dashboard" class="content-section active">
                 <!-- Título dinámico según rol -->
-                <div class="header"><h1 id="dashboard-title">Visión General</h1></div>
+                <div class="header">
+                    <h1 id="dashboard-title">Visión General</h1>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <button class="btn-outline" style="height:36px;font-size:0.78rem;padding:0 14px;color:#22c55e;border-color:rgba(34,197,94,0.35);" onclick="exportClientsExcel()" title="Exportar clientes a Excel">
+                            📊 Exportar Excel
+                        </button>
+                        <button class="btn-outline" style="height:36px;font-size:0.78rem;padding:0 14px;color:var(--gold-bright);border-color:rgba(232,204,122,0.35);" onclick="exportClientsPDF()" title="Exportar clientes a PDF">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
 
                 <!-- ══ DASHBOARD OPERATOR ══ -->
                 <div id="dashboard-operator">
@@ -1145,6 +1155,8 @@
                             <p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando sesiones...</p>
                         </div>
                     </div>
+
+                </div><!-- /dashboard-admin -->
             </section>
 
             <section id="asignaciones" class="content-section">
@@ -1208,6 +1220,8 @@
                         <div style="display:flex;gap:8px;align-items:center;">
                             <input type="text" id="cli-search" placeholder="Buscar cliente..." style="width:200px;height:34px;font-size:0.8rem;" oninput="filterClients(this.value)">
                             <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;" onclick="loadClients()">↻ Recargar</button>
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;color:#22c55e;border-color:rgba(34,197,94,0.4);" onclick="exportClientsExcel()" title="Exportar Excel">📊 Excel</button>
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;color:#e8cc7a;border-color:rgba(232,204,122,0.4);" onclick="exportClientsPDF()" title="Exportar PDF">📄 PDF</button>
                         </div>
                     </div>
                     <div id="client-list-container">
@@ -2638,6 +2652,194 @@
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
+        }
+
+        // ══════════════════════════════════════════
+        // EXPORTAR CLIENTES — Excel y PDF
+        // ══════════════════════════════════════════
+
+        function exportClientsExcel() {
+            if (!allClientRows || !allClientRows.length) {
+                showToast('No hay clientes para exportar.', 'error'); return;
+            }
+            // Cabeceras
+            const headers = ['Nombre', 'NIT / Cédula', 'Email', 'Teléfono', 'Abogado Asignado', 'Estado', 'Origen', 'Notas'];
+
+            // Buscar casos relacionados por nombre de cliente
+            function getCasosCliente(nombre) {
+                return db.filter(c => c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()));
+            }
+
+            // Filas de clientes
+            const rows = allClientRows.map(c => [
+                c.nombre   || '—',
+                c.nit      || '—',
+                c.email    || '—',
+                c.telefono || '—',
+                c.abogado  || '—',
+                c.estado   || (c._source === 'directorio' ? 'DIRECTORIO' : '—'),
+                c._source  === 'directorio' ? 'Directorio' : 'Registro',
+                c.notas    || '—',
+            ]);
+
+            // Separador + sección de casos
+            const casoRows = [];
+            allClientRows.forEach(c => {
+                const casos = getCasosCliente(c.nombre);
+                casos.forEach(caso => {
+                    casoRows.push([
+                        c.nombre || '—',
+                        caso.date || '—',
+                        caso.rama || '—',
+                        caso.tipo || '—',
+                        caso.partes || '—',
+                        caso.lawyer || '—',
+                        caso.venc || '—',
+                        caso.score > 0 ? caso.score + '/10' : '—',
+                        caso.status || '—',
+                        caso.ahorroMin > 0 ? Math.round(caso.ahorroMin/60*10)/10 + 'h' : '—',
+                    ]);
+                });
+            });
+
+            // Construir CSV compatible con Excel (UTF-8 BOM)
+            const sep = ',';
+            const q   = v => '"' + String(v).replace(/"/g, '""') + '"';
+            let csv    = '﻿'; // BOM para Excel
+
+            csv += '=== DIRECTORIO DE CLIENTES ===
+';
+            csv += headers.map(q).join(sep) + '
+';
+            rows.forEach(r => { csv += r.map(q).join(sep) + '
+'; });
+
+            csv += '
+=== CASOS POR CLIENTE ===
+';
+            csv += ['Cliente','Fecha','Rama','Tipo','Partes','Abogado','Vencimiento','Score IA','Estado','Tiempo IA'].map(q).join(sep) + '
+';
+            if (casoRows.length) {
+                casoRows.forEach(r => { csv += r.map(q).join(sep) + '
+'; });
+            } else {
+                csv += q('Sin casos registrados') + '
+';
+            }
+
+            // Descargar
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            a.download = `Floovu_Clientes_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('✓ Exportado como Excel/CSV', 'ok');
+        }
+
+        function exportClientsPDF() {
+            if (!allClientRows || !allClientRows.length) {
+                showToast('No hay clientes para exportar.', 'error'); return;
+            }
+
+            function getCasosCliente(nombre) {
+                return db.filter(c => c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()));
+            }
+
+            const now     = new Date().toLocaleDateString('es-CO', { dateStyle: 'long' });
+            const gold    = '#C9A84C';
+            const dark    = '#060a14';
+            const silver  = '#7a8fa6';
+
+            let html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+            <title>Clientes — Floovu Legal AI PRO v8</title>
+            <style>
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; background:#fff; color:#111; font-size:11px; }
+                .cover { background:${dark}; color:#fff; padding:48px 40px 36px; margin-bottom:24px; }
+                .cover h1 { font-size:28px; font-weight:800; color:${gold}; margin-bottom:4px; letter-spacing:1px; }
+                .cover p  { font-size:12px; color:${silver}; margin-top:6px; }
+                .cover .meta { margin-top:16px; font-size:11px; color:rgba(255,255,255,0.5); }
+                .section-title { font-size:13px; font-weight:800; color:${dark}; border-left:4px solid ${gold}; padding-left:10px; margin:24px 0 12px; text-transform:uppercase; letter-spacing:1px; }
+                table { width:100%; border-collapse:collapse; margin-bottom:24px; font-size:10px; }
+                th { background:${dark}; color:${gold}; padding:8px 10px; text-align:left; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; }
+                td { padding:7px 10px; border-bottom:1px solid #eee; vertical-align:top; }
+                tr:nth-child(even) td { background:#f9f9f9; }
+                .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:700; text-transform:uppercase; }
+                .badge-gold  { background:rgba(201,168,76,0.12); color:#8a6a1a; }
+                .badge-green { background:rgba(34,197,94,0.12);  color:#166534; }
+                .badge-grey  { background:#f0f0f0; color:#555; }
+                .client-block { margin-bottom:20px; break-inside:avoid; }
+                .client-header { background:#f5f0e8; border-left:3px solid ${gold}; padding:10px 14px; margin-bottom:8px; }
+                .client-header h3 { font-size:13px; font-weight:700; color:${dark}; }
+                .client-header p  { font-size:10px; color:${silver}; margin-top:2px; }
+                .no-casos { color:${silver}; font-style:italic; padding:6px 10px; font-size:10px; }
+                .footer { margin-top:32px; padding-top:12px; border-top:1px solid #ddd; font-size:9px; color:${silver}; text-align:center; }
+                @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+            </style></head><body>
+            <div class="cover">
+                <h1>⚖ Floovu Legal AI PRO v8</h1>
+                <p>Reporte Completo de Clientes</p>
+                <div class="meta">Generado el ${now} · ${allClientRows.length} cliente${allClientRows.length !== 1 ? 's' : ''} registrado${allClientRows.length !== 1 ? 's' : ''}</div>
+            </div>
+
+            <div style="padding:0 32px 32px;">
+
+            <div class="section-title">Directorio de Clientes</div>
+            <table>
+                <thead><tr>
+                    <th>Nombre</th><th>NIT / Cédula</th><th>Email</th>
+                    <th>Teléfono</th><th>Abogado</th><th>Estado</th>
+                </tr></thead>
+                <tbody>
+                ${allClientRows.map(c => `<tr>
+                    <td style="font-weight:600;">${c.nombre||'—'}</td>
+                    <td>${c.nit||'—'}</td>
+                    <td>${c.email||'—'}</td>
+                    <td>${c.telefono||'—'}</td>
+                    <td>${c.abogado||'—'}</td>
+                    <td><span class="badge ${c.estado==='ASIGNADO'?'badge-green':c._source==='directorio'?'badge-gold':'badge-grey'}">${c.estado||(c._source==='directorio'?'Directorio':'—')}</span></td>
+                </tr>`).join('')}
+                </tbody>
+            </table>
+
+            <div class="section-title">Casos por Cliente</div>
+            ${allClientRows.map(c => {
+                const casos = getCasosCliente(c.nombre);
+                return `<div class="client-block">
+                    <div class="client-header">
+                        <h3>${c.nombre||'—'}</h3>
+                        <p>${c.email||''} ${c.nit ? '· ' + c.nit : ''} ${c.abogado ? '· Abogado: ' + c.abogado : ''}</p>
+                    </div>
+                    ${casos.length ? `<table>
+                        <thead><tr>
+                            <th>Fecha</th><th>Rama</th><th>Tipo</th>
+                            <th>Abogado</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th>
+                        </tr></thead>
+                        <tbody>
+                        ${casos.map(caso => `<tr>
+                            <td>${caso.date||'—'}</td>
+                            <td>${caso.rama||'—'}</td>
+                            <td>${caso.tipo||'—'}</td>
+                            <td>${caso.lawyer||'—'}</td>
+                            <td style="color:${caso.venc&&caso.venc!=='S/D'?'#c0392b':'#555'};">${caso.venc||'—'}</td>
+                            <td style="font-weight:700;color:${caso.score>0?'#8a6a1a':'#555'};">${caso.score>0?caso.score+'/10':'—'}</td>
+                            <td><span class="badge ${caso.status==='ASIGNADO'?'badge-green':'badge-grey'}">${caso.status||'—'}</span></td>
+                        </tr>`).join('')}
+                        </tbody>
+                    </table>` : '<p class="no-casos">Sin casos registrados para este cliente.</p>'}
+                </div>`;
+            }).join('')}
+
+            <div class="footer">Floovu Legal AI PRO v8 · Reporte confidencial · ${now}</div>
+            </div></body></html>`;
+
+            const win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+            win.onload = () => { win.focus(); win.print(); };
+            showToast('✓ PDF listo para imprimir / guardar', 'ok');
         }
 
         async function addClient() {
