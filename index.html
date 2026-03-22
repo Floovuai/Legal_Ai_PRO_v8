@@ -976,11 +976,11 @@
                 <div class="header">
                     <h1 id="dashboard-title">Visión General</h1>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <button class="btn-outline" style="height:36px;font-size:0.78rem;padding:0 14px;color:#22c55e;border-color:rgba(34,197,94,0.35);" onclick="exportClientsExcel()" title="Exportar clientes a Excel">
-                            📊 Exportar Excel
+                        <button class="btn-outline" style="height:34px;font-size:0.76rem;padding:0 12px;color:#22c55e;border-color:rgba(34,197,94,0.35);gap:5px;display:flex;align-items:center;" onclick="exportClientsExcel()">
+                            📊 Excel
                         </button>
-                        <button class="btn-outline" style="height:36px;font-size:0.78rem;padding:0 14px;color:var(--gold-bright);border-color:rgba(232,204,122,0.35);" onclick="exportClientsPDF()" title="Exportar clientes a PDF">
-                            📄 Exportar PDF
+                        <button class="btn-outline" style="height:34px;font-size:0.76rem;padding:0 12px;color:var(--gold-bright);border-color:rgba(232,204,122,0.35);gap:5px;display:flex;align-items:center;" onclick="exportClientsPDF()">
+                            📄 PDF
                         </button>
                     </div>
                 </div>
@@ -2639,174 +2639,312 @@
         // EXPORTAR CLIENTES — Excel y PDF
         // ══════════════════════════════════════════
 
+        // ══════════════════════════════════════════
+        // EXPORTAR — según perfil
+        // Admin:    Panel de Agencia + Configuración
+        // Operador: Todas sus pestañas
+        // ══════════════════════════════════════════
+
         function exportClientsExcel() {
-            if (!allClientRows || !allClientRows.length) {
-                showToast('No hay clientes para exportar.', 'error'); return;
-            }
-            const headers = ['Nombre', 'NIT / Cédula', 'Email', 'Teléfono', 'Abogado Asignado', 'Estado', 'Origen', 'Notas'];
-            const NL  = '\n';
-            const sep = ',';
-            const q   = function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
-
-            function getCasosCliente(nombre) {
-                return db.filter(function(c) { return c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()); });
-            }
-
-            const rows = allClientRows.map(function(c) { return [
-                c.nombre   || '—',
-                c.nit      || '—',
-                c.email    || '—',
-                c.telefono || '—',
-                c.abogado  || '—',
-                c.estado   || (c._source === 'directorio' ? 'DIRECTORIO' : '—'),
-                c._source  === 'directorio' ? 'Directorio' : 'Registro',
-                c.notas    || '—',
-            ]; });
-
-            const casoRows = [];
-            allClientRows.forEach(function(c) {
-                const casos = getCasosCliente(c.nombre);
-                casos.forEach(function(caso) {
-                    casoRows.push([
-                        c.nombre || '—',
-                        caso.date || '—',
-                        caso.rama || '—',
-                        caso.tipo || '—',
-                        caso.partes || '—',
-                        caso.lawyer || '—',
-                        caso.venc || '—',
-                        caso.score > 0 ? caso.score + '/10' : '—',
-                        caso.status || '—',
-                        caso.ahorroMin > 0 ? Math.round(caso.ahorroMin/60*10)/10 + 'h' : '—',
-                    ]);
-                });
-            });
-
+            var isAdmin = currentUser && currentUser.role === 'admin';
+            var NL = '\n', sep = ',';
+            var q  = function(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; };
             var csv = '\uFEFF';
-            csv += '=== DIRECTORIO DE CLIENTES ===' + NL;
-            csv += headers.map(q).join(sep) + NL;
-            rows.forEach(function(r) { csv += r.map(q).join(sep) + NL; });
-            csv += NL + '=== CASOS POR CLIENTE ===' + NL;
-            csv += ['Cliente','Fecha','Rama','Tipo','Partes','Abogado','Vencimiento','Score IA','Estado','Tiempo IA'].map(q).join(sep) + NL;
-            if (casoRows.length) {
-                casoRows.forEach(function(r) { csv += r.map(q).join(sep) + NL; });
+            var filename = '';
+
+            if (isAdmin) {
+                // ── ADMIN: Panel de Agencia + Configuración ──
+                if (!db || !db.length) { showToast('Sin datos para exportar.', 'error'); return; }
+
+                var total     = db.length;
+                var asignados = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
+                var scores    = db.filter(function(c){ return c.score > 0; }).map(function(c){ return c.score; });
+                var avgScore  = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
+                var totalMin  = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); }, 0);
+                var hrsStr    = totalMin > 0 ? (totalMin/60).toFixed(1)+'h' : '0h';
+                var ramaCount = {};
+                db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
+
+                // KPIs
+                csv += '=== PANEL DE AGENCIA — FLOOVU LEGAL AI PRO v8 ===' + NL;
+                csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
+                csv += '=== KPIs ===' + NL;
+                csv += [q('Métrica'), q('Valor')].join(sep) + NL;
+                csv += [q('Total de casos'),        q(total)].join(sep) + NL;
+                csv += [q('Casos asignados'),        q(asignados)].join(sep) + NL;
+                csv += [q('Casos pendientes'),       q(total - asignados)].join(sep) + NL;
+                csv += [q('Score IA promedio'),      q(avgScore + '/10')].join(sep) + NL;
+                csv += [q('Horas ahorradas por IA'), q(hrsStr)].join(sep) + NL + NL;
+
+                // Distribución por rama
+                csv += '=== DISTRIBUCIÓN POR RAMA ===' + NL;
+                csv += [q('Rama'), q('Casos'), q('Porcentaje')].join(sep) + NL;
+                Object.keys(ramaCount).forEach(function(r) {
+                    csv += [q(r), q(ramaCount[r]), q(Math.round(ramaCount[r]/total*100)+'%')].join(sep) + NL;
+                });
+                csv += NL;
+
+                // Registro completo de casos
+                csv += '=== REGISTRO DE CASOS ===' + NL;
+                csv += [q('Fecha'),q('Rama'),q('Tipo'),q('Abogado'),q('Vencimiento'),q('Score IA'),q('Estado'),q('Tiempo IA')].join(sep) + NL;
+                db.forEach(function(c) {
+                    csv += [
+                        q(c.date), q(c.rama), q(c.tipo||'—'),
+                        q(c.lawyer||'Pendiente'), q(c.venc||'—'),
+                        q(c.score>0 ? c.score+'/10' : '—'),
+                        q(c.status||'—'),
+                        q(c.ahorroMin>0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—')
+                    ].join(sep) + NL;
+                });
+                csv += NL;
+
+                // Configuración: abogados del directorio
+                csv += '=== DIRECTORIO DE ABOGADOS ===' + NL;
+                csv += [q('Nombre'),q('Email'),q('Especialidad')].join(sep) + NL;
+                if (lawyers && lawyers.length) {
+                    lawyers.forEach(function(l) {
+                        csv += [q(l.name||'—'), q(l.email||'—'), q(l.spec||l.especialidad||'—')].join(sep) + NL;
+                    });
+                } else {
+                    csv += q('Sin abogados registrados') + NL;
+                }
+
+                filename = 'Floovu_Agencia_' + new Date().toISOString().slice(0,10) + '.csv';
+
             } else {
-                csv += q('Sin casos registrados') + NL;
+                // ── OPERADOR: todas sus pestañas ──
+                var opName   = currentUser && currentUser.name;
+                var opEmail  = currentUser && currentUser.email;
+                var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
+                var misExpedientes = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
+
+                csv += '=== REPORTE DE OPERADOR — FLOOVU LEGAL AI PRO v8 ===' + NL;
+                csv += 'Operador: ' + (opName||'—') + ' | Email: ' + (opEmail||'—') + NL;
+                csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
+
+                // Resumen dashboard
+                var scores2   = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var avgScore2 = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
+                var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
+                csv += '=== DASHBOARD — MIS MÉTRICAS ===' + NL;
+                csv += [q('Métrica'),q('Valor')].join(sep) + NL;
+                csv += [q('Casos asignados'), q(misCasos.length)].join(sep) + NL;
+                csv += [q('Score IA promedio'), q(avgScore2+'/10')].join(sep) + NL;
+                csv += [q('Horas ahorradas'), q(totalMin2>0?(totalMin2/60).toFixed(1)+'h':'0h')].join(sep) + NL + NL;
+
+                // Expedientes / Registro Legal
+                csv += '=== REGISTRO LEGAL — MIS CASOS ===' + NL;
+                csv += [q('Token'),q('Fecha'),q('Rama'),q('Partes'),q('Tipo'),q('Vencimiento'),q('Score IA'),q('Estado'),q('Tiempo IA')].join(sep) + NL;
+                misExpedientes.forEach(function(c) {
+                    csv += [
+                        q(c.token||'—'), q(c.date||'—'), q(c.rama||'—'),
+                        q(c.partes||'—'), q(c.tipo||'—'), q(c.venc||'—'),
+                        q(c.score>0?c.score+'/10':'—'), q(c.status||'—'),
+                        q(c.ahorroMin>0?Math.round(c.ahorroMin/60*10)/10+'h':'—')
+                    ].join(sep) + NL;
+                });
+                csv += NL;
+
+                // Clientes asociados a sus casos
+                csv += '=== MIS CLIENTES ===' + NL;
+                csv += [q('Nombre'),q('Email'),q('Teléfono'),q('NIT / Cédula'),q('Estado'),q('Notas')].join(sep) + NL;
+                var clientesVistos = {};
+                misCasos.forEach(function(c) {
+                    if (!allClientRows) return;
+                    allClientRows.forEach(function(cl) {
+                        if (cl.nombre && c.partes && c.partes.toLowerCase().includes(cl.nombre.toLowerCase()) && !clientesVistos[cl.nombre]) {
+                            clientesVistos[cl.nombre] = true;
+                            csv += [
+                                q(cl.nombre||'—'), q(cl.email||'—'), q(cl.telefono||'—'),
+                                q(cl.nit||'—'), q(cl.estado||'—'), q(cl.notas||'—')
+                            ].join(sep) + NL;
+                        }
+                    });
+                });
+                csv += NL;
+
+                // Agenda judicial de sus casos
+                csv += '=== AGENDA JUDICIAL — MIS VENCIMIENTOS ===' + NL;
+                csv += [q('Fecha'),q('Partes'),q('Rama'),q('Tipo'),q('Abogado'),q('Vencimiento')].join(sep) + NL;
+                var conVenc = misCasos.filter(function(c){ return c.venc && c.venc !== 'S/D' && c.venc !== 'N/A'; });
+                if (conVenc.length) {
+                    conVenc.forEach(function(c) {
+                        csv += [q(c.date||'—'),q(c.partes||'—'),q(c.rama||'—'),q(c.tipo||'—'),q(c.lawyer||'—'),q(c.venc||'—')].join(sep) + NL;
+                    });
+                } else {
+                    csv += q('Sin vencimientos registrados') + NL;
+                }
+
+                filename = 'Floovu_Operador_' + (opName||'').replace(/\s+/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.csv';
             }
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement('a');
-            a.href     = url;
-            a.download = 'Floovu_Clientes_' + new Date().toISOString().slice(0,10) + '.csv';
-            a.click();
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement('a');
+            a.href = url; a.download = filename; a.click();
             URL.revokeObjectURL(url);
-            showToast('✓ Exportado como Excel/CSV', 'ok');
+            showToast('✓ Exportado correctamente', 'ok');
         }
 
-                function exportClientsPDF() {
-            if (!allClientRows || !allClientRows.length) {
-                showToast('No hay clientes para exportar.', 'error'); return;
+        function exportClientsPDF() {
+            var isAdmin = currentUser && currentUser.role === 'admin';
+            var now     = new Date().toLocaleDateString('es-CO', { dateStyle: 'long' });
+            var G = '#C9A84C', D = '#060a14', S = '#7a8fa6';
+
+            var css = '<style>*{margin:0;padding:0;box-sizing:border-box;}' +
+                'body{font-family:Segoe UI,Arial,sans-serif;color:#111;font-size:11px;}' +
+                '.cover{background:' + D + ';color:#fff;padding:40px;margin-bottom:20px;}' +
+                '.cover h1{font-size:24px;font-weight:800;color:' + G + ';margin-bottom:4px;}' +
+                '.cover p{font-size:11px;color:' + S + ';margin-top:4px;}' +
+                '.sec{font-size:12px;font-weight:800;color:' + D + ';border-left:4px solid ' + G + ';padding-left:10px;margin:20px 0 10px;text-transform:uppercase;letter-spacing:1px;}' +
+                'table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:10px;}' +
+                'th{background:' + D + ';color:' + G + ';padding:7px 10px;text-align:left;font-size:9px;letter-spacing:1px;text-transform:uppercase;}' +
+                'td{padding:6px 10px;border-bottom:1px solid #eee;}' +
+                'tr:nth-child(even) td{background:#f9f9f9;}' +
+                '.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}' +
+                '.kpi{background:#f5f0e8;border-left:3px solid ' + G + ';padding:12px;border-radius:4px;}' +
+                '.kpi-val{font-size:20px;font-weight:800;color:' + D + ';}' +
+                '.kpi-lbl{font-size:9px;color:' + S + ';text-transform:uppercase;letter-spacing:1px;margin-top:2px;}' +
+                '.badge-green{background:rgba(34,197,94,0.12);color:#166534;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;}' +
+                '.badge-gold{background:rgba(201,168,76,0.12);color:#8a6a1a;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;}' +
+                '.badge-grey{background:#f0f0f0;color:#555;padding:2px 8px;border-radius:20px;font-size:9px;}' +
+                '.footer{margin-top:24px;padding-top:10px;border-top:1px solid #ddd;font-size:9px;color:' + S + ';text-align:center;}' +
+                '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}</style>';
+
+            var body = '';
+
+            if (isAdmin) {
+                if (!db || !db.length) { showToast('Sin datos para exportar.', 'error'); return; }
+                var total    = db.length;
+                var asig     = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
+                var scores   = db.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var avg      = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
+                var totalMin = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
+                var hrs      = totalMin>0?(totalMin/60).toFixed(1)+'h':'0h';
+                var ramaCount = {};
+                db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
+
+                body += '<div class="cover"><h1>⚖ Floovu Legal AI PRO v8</h1>' +
+                    '<p>Reporte de Agencia</p><p style="opacity:0.5;margin-top:8px;font-size:10px;">Generado el ' + now + '</p></div>';
+                body += '<div style="padding:0 32px 32px;">';
+                body += '<div class="sec">KPIs del Panel</div>';
+                body += '<div class="kpi-grid">' +
+                    '<div class="kpi"><div class="kpi-val">' + total + '</div><div class="kpi-lbl">Casos Procesados</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + avg + '/10</div><div class="kpi-lbl">Score IA Global</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + hrs + '</div><div class="kpi-lbl">Horas Ahorradas</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + asig + '/' + total + '</div><div class="kpi-lbl">Casos Asignados</div></div>' +
+                    '</div>';
+
+                body += '<div class="sec">Distribución por Rama</div>';
+                body += '<table><thead><tr><th>Rama</th><th>Casos</th><th>Porcentaje</th></tr></thead><tbody>';
+                Object.keys(ramaCount).forEach(function(r) {
+                    body += '<tr><td>' + r + '</td><td>' + ramaCount[r] + '</td><td>' + Math.round(ramaCount[r]/total*100) + '%</td></tr>';
+                });
+                body += '</tbody></table>';
+
+                body += '<div class="sec">Registro de Casos</div>';
+                body += '<table><thead><tr><th>Fecha</th><th>Rama</th><th>Tipo</th><th>Abogado</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th></tr></thead><tbody>';
+                db.slice(0,50).forEach(function(c) {
+                    var badge = c.status==='ASIGNADO' ? 'badge-green' : 'badge-grey';
+                    body += '<tr><td>' + (c.date||'—') + '</td><td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
+                        '<td>' + (c.lawyer||'Pendiente') + '</td>' +
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'—') + '</td>' +
+                        '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
+                });
+                body += '</tbody></table>';
+
+                body += '<div class="sec">Directorio de Abogados</div>';
+                body += '<table><thead><tr><th>Nombre</th><th>Email</th><th>Especialidad</th></tr></thead><tbody>';
+                if (lawyers && lawyers.length) {
+                    lawyers.forEach(function(l) {
+                        body += '<tr><td>' + (l.name||'—') + '</td><td>' + (l.email||'—') + '</td><td>' + (l.spec||l.especialidad||'—') + '</td></tr>';
+                    });
+                } else { body += '<tr><td colspan="3" style="text-align:center;color:' + S + ';">Sin abogados registrados</td></tr>'; }
+                body += '</tbody></table>';
+
+            } else {
+                // ── OPERADOR ──
+                var opName  = currentUser && currentUser.name;
+                var opEmail = currentUser && currentUser.email;
+                var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
+                if (!misCasos.length) { showToast('No tenés casos asignados para exportar.', 'error'); return; }
+
+                var scores2  = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var avg2     = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
+                var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
+
+                body += '<div class="cover"><h1>⚖ Floovu Legal AI PRO v8</h1>' +
+                    '<p>Reporte de Operador — ' + (opName||'') + '</p>' +
+                    '<p style="opacity:0.5;margin-top:8px;font-size:10px;">' + (opEmail||'') + ' · Generado el ' + now + '</p></div>';
+                body += '<div style="padding:0 32px 32px;">';
+
+                body += '<div class="sec">Mis Métricas</div>';
+                body += '<div class="kpi-grid">' +
+                    '<div class="kpi"><div class="kpi-val">' + misCasos.length + '</div><div class="kpi-lbl">Casos Asignados</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + avg2 + '/10</div><div class="kpi-lbl">Score IA Promedio</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + (totalMin2>0?(totalMin2/60).toFixed(1)+'h':'0h') + '</div><div class="kpi-lbl">Horas Ahorradas</div></div>' +
+                    '</div>';
+
+                body += '<div class="sec">Registro Legal — Mis Casos</div>';
+                body += '<table><thead><tr><th>Fecha</th><th>Partes</th><th>Rama</th><th>Tipo</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th></tr></thead><tbody>';
+                misCasos.forEach(function(c) {
+                    var badge = c.status==='ASIGNADO'?'badge-green':'badge-grey';
+                    body += '<tr><td>' + (c.date||'—') + '</td><td style="font-weight:600;">' + (c.partes||'—') + '</td>' +
+                        '<td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'—') + '</td>' +
+                        '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
+                });
+                body += '</tbody></table>';
+
+                // Clientes asociados
+                body += '<div class="sec">Mis Clientes</div>';
+                body += '<table><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>NIT / Cédula</th><th>Estado</th><th>Notas</th></tr></thead><tbody>';
+                var vistos = {};
+                var hayClientes = false;
+                misCasos.forEach(function(c) {
+                    if (!allClientRows) return;
+                    allClientRows.forEach(function(cl) {
+                        if (cl.nombre && c.partes && c.partes.toLowerCase().includes(cl.nombre.toLowerCase()) && !vistos[cl.nombre]) {
+                            vistos[cl.nombre] = true;
+                            hayClientes = true;
+                            var badge2 = cl.estado==='ASIGNADO'?'badge-green':'badge-gold';
+                            body += '<tr><td style="font-weight:600;">' + (cl.nombre||'—') + '</td><td>' + (cl.email||'—') + '</td>' +
+                                '<td>' + (cl.telefono||'—') + '</td><td>' + (cl.nit||'—') + '</td>' +
+                                '<td><span class="' + badge2 + '">' + (cl.estado||'—') + '</span></td>' +
+                                '<td>' + (cl.notas||'—') + '</td></tr>';
+                        }
+                    });
+                });
+                if (!hayClientes) body += '<tr><td colspan="6" style="text-align:center;color:' + S + ';">Sin clientes asociados</td></tr>';
+                body += '</tbody></table>';
+
+                // Agenda judicial
+                var conVenc = misCasos.filter(function(c){ return c.venc && c.venc !== 'S/D' && c.venc !== 'N/A'; });
+                if (conVenc.length) {
+                    body += '<div class="sec">Agenda Judicial — Mis Vencimientos</div>';
+                    body += '<table><thead><tr><th>Fecha Caso</th><th>Partes</th><th>Rama</th><th>Tipo</th><th>Vencimiento</th></tr></thead><tbody>';
+                    conVenc.forEach(function(c) {
+                        body += '<tr><td>' + (c.date||'—') + '</td><td>' + (c.partes||'—') + '</td>' +
+                            '<td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
+                            '<td style="color:#c0392b;font-weight:700;">' + c.venc + '</td></tr>';
+                    });
+                    body += '</tbody></table>';
+                }
             }
 
-            function getCasosCliente(nombre) {
-                return db.filter(c => c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()));
-            }
+            body += '<div class="footer">Floovu Legal AI PRO v8 · Reporte confidencial · ' + now + '</div></div>';
 
-            const now     = new Date().toLocaleDateString('es-CO', { dateStyle: 'long' });
-            const gold    = '#C9A84C';
-            const dark    = '#060a14';
-            const silver  = '#7a8fa6';
-
-            let html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-            <title>Clientes — Floovu Legal AI PRO v8</title>
-            <style>
-                * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Segoe UI', Arial, sans-serif; background:#fff; color:#111; font-size:11px; }
-                .cover { background:${dark}; color:#fff; padding:48px 40px 36px; margin-bottom:24px; }
-                .cover h1 { font-size:28px; font-weight:800; color:${gold}; margin-bottom:4px; letter-spacing:1px; }
-                .cover p  { font-size:12px; color:${silver}; margin-top:6px; }
-                .cover .meta { margin-top:16px; font-size:11px; color:rgba(255,255,255,0.5); }
-                .section-title { font-size:13px; font-weight:800; color:${dark}; border-left:4px solid ${gold}; padding-left:10px; margin:24px 0 12px; text-transform:uppercase; letter-spacing:1px; }
-                table { width:100%; border-collapse:collapse; margin-bottom:24px; font-size:10px; }
-                th { background:${dark}; color:${gold}; padding:8px 10px; text-align:left; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; }
-                td { padding:7px 10px; border-bottom:1px solid #eee; vertical-align:top; }
-                tr:nth-child(even) td { background:#f9f9f9; }
-                .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:9px; font-weight:700; text-transform:uppercase; }
-                .badge-gold  { background:rgba(201,168,76,0.12); color:#8a6a1a; }
-                .badge-green { background:rgba(34,197,94,0.12);  color:#166534; }
-                .badge-grey  { background:#f0f0f0; color:#555; }
-                .client-block { margin-bottom:20px; break-inside:avoid; }
-                .client-header { background:#f5f0e8; border-left:3px solid ${gold}; padding:10px 14px; margin-bottom:8px; }
-                .client-header h3 { font-size:13px; font-weight:700; color:${dark}; }
-                .client-header p  { font-size:10px; color:${silver}; margin-top:2px; }
-                .no-casos { color:${silver}; font-style:italic; padding:6px 10px; font-size:10px; }
-                .footer { margin-top:32px; padding-top:12px; border-top:1px solid #ddd; font-size:9px; color:${silver}; text-align:center; }
-                @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-            </style></head><body>
-            <div class="cover">
-                <h1>⚖ Floovu Legal AI PRO v8</h1>
-                <p>Reporte Completo de Clientes</p>
-                <div class="meta">Generado el ${now} · ${allClientRows.length} cliente${allClientRows.length !== 1 ? 's' : ''} registrado${allClientRows.length !== 1 ? 's' : ''}</div>
-            </div>
-
-            <div style="padding:0 32px 32px;">
-
-            <div class="section-title">Directorio de Clientes</div>
-            <table>
-                <thead><tr>
-                    <th>Nombre</th><th>NIT / Cédula</th><th>Email</th>
-                    <th>Teléfono</th><th>Abogado</th><th>Estado</th>
-                </tr></thead>
-                <tbody>
-                ${allClientRows.map(c => `<tr>
-                    <td style="font-weight:600;">${c.nombre||'—'}</td>
-                    <td>${c.nit||'—'}</td>
-                    <td>${c.email||'—'}</td>
-                    <td>${c.telefono||'—'}</td>
-                    <td>${c.abogado||'—'}</td>
-                    <td><span class="badge ${c.estado==='ASIGNADO'?'badge-green':c._source==='directorio'?'badge-gold':'badge-grey'}">${c.estado||(c._source==='directorio'?'Directorio':'—')}</span></td>
-                </tr>`).join('')}
-                </tbody>
-            </table>
-
-            <div class="section-title">Casos por Cliente</div>
-            ${allClientRows.map(c => {
-                const casos = getCasosCliente(c.nombre);
-                return `<div class="client-block">
-                    <div class="client-header">
-                        <h3>${c.nombre||'—'}</h3>
-                        <p>${c.email||''} ${c.nit ? '· ' + c.nit : ''} ${c.abogado ? '· Abogado: ' + c.abogado : ''}</p>
-                    </div>
-                    ${casos.length ? `<table>
-                        <thead><tr>
-                            <th>Fecha</th><th>Rama</th><th>Tipo</th>
-                            <th>Abogado</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th>
-                        </tr></thead>
-                        <tbody>
-                        ${casos.map(caso => `<tr>
-                            <td>${caso.date||'—'}</td>
-                            <td>${caso.rama||'—'}</td>
-                            <td>${caso.tipo||'—'}</td>
-                            <td>${caso.lawyer||'—'}</td>
-                            <td style="color:${caso.venc&&caso.venc!=='S/D'?'#c0392b':'#555'};">${caso.venc||'—'}</td>
-                            <td style="font-weight:700;color:${caso.score>0?'#8a6a1a':'#555'};">${caso.score>0?caso.score+'/10':'—'}</td>
-                            <td><span class="badge ${caso.status==='ASIGNADO'?'badge-green':'badge-grey'}">${caso.status||'—'}</span></td>
-                        </tr>`).join('')}
-                        </tbody>
-                    </table>` : '<p class="no-casos">Sin casos registrados para este cliente.</p>'}
-                </div>`;
-            }).join('')}
-
-            <div class="footer">Floovu Legal AI PRO v8 · Reporte confidencial · ${now}</div>
-            </div></body></html>`;
-
-            const win = window.open('', '_blank');
+            var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Floovu</title>' + css + '</head><body>' + body + '</body></html>';
+            var win = window.open('', '_blank');
+            if (!win) { showToast('Habilitá las ventanas emergentes para exportar PDF.', 'error'); return; }
             win.document.write(html);
             win.document.close();
-            win.onload = () => { win.focus(); win.print(); };
+            win.onload = function() { win.focus(); win.print(); };
             showToast('✓ PDF listo para imprimir / guardar', 'ok');
         }
+
 
         async function addClient() {
             const nombre   = document.getElementById('new-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
