@@ -929,53 +929,66 @@
                 <!-- ══ DASHBOARD ADMIN (AGENCIA) ══ -->
                 <div id="dashboard-admin" style="display:none;">
 
-                    <!-- KPIs de uso del producto -->
-                    <div class="kpi-container" style="margin-bottom:2rem;">
-                        <div class="kpi-card">
-                            <p class="kpi-label">📁 Casos Procesados</p>
-                            <div class="kpi-value" id="admin-kpi-casos">--</div>
-                            <p class="kpi-sub">Total en el sistema</p>
+                    <!-- KPIs -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">Casos Procesados</p>
+                            <div class="kpi-v2-value" id="admin-kpi-casos">--</div>
+                            <p class="kpi-v2-sub">Total en el sistema</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:100%"></div></div>
                         </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">🧠 Score IA Global</p>
-                            <div class="kpi-value" id="admin-kpi-score">--</div>
-                            <p class="kpi-sub">Promedio de análisis</p>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#7c5cbf,transparent)"></div>
+                            <p class="kpi-v2-label">Score IA Global</p>
+                            <div class="kpi-v2-value" id="admin-kpi-score" style="color:#b39ddb;text-shadow:0 0 24px rgba(124,92,191,0.4);">--</div>
+                            <p class="kpi-v2-sub">Promedio de análisis</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-score" style="width:0%;background:linear-gradient(90deg,#7c5cbf,#b39ddb)"></div></div>
                         </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">⏳ Horas Ahorradas</p>
-                            <div class="kpi-value" id="admin-kpi-hours">--</div>
-                            <p class="kpi-sub">Productividad generada</p>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-ok),transparent)"></div>
+                            <p class="kpi-v2-label">Horas Ahorradas</p>
+                            <div class="kpi-v2-value" id="admin-kpi-hours" style="color:var(--kpi-ok);text-shadow:0 0 24px rgba(34,197,94,0.3);">--</div>
+                            <p class="kpi-v2-sub">Productividad generada</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:70%;background:linear-gradient(90deg,var(--kpi-ok),#86efac)"></div></div>
                         </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">⚖️ Casos Asignados</p>
-                            <div class="kpi-value" id="admin-kpi-asignados">--</div>
-                            <p class="kpi-sub">Del total procesados</p>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-alert),transparent)"></div>
+                            <p class="kpi-v2-label">Casos Asignados</p>
+                            <div class="kpi-v2-value" id="admin-kpi-asignados" style="color:var(--kpi-alert);text-shadow:0 0 24px rgba(249,115,22,0.3);">--</div>
+                            <p class="kpi-v2-sub">Del total procesados</p>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-asig" style="width:0%;background:linear-gradient(90deg,var(--kpi-alert),#fdba74)"></div></div>
                         </div>
+
                     </div>
 
                     <div class="dashboard-grid">
                         <!-- Estado de servicios -->
                         <div class="card">
                             <p class="card-title">🔌 Estado de Servicios</p>
-                            <div style="display:flex;flex-direction:column;gap:12px;margin-top:0.5rem;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
-                                    <span style="font-size:0.82rem;color:var(--silver);">🌍 Webhook n8n</span>
-                                    <span id="admin-h-web" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                            <div style="display:flex;flex-direction:column;gap:10px;margin-top:0.5rem;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.9rem;color:var(--silver-lt);">🌍 Webhook n8n</span>
+                                    <span id="admin-h-web" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
-                                    <span style="font-size:0.82rem;color:var(--silver);">📧 Gmail</span>
-                                    <span id="admin-h-gmail" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.9rem;color:var(--silver-lt);">📧 Gmail</span>
+                                    <span id="admin-h-gmail" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
-                                    <span style="font-size:0.82rem;color:var(--silver);">📊 Google Sheets</span>
-                                    <span id="admin-h-sheet" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.9rem;color:var(--silver-lt);">📊 Google Sheets</span>
+                                    <span id="admin-h-sheet" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid var(--border);">
-                                    <span style="font-size:0.82rem;color:var(--silver);">🤖 Motor IA</span>
-                                    <span id="admin-h-ai" style="font-size:0.78rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.9rem;color:var(--silver-lt);">🤖 Motor IA</span>
+                                    <span id="admin-h-ai" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
                             </div>
-                            <button class="btn-premium" style="width:100%;margin-top:1rem;font-size:0.8rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
+                            <button class="btn-premium" style="width:100%;margin-top:1.25rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
                         </div>
 
                         <!-- Distribución de casos -->
@@ -986,8 +999,26 @@
                             </div>
                         </div>
 
-
                     </div>
+
+                    <!-- Tabla últimos casos -->
+                    <div class="card" style="margin-top:1.5rem;">
+                        <p class="card-title">📋 Actividad Reciente</p>
+                        <table>
+                            <thead><tr>
+                                <th>Fecha</th>
+                                <th>Rama</th>
+                                <th>Tipo</th>
+                                <th>Score IA</th>
+                                <th>Estado</th>
+                                <th>Tiempo IA</th>
+                            </tr></thead>
+                            <tbody id="admin-dash-rows">
+                                <tr><td colspan="6" class="empty-state">Sin actividad reciente</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
             </section>
 
@@ -2820,6 +2851,14 @@
             set('admin-kpi-score')(avgScore ? `${avgScore}/10` : 'N/A');
             set('admin-kpi-hours')(`${totalHrs}h`);
             set('admin-kpi-asignados')(total ? `${asignados}/${total}` : '0/0');
+
+            // Animar barras
+            setTimeout(() => {
+                const scoreBar = document.getElementById('admin-bar-score');
+                const asigBar  = document.getElementById('admin-bar-asig');
+                if (scoreBar && avgScore) scoreBar.style.width = `${Math.min(parseFloat(avgScore)/10*100,100)}%`;
+                if (asigBar  && total)   asigBar.style.width  = `${Math.min(asignados/total*100,100)}%`;
+            }, 100);
 
             // Tabla últimos casos (sin datos privados — solo métricas)
             const tbody = document.getElementById('admin-dash-rows');
