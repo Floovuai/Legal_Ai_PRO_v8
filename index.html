@@ -790,6 +790,102 @@
         .role-badge.operator { background: rgba(99,153,34,0.2); color: #97C459; }
     </style>
 
+    <!-- ══ FIREBASE SESSION CONTROL ══ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBb3IubEjyVMNsl8S-98pzfV9H_LEGhvWM",
+            authDomain: "legal-ai-pro-v8.firebaseapp.com",
+            databaseURL: "https://legal-ai-pro-v8-default-rtdb.firebaseio.com",
+            projectId: "legal-ai-pro-v8",
+            storageBucket: "legal-ai-pro-v8.firebasestorage.app",
+            messagingSenderId: "215298653639",
+            appId: "1:215298653639:web:db9b999d63bd20ce0c2de2"
+        };
+
+        const app      = initializeApp(firebaseConfig);
+        const db       = getDatabase(app);
+
+        // Generar token único para esta sesión
+        const SESSION_TOKEN = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        let   heartbeatInterval = null;
+        let   currentSessionUser = null;
+
+        // ── Registrar sesión al login ──
+        window.firebaseRegisterSession = async function(username) {
+            currentSessionUser = username;
+            const sessionRef = ref(db, 'sessions/' + username);
+
+            // Verificar si ya hay una sesión activa de otro dispositivo
+            const snapshot = await get(sessionRef);
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                const now  = Date.now();
+                // Si el heartbeat tiene menos de 30 segundos, hay alguien conectado
+                if (data.token !== SESSION_TOKEN && (now - data.lastSeen) < 30000) {
+                    return { blocked: true, since: data.lastSeen };
+                }
+            }
+
+            // Registrar esta sesión
+            await set(sessionRef, {
+                token:    SESSION_TOKEN,
+                lastSeen: Date.now(),
+                userAgent: navigator.userAgent.substring(0, 80)
+            });
+
+            // Heartbeat cada 15 segundos
+            heartbeatInterval = setInterval(async () => {
+                // Verificar que nuestra sesión sigue siendo la activa
+                const snap = await get(sessionRef);
+                if (snap.exists() && snap.val().token !== SESSION_TOKEN) {
+                    // Nos expulsaron desde otro dispositivo
+                    clearInterval(heartbeatInterval);
+                    window.firebaseHandleExpulsion();
+                    return;
+                }
+                await set(sessionRef, {
+                    token:    SESSION_TOKEN,
+                    lastSeen: Date.now(),
+                    userAgent: navigator.userAgent.substring(0, 80)
+                });
+            }, 15000);
+
+            return { blocked: false };
+        };
+
+        // ── Cerrar sesión ──
+        window.firebaseCloseSession = async function() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            if (currentSessionUser) {
+                const sessionRef = ref(db, 'sessions/' + currentSessionUser);
+                const snap = await get(sessionRef);
+                if (snap.exists() && snap.val().token === SESSION_TOKEN) {
+                    await remove(sessionRef);
+                }
+            }
+            currentSessionUser = null;
+        };
+
+        // ── Manejar expulsión ──
+        window.firebaseHandleExpulsion = function() {
+            // Limpiar estado local
+            if (typeof currentUser !== 'undefined') currentUser = null;
+            // Mostrar login con mensaje
+            const overlay = document.getElementById('login-overlay');
+            const appShell = document.getElementById('app-shell');
+            if (overlay)  overlay.classList.remove('hidden');
+            if (appShell) appShell.style.display = 'none';
+            // Mostrar toast de aviso
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Sesión cerrada — se inició sesión desde otro dispositivo', 'error');
+            } else {
+                alert('Tu sesión fue cerrada porque se inició sesión desde otro dispositivo.');
+            }
+        };
+    </script>
 </head>
 <body>
 
@@ -1574,6 +1670,27 @@
             }
 
             // Login exitoso
+            // Verificar sesión única con Firebase
+            if (typeof window.firebaseRegisterSession === 'function') {
+                const btn = document.getElementById('login-btn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Verificando sesión...'; }
+                try {
+                    const result = await window.firebaseRegisterSession(user.username);
+                    if (result.blocked) {
+                        const errEl = document.getElementById('login-error');
+                        if (errEl) {
+                            errEl.style.display = 'block';
+                            errEl.textContent = '⚠️ Ya hay una sesión activa en otro dispositivo. Cerrá sesión allí primero.';
+                        }
+                        if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema →'; }
+                        return;
+                    }
+                } catch(e) {
+                    console.warn('Firebase session check failed, continuing:', e);
+                }
+                if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema →'; }
+            }
+
             currentUser = user;
             sessionStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
 
@@ -1650,6 +1767,10 @@
         }
 
         function doLogout() {
+            // Cerrar sesión en Firebase
+            if (typeof window.firebaseCloseSession === 'function') {
+                window.firebaseCloseSession();
+            }
             sessionStorage.removeItem('floovu_user');
             currentUser = null;
             document.getElementById('login-overlay').classList.remove('hidden');
