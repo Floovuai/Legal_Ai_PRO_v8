@@ -830,6 +830,19 @@
             await remove(sessionRef);
         };
 
+        // ── Escuchar sesiones en tiempo real y actualizar panel admin ──
+        const sessionsRef = ref(db, 'sessions');
+        onValue(sessionsRef, (snapshot) => {
+            window._firebaseSessions = snapshot.exists() ? snapshot.val() : {};
+            // Si el panel de admin está visible, actualizar automáticamente
+            const container = document.getElementById('active-sessions-list');
+            if (container && typeof window.renderActiveSessionsLive === 'function') {
+                window.renderActiveSessionsLive(window._firebaseSessions);
+            }
+        });
+
+        window.firebaseReady = true;
+
         // ── Registrar sesión al login ──
         window.firebaseRegisterSession = async function(username) {
             currentSessionUser = username;
@@ -3173,7 +3186,7 @@
                 if (adminDash) adminDash.style.display = 'block';
                 if (title)     title.textContent        = 'Panel de Agencia';
                 renderAdminDashboard();
-                setTimeout(renderActiveSessions, 500);
+                setTimeout(renderActiveSessions, 2000);
             } else {
                 if (opDash)    opDash.style.display    = '';
                 if (adminDash) adminDash.style.display = 'none';
@@ -3184,68 +3197,77 @@
         // ══════════════════════════════════════════
         // SESIONES ACTIVAS — lee Firebase en tiempo real
         // ══════════════════════════════════════════
-        async function renderActiveSessions() {
+        function renderActiveSessionsLive(sessions) {
             const container = document.getElementById('active-sessions-list');
             if (!container) return;
-            container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando...</p>';
+            const now = Date.now();
 
-            if (!window.firebaseGetSessions) {
-                container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Firebase no disponible</p>';
+            if (!sessions || Object.keys(sessions).length === 0) {
+                container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1.5rem 1rem;">No hay sesiones activas en este momento.</p>';
                 return;
             }
 
+            container.innerHTML = Object.entries(sessions).map(([username, data]) => {
+                const lastSeenAgo = Math.round((now - data.lastSeen) / 1000);
+                const isOnline    = lastSeenAgo < 30;
+                const loginDate   = new Date(data.loginTime || data.lastSeen).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
+                const role        = data.role === 'admin' ? 'Agencia' : 'Operador';
+                const roleColor   = data.role === 'admin' ? 'var(--gold)' : '#97C459';
+                const statusColor = isOnline ? '#22c55e' : 'var(--kpi-alert)';
+                const statusText  = isOnline ? '● En línea' : ('● Hace ' + lastSeenAgo + 's');
+                const ua          = data.userAgent || '';
+                const device      = ua.includes('Mobile') ? '📱 Móvil' : ua.includes('Tablet') ? '📱 Tablet' : '🖥️ Escritorio';
+                const browser     = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Otro';
+
+                return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;margin-bottom:8px;">' +
+                    '<div style="display:flex;align-items:center;gap:14px;">' +
+                        '<div style="width:38px;height:38px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">' +
+                            (data.role === 'admin' ? '👑' : '👤') +
+                        '</div>' +
+                        '<div>' +
+                            '<p style="margin:0;font-size:0.9rem;font-weight:700;color:var(--white);">' + esc(data.name || username) + '</p>' +
+                            '<p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">@' + esc(username) + ' · ' + esc(data.email || '—') + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:20px;">' +
+                        '<div style="text-align:right;">' +
+                            '<p style="margin:0;font-size:0.7rem;color:' + roleColor + ';font-weight:700;letter-spacing:1px;text-transform:uppercase;">' + role + '</p>' +
+                            '<p style="margin:2px 0 0;font-size:0.7rem;color:var(--silver);">' + device + ' · ' + browser + '</p>' +
+                        '</div>' +
+                        '<div style="text-align:right;">' +
+                            '<p style="margin:0;font-size:0.72rem;color:var(--silver);">Login: ' + loginDate + '</p>' +
+                            '<p style="margin:2px 0 0;font-size:0.75rem;font-weight:700;color:' + statusColor + ';">' + statusText + '</p>' +
+                        '</div>' +
+                        '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;padding:7px 14px;font-size:0.75rem;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;" onmouseover="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.08)\'">✕ Cerrar sesión</button>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+        window.renderActiveSessionsLive = renderActiveSessionsLive;
+
+        async function renderActiveSessions() {
+            const container = document.getElementById('active-sessions-list');
+            if (!container) return;
+            container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1.5rem;">Cargando...</p>';
+
+            // Usar cache en tiempo real si ya está disponible
+            if (window._firebaseSessions !== undefined) {
+                renderActiveSessionsLive(window._firebaseSessions);
+                return;
+            }
+
+            // Fallback: cargar una sola vez
+            if (!window.firebaseGetSessions) {
+                container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Conectando con Firebase...</p>';
+                // Reintentar en 1 segundo
+                setTimeout(renderActiveSessions, 1000);
+                return;
+            }
             try {
                 const sessions = await window.firebaseGetSessions();
-                const now = Date.now();
-
-                if (!sessions || Object.keys(sessions).length === 0) {
-                    container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">No hay sesiones activas</p>';
-                    return;
-                }
-
-                container.innerHTML = Object.entries(sessions).map(([username, data]) => {
-                    const lastSeenAgo = Math.round((now - data.lastSeen) / 1000);
-                    const isOnline    = lastSeenAgo < 30;
-                    const loginDate   = new Date(data.loginTime || data.lastSeen).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
-                    const role        = data.role === 'admin' ? 'Agencia' : 'Operador';
-                    const roleColor   = data.role === 'admin' ? 'var(--gold)' : '#97C459';
-                    const statusColor = isOnline ? '#22c55e' : 'var(--kpi-alert)';
-                    const statusText  = isOnline ? '● En línea' : `● Hace ${lastSeenAgo}s`;
-
-                    // Detectar dispositivo básico desde userAgent
-                    const ua = data.userAgent || '';
-                    const device = ua.includes('Mobile') ? '📱 Móvil' : ua.includes('Tablet') ? '📱 Tablet' : '🖥️ Escritorio';
-                    const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Otro';
-
-                    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;margin-bottom:8px;">
-                        <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-size:1rem;">
-                                ${data.role === 'admin' ? '👑' : '👤'}
-                            </div>
-                            <div>
-                                <p style="margin:0;font-size:0.9rem;font-weight:700;color:var(--white);">${esc(data.name || username)}</p>
-                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">@${esc(username)} · ${esc(data.email || '—')}</p>
-                            </div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:20px;text-align:right;">
-                            <div>
-                                <p style="margin:0;font-size:0.7rem;color:${roleColor};font-weight:700;letter-spacing:1px;text-transform:uppercase;">${role}</p>
-                                <p style="margin:2px 0 0;font-size:0.7rem;color:var(--silver);">${device} · ${browser}</p>
-                            </div>
-                            <div>
-                                <p style="margin:0;font-size:0.72rem;color:var(--silver);">Login: ${loginDate}</p>
-                                <p style="margin:2px 0 0;font-size:0.72rem;font-weight:700;color:${statusColor};">${statusText}</p>
-                            </div>
-                            <button onclick="forceLogoutSession('${esc(username)}')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;padding:6px 12px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;"
-                                onmouseover="this.style.background='rgba(239,68,68,0.2)'"
-                                onmouseout="this.style.background='rgba(239,68,68,0.08)'">
-                                ✕ Forzar cierre
-                            </button>
-                        </div>
-                    </div>`;
-                }).join('');
+                renderActiveSessionsLive(sessions);
             } catch(e) {
-                container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:1rem;">Error al cargar sesiones: ${e.message}</p>`;
+                container.innerHTML = '<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:1rem;">Error: ' + e.message + '</p>';
             }
         }
 
