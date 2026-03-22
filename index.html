@@ -316,6 +316,16 @@
         }
 
         /* ── TABLES ── */
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius-sm);
+        }
+        .table-scroll::-webkit-scrollbar { height: 4px; }
+        .table-scroll::-webkit-scrollbar-track { background: transparent; }
+        .table-scroll::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.25); border-radius: 4px; }
+        .table-scroll table { min-width: 600px; }
         table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
         th {
             text-align: left;
@@ -615,13 +625,11 @@
                 position: static;
                 height: auto;
                 max-height: none;
-                padding: 1rem;
+                padding: 0.75rem 1rem;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
                 display: flex;
-                flex-direction: row;
-                flex-wrap: wrap;
-                align-items: center;
+                flex-direction: column;
                 gap: 0.5rem;
             }
             .brand { margin-bottom: 0; font-size: 1.2rem; border-bottom: none; padding-bottom: 0; flex-shrink: 0; }
@@ -629,7 +637,26 @@
             nav { display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; width: 100%; }
             .nav-item { padding: 8px 12px; font-size: 0.78rem; margin-bottom: 0; border-radius: 8px; }
             .nav-item.active { border-left: none; border-bottom: 2px solid var(--gold); }
-            .sidebar-account { display: none; }
+            .sidebar-account {
+                margin-top: 0 !important;
+                width: 100%;
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 14px !important;
+                border-radius: 10px !important;
+                flex-wrap: wrap;
+            }
+            .sidebar-account p:first-child { display: none; }
+            .sidebar-account p { margin-bottom: 0 !important; font-size: 0.75rem; }
+            .sidebar-account span { margin-bottom: 0 !important; }
+            .sidebar-account button {
+                width: auto !important;
+                padding: 6px 14px !important;
+                font-size: 0.72rem !important;
+                margin-left: auto;
+            }
             .main-view { padding: 1rem; padding-top: 1.5rem; }
             .header h1 { font-size: 1.5rem; }
             .dashboard-grid { grid-template-columns: 1fr; gap: 1rem; }
@@ -655,17 +682,33 @@
             .kpi-value { font-size: 1.5rem; }
             .kpi-label { font-size: 0.6rem; }
             .kpi-sub { font-size: 0.6rem; }
-            .header h1 { font-size: 1.2rem; }
+            .header { flex-wrap: wrap; gap: 0.75rem; }
+            .header h1 { font-size: 1.2rem; width: 100%; }
+            .header > div { width: 100%; justify-content: flex-start; }
             .main-view { padding: 0.75rem; padding-top: 1rem; }
-            nav .nav-item span:not(.badge) {
-                display: none;
-            }
+            nav .nav-item span:not(.badge) { display: none; }
             nav .nav-item { padding: 8px; font-size: 1.1rem; }
-            table { display: block; overflow-x: auto; white-space: nowrap; }
+            .table-scroll table { min-width: 500px; }
+            table { display: table; overflow-x: visible; white-space: normal; }
             .asig-header h3 { font-size: 0.9rem; }
             .card { padding: 0.875rem; border-radius: 12px; }
             .dashboard-grid { gap: 0.75rem; }
             .btn-asig-main { width: 100%; justify-content: center; }
+            /* KPIs admin en 2 columnas */
+            [style*="grid-template-columns:repeat(4,1fr)"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            /* Sesiones activas — apilar en móvil */
+            #active-sessions-list > div {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 10px !important;
+            }
+            #active-sessions-list > div > div:last-child {
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                width: 100%;
+            }
         }
 
         /* ── LOGIN ── */
@@ -951,7 +994,7 @@
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
             </nav>
 
-            <div style="margin-top:auto;padding:16px;background:var(--gold-dim);border-radius:12px;border:1px solid var(--gold);font-size:0.8rem;">
+            <div class="sidebar-account" style="margin-top:auto;padding:16px;background:var(--gold-dim);border-radius:12px;border:1px solid var(--gold);font-size:0.8rem;">
                 <p style="color:var(--gold);font-weight:700;margin-bottom:4px;">SESIÓN ACTIVA</p>
                 <p id="sidebar-account-email" style="color:var(--silver);font-size:0.78rem;margin-bottom:6px;">—</p>
                 <span class="role-badge" id="user-role-badge" style="font-size:0.65rem;display:inline-block;margin-bottom:10px;">—</span>
@@ -1156,7 +1199,7 @@
                 <div class="header"><h1>Registro Maestro</h1></div>
                 <div class="card">
                     <p class="card-title">Google Sheets (Registro Legal)</p>
-                    <table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table>
+                    <div class="table-scroll"><table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table></div>
                 </div>
             </section>
 
@@ -1250,17 +1293,19 @@
                 <div class="header"><h1>Agenda Judicial</h1></div>
                 <div class="card">
                     <p class="card-title">Términos Procesales</p>
-                    <table>
-                        <thead><tr>
-                            <th>FECHA</th>
-                            <th>PARTES</th>
-                            <th>RAMA</th>
-                            <th>TIPO</th>
-                            <th>ABOGADO</th>
-                            <th>VENCIMIENTO</th>
-                        </tr></thead>
-                        <tbody id="cal-content"><tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
-                    </table>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>FECHA</th>
+                                <th>PARTES</th>
+                                <th>RAMA</th>
+                                <th>TIPO</th>
+                                <th>ABOGADO</th>
+                                <th>VENCIMIENTO</th>
+                            </tr></thead>
+                            <tbody id="cal-content"><tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -2596,7 +2641,7 @@
                 return;
             }
             container.innerHTML = `
-                <table>
+                <div class="table-scroll"><table>
                     <thead><tr>
                         <th>CLIENTE</th>
                         <th>NIT / CÉDULA</th>
