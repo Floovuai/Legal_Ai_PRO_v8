@@ -679,8 +679,12 @@
 
         /* Canvas de fondo */
         #login-bg-canvas {
-            position: absolute; inset: 0; z-index: 0;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
             pointer-events: none;
+            display: block;
         }
 
         /* Halo central — luz concentrada detrás del card */
@@ -2662,16 +2666,16 @@
             if (!allClientRows || !allClientRows.length) {
                 showToast('No hay clientes para exportar.', 'error'); return;
             }
-            // Cabeceras
             const headers = ['Nombre', 'NIT / Cédula', 'Email', 'Teléfono', 'Abogado Asignado', 'Estado', 'Origen', 'Notas'];
+            const NL  = '\n';
+            const sep = ',';
+            const q   = function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
 
-            // Buscar casos relacionados por nombre de cliente
             function getCasosCliente(nombre) {
-                return db.filter(c => c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()));
+                return db.filter(function(c) { return c.partes && c.partes.toLowerCase().includes((nombre||'').toLowerCase()); });
             }
 
-            // Filas de clientes
-            const rows = allClientRows.map(c => [
+            const rows = allClientRows.map(function(c) { return [
                 c.nombre   || '—',
                 c.nit      || '—',
                 c.email    || '—',
@@ -2680,13 +2684,12 @@
                 c.estado   || (c._source === 'directorio' ? 'DIRECTORIO' : '—'),
                 c._source  === 'directorio' ? 'Directorio' : 'Registro',
                 c.notas    || '—',
-            ]);
+            ]; });
 
-            // Separador + sección de casos
             const casoRows = [];
-            allClientRows.forEach(c => {
+            allClientRows.forEach(function(c) {
                 const casos = getCasosCliente(c.nombre);
-                casos.forEach(caso => {
+                casos.forEach(function(caso) {
                     casoRows.push([
                         c.nombre || '—',
                         caso.date || '—',
@@ -2702,43 +2705,29 @@
                 });
             });
 
-            // Construir CSV compatible con Excel (UTF-8 BOM)
-            const sep = ',';
-            const q   = v => '"' + String(v).replace(/"/g, '""') + '"';
-            let csv    = '﻿'; // BOM para Excel
-
-            csv += '=== DIRECTORIO DE CLIENTES ===
-';
-            csv += headers.map(q).join(sep) + '
-';
-            rows.forEach(r => { csv += r.map(q).join(sep) + '
-'; });
-
-            csv += '
-=== CASOS POR CLIENTE ===
-';
-            csv += ['Cliente','Fecha','Rama','Tipo','Partes','Abogado','Vencimiento','Score IA','Estado','Tiempo IA'].map(q).join(sep) + '
-';
+            var csv = '\uFEFF';
+            csv += '=== DIRECTORIO DE CLIENTES ===' + NL;
+            csv += headers.map(q).join(sep) + NL;
+            rows.forEach(function(r) { csv += r.map(q).join(sep) + NL; });
+            csv += NL + '=== CASOS POR CLIENTE ===' + NL;
+            csv += ['Cliente','Fecha','Rama','Tipo','Partes','Abogado','Vencimiento','Score IA','Estado','Tiempo IA'].map(q).join(sep) + NL;
             if (casoRows.length) {
-                casoRows.forEach(r => { csv += r.map(q).join(sep) + '
-'; });
+                casoRows.forEach(function(r) { csv += r.map(q).join(sep) + NL; });
             } else {
-                csv += q('Sin casos registrados') + '
-';
+                csv += q('Sin casos registrados') + NL;
             }
 
-            // Descargar
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url  = URL.createObjectURL(blob);
             const a    = document.createElement('a');
             a.href     = url;
-            a.download = `Floovu_Clientes_${new Date().toISOString().slice(0,10)}.csv`;
+            a.download = 'Floovu_Clientes_' + new Date().toISOString().slice(0,10) + '.csv';
             a.click();
             URL.revokeObjectURL(url);
             showToast('✓ Exportado como Excel/CSV', 'ok');
         }
 
-        function exportClientsPDF() {
+                function exportClientsPDF() {
             if (!allClientRows || !allClientRows.length) {
                 showToast('No hay clientes para exportar.', 'error'); return;
             }
@@ -3326,6 +3315,7 @@
                 // ══════════════════════════════════════════
         // FONDO LOGIN — disruptivo futurista
         // ══════════════════════════════════════════
+        window.addEventListener('load', function() {
         (function initLoginBg() {
             const canvas = document.getElementById('login-bg-canvas');
             if (!canvas) return;
@@ -3333,8 +3323,8 @@
             let W, H, raf, t = 0;
 
             function resize() {
-                W = canvas.width  = window.innerWidth;
-                H = canvas.height = window.innerHeight;
+                W = canvas.width  = canvas.offsetWidth  || window.innerWidth;
+                H = canvas.height = canvas.offsetHeight || window.innerHeight;
             }
             resize();
             window.addEventListener('resize', () => { resize(); });
@@ -3571,6 +3561,7 @@
                 }).observe(loginEl, { attributes:true, attributeFilter:['class'] });
             }
         })();
+        }); // end window load
 
                 // ══════════════════════════════════════════
         // DONUT CHART FUTURISTA — canvas nativo
