@@ -795,99 +795,71 @@
     </style>
 
     <!-- ══ FIREBASE SESSION CONTROL ══ -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBb3IubEjyVMNsl8S-98pzfV9H_LEGhvWM",
-            authDomain: "legal-ai-pro-v8.firebaseapp.com",
-            databaseURL: "https://legal-ai-pro-v8-default-rtdb.firebaseio.com",
-            projectId: "legal-ai-pro-v8",
-            storageBucket: "legal-ai-pro-v8.firebasestorage.app",
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        // ── Inicializar Firebase (compat — sin módulos) ──
+        var _fbApp = firebase.initializeApp({
+            apiKey:            "AIzaSyBb3IubEjyVMNsl8S-98pzfV9H_LEGhvWM",
+            authDomain:        "legal-ai-pro-v8.firebaseapp.com",
+            databaseURL:       "https://legal-ai-pro-v8-default-rtdb.firebaseio.com",
+            projectId:         "legal-ai-pro-v8",
+            storageBucket:     "legal-ai-pro-v8.firebasestorage.app",
             messagingSenderId: "215298653639",
-            appId: "1:215298653639:web:db9b999d63bd20ce0c2de2"
-        };
+            appId:             "1:215298653639:web:db9b999d63bd20ce0c2de2"
+        });
+        var _fbDB           = firebase.database();
+        var _fbToken        = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        var _fbHeartbeat    = null;
+        var _fbCurrentUser  = null;
+        var _fbSessions     = {};
 
-        const app      = initializeApp(firebaseConfig);
-        const db       = getDatabase(app);
-
-        // Generar token único para esta sesión
-        const SESSION_TOKEN = Math.random().toString(36).slice(2) + Date.now().toString(36);
-        let   heartbeatInterval = null;
-        let   currentSessionUser = null;
-
-        // ── Obtener todas las sesiones activas ──
-        window.firebaseGetSessions = async function() {
-            const sessionsRef = ref(db, 'sessions');
-            const snapshot = await get(sessionsRef);
-            return snapshot.exists() ? snapshot.val() : {};
-        };
-
-        // ── Forzar cierre de sesión de un usuario ──
-        window.firebaseForceLogout = async function(username) {
-            const sessionRef = ref(db, 'sessions/' + username);
-            await remove(sessionRef);
-        };
-
-        // ── Escuchar sesiones en tiempo real y actualizar panel admin ──
-        const sessionsRef = ref(db, 'sessions');
-        onValue(sessionsRef, (snapshot) => {
-            window._firebaseSessions = snapshot.exists() ? snapshot.val() : {};
-            // Si el panel de admin está visible, actualizar automáticamente
-            const container = document.getElementById('active-sessions-list');
-            if (container && typeof window.renderActiveSessionsLive === 'function') {
-                window.renderActiveSessionsLive(window._firebaseSessions);
+        // Escuchar sesiones en tiempo real
+        _fbDB.ref('sessions').on('value', function(snap) {
+            _fbSessions = snap.val() || {};
+            // Actualizar panel si está visible
+            var container = document.getElementById('active-sessions-list');
+            if (container && container.offsetParent !== null) {
+                renderActiveSessionsLive(_fbSessions);
             }
         });
 
-        window.firebaseReady = true;
-
         // ── Registrar sesión al login ──
-        window.firebaseRegisterSession = async function(username) {
-            currentSessionUser = username;
-            const sessionRef = ref(db, 'sessions/' + username);
+        window.firebaseRegisterSession = async function(username, profile) {
+            _fbCurrentUser = username;
+            var sessionRef = _fbDB.ref('sessions/' + username);
+            var snap       = await sessionRef.once('value');
 
-            // Verificar si ya hay una sesión activa de otro dispositivo
-            const snapshot = await get(sessionRef);
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                const now  = Date.now();
-                // Si el heartbeat tiene menos de 30 segundos, hay alguien conectado
-                if (data.token !== SESSION_TOKEN && (now - data.lastSeen) < 30000) {
-                    return { blocked: true, since: data.lastSeen };
+            if (snap.exists()) {
+                var data = snap.val();
+                var now  = Date.now();
+                if (data.token !== _fbToken && (now - data.lastSeen) < 30000) {
+                    return { blocked: true };
                 }
             }
 
-            // Registrar esta sesión con perfil completo
-            await set(sessionRef, {
-                token:     SESSION_TOKEN,
+            var sessionData = {
+                token:     _fbToken,
                 lastSeen:  Date.now(),
                 loginTime: Date.now(),
-                userAgent: navigator.userAgent.substring(0, 80),
-                name:      (window._sessionProfile && window._sessionProfile.name)  || username,
-                email:     (window._sessionProfile && window._sessionProfile.email) || '',
-                role:      (window._sessionProfile && window._sessionProfile.role)  || '',
-            });
+                name:      (profile && profile.name)  || username,
+                email:     (profile && profile.email) || '',
+                role:      (profile && profile.role)  || '',
+                userAgent: navigator.userAgent.substring(0, 80)
+            };
+            await sessionRef.set(sessionData);
 
             // Heartbeat cada 15 segundos
-            heartbeatInterval = setInterval(async () => {
-                // Verificar que nuestra sesión sigue siendo la activa
-                const snap = await get(sessionRef);
-                if (snap.exists() && snap.val().token !== SESSION_TOKEN) {
-                    clearInterval(heartbeatInterval);
+            if (_fbHeartbeat) clearInterval(_fbHeartbeat);
+            _fbHeartbeat = setInterval(async function() {
+                var s = await sessionRef.once('value');
+                if (s.exists() && s.val().token !== _fbToken) {
+                    clearInterval(_fbHeartbeat);
                     window.firebaseHandleExpulsion();
                     return;
                 }
-                await set(sessionRef, {
-                    token:     SESSION_TOKEN,
-                    lastSeen:  Date.now(),
-                    loginTime: snap.val().loginTime || Date.now(),
-                    userAgent: navigator.userAgent.substring(0, 80),
-                    name:      (window._sessionProfile && window._sessionProfile.name)  || username,
-                    email:     (window._sessionProfile && window._sessionProfile.email) || '',
-                    role:      (window._sessionProfile && window._sessionProfile.role)  || '',
-                });
+                sessionData.lastSeen = Date.now();
+                sessionRef.set(sessionData);
             }, 15000);
 
             return { blocked: false };
@@ -895,34 +867,44 @@
 
         // ── Cerrar sesión ──
         window.firebaseCloseSession = async function() {
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            if (currentSessionUser) {
-                const sessionRef = ref(db, 'sessions/' + currentSessionUser);
-                const snap = await get(sessionRef);
-                if (snap.exists() && snap.val().token === SESSION_TOKEN) {
-                    await remove(sessionRef);
+            if (_fbHeartbeat) clearInterval(_fbHeartbeat);
+            if (_fbCurrentUser) {
+                var ref  = _fbDB.ref('sessions/' + _fbCurrentUser);
+                var snap = await ref.once('value');
+                if (snap.exists() && snap.val().token === _fbToken) {
+                    await ref.remove();
                 }
             }
-            currentSessionUser = null;
+            _fbCurrentUser = null;
         };
 
-        // ── Manejar expulsión ──
+        // ── Forzar cierre de sesión de un usuario ──
+        window.firebaseForceLogout = async function(username) {
+            await _fbDB.ref('sessions/' + username).remove();
+        };
+
+        // ── Obtener sesiones (para renderizado manual) ──
+        window.firebaseGetSessions = async function() {
+            var snap = await _fbDB.ref('sessions').once('value');
+            return snap.val() || {};
+        };
+
+        // ── Expulsión desde otro dispositivo ──
         window.firebaseHandleExpulsion = function() {
-            // Limpiar estado local
             if (typeof currentUser !== 'undefined') currentUser = null;
-            // Mostrar login con mensaje
-            const overlay = document.getElementById('login-overlay');
-            const appShell = document.getElementById('app-shell');
+            var overlay  = document.getElementById('login-overlay');
+            var appShell = document.getElementById('app-shell');
             if (overlay)  overlay.classList.remove('hidden');
             if (appShell) appShell.style.display = 'none';
-            // Mostrar toast de aviso
             if (typeof showToast === 'function') {
                 showToast('⚠️ Sesión cerrada — se inició sesión desde otro dispositivo', 'error');
-            } else {
-                alert('Tu sesión fue cerrada porque se inició sesión desde otro dispositivo.');
             }
         };
+
+        window.firebaseReady = true;
+        console.log('[Floovu] Firebase compat inicializado ✓');
     </script>
+
 </head>
 <body>
 
@@ -1737,7 +1719,7 @@
                 try {
                     // Pasar perfil completo a Firebase
                     window._sessionProfile = { name: user.name, email: user.email || '', role: user.role };
-                    const result = await window.firebaseRegisterSession(user.username);
+                    const result = await window.firebaseRegisterSession(user.username, window._sessionProfile);
                     if (result.blocked) {
                         const errEl = document.getElementById('login-error');
                         if (errEl) {
@@ -3186,12 +3168,42 @@
                 if (adminDash) adminDash.style.display = 'block';
                 if (title)     title.textContent        = 'Panel de Agencia';
                 renderAdminDashboard();
-                setTimeout(renderActiveSessions, 2000);
+                // Esperar que Firebase esté listo y mostrar sesiones
+                waitForFirebaseAndRender();
             } else {
                 if (opDash)    opDash.style.display    = '';
                 if (adminDash) adminDash.style.display = 'none';
                 if (title)     title.textContent        = 'Visión General';
             }
+        }
+
+        function waitForFirebaseAndRender() {
+            let attempts = 0;
+            function tryRender() {
+                attempts++;
+                // Si ya tenemos datos en caché (onValue los puso ahí)
+                if (window._firebaseSessions !== undefined) {
+                    renderActiveSessionsLive(window._firebaseSessions);
+                    return;
+                }
+                // Si Firebase está listo podemos hacer get
+                if (window.firebaseGetSessions) {
+                    window.firebaseGetSessions().then(function(sessions) {
+                        renderActiveSessionsLive(sessions || {});
+                    }).catch(function() {
+                        renderActiveSessionsLive({});
+                    });
+                    return;
+                }
+                // Todavía no está listo — reintentar hasta 10 veces
+                if (attempts < 10) {
+                    setTimeout(tryRender, 800);
+                } else {
+                    var container = document.getElementById('active-sessions-list');
+                    if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:1rem;opacity:0.5;">Firebase no disponible. Verificá tu conexión.</p>';
+                }
+            }
+            setTimeout(tryRender, 600);
         }
 
         // ══════════════════════════════════════════
@@ -3722,7 +3734,148 @@
             });
         }
 
-                async function pingEngineAdmin() {
+                // ══════════════════════════════════════════
+        // FIREBASE — control de sesiones únicas
+        // ══════════════════════════════════════════
+        const FIREBASE_CONFIG = {
+            apiKey:            "AIzaSyBb3IubEjyVMNsl8S-98pzfV9H_LEGhvWM",
+            authDomain:        "legal-ai-pro-v8.firebaseapp.com",
+            databaseURL:       "https://legal-ai-pro-v8-default-rtdb.firebaseio.com",
+            projectId:         "legal-ai-pro-v8",
+            storageBucket:     "legal-ai-pro-v8.firebasestorage.app",
+            messagingSenderId: "215298653639",
+            appId:             "1:215298653639:web:db9b999d63bd20ce0c2de2"
+        };
+
+        let _fbApp = null, _fbDb = null;
+        const SESSION_TOKEN = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        let _heartbeatInterval = null;
+        let _fbSessionUser     = null;
+        let _fbSessionsRef     = null;
+
+        function initFirebase() {
+            try {
+                if (!firebase || !firebase.app) return false;
+                if (!_fbApp) {
+                    _fbApp = firebase.initializeApp(FIREBASE_CONFIG);
+                    _fbDb  = firebase.database();
+                }
+                return true;
+            } catch(e) {
+                logError('Firebase init error: ' + e.message);
+                return false;
+            }
+        }
+
+        // ── Registrar sesión al login ──
+        async function fbRegisterSession(username, profile) {
+            if (!initFirebase()) return { blocked: false };
+            _fbSessionUser = username;
+            const ref = _fbDb.ref('sessions/' + username);
+
+            try {
+                const snap = await ref.once('value');
+                if (snap.exists()) {
+                    const data = snap.val();
+                    const age  = Date.now() - (data.lastSeen || 0);
+                    if (data.token !== SESSION_TOKEN && age < 30000) {
+                        return { blocked: true };
+                    }
+                }
+
+                await ref.set({
+                    token:     SESSION_TOKEN,
+                    lastSeen:  Date.now(),
+                    loginTime: Date.now(),
+                    name:      profile.name  || username,
+                    email:     profile.email || '',
+                    role:      profile.role  || '',
+                    userAgent: navigator.userAgent.substring(0, 100)
+                });
+
+                // Heartbeat cada 15s
+                _heartbeatInterval = setInterval(async function() {
+                    try {
+                        const s = await ref.once('value');
+                        if (s.exists() && s.val().token !== SESSION_TOKEN) {
+                            clearInterval(_heartbeatInterval);
+                            fbHandleExpulsion();
+                            return;
+                        }
+                        await ref.update({ lastSeen: Date.now() });
+                    } catch(e) { /* silencioso */ }
+                }, 15000);
+
+                // Escuchar cambios para detectar expulsión
+                ref.on('value', function(s) {
+                    if (s.exists() && s.val().token !== SESSION_TOKEN) {
+                        clearInterval(_heartbeatInterval);
+                        ref.off();
+                        fbHandleExpulsion();
+                    }
+                });
+
+                return { blocked: false };
+            } catch(e) {
+                logError('Firebase session error: ' + e.message);
+                return { blocked: false };
+            }
+        }
+
+        // ── Cerrar sesión ──
+        async function fbCloseSession() {
+            if (_heartbeatInterval) clearInterval(_heartbeatInterval);
+            if (_fbDb && _fbSessionUser) {
+                try {
+                    const ref = _fbDb.ref('sessions/' + _fbSessionUser);
+                    const s   = await ref.once('value');
+                    if (s.exists() && s.val().token === SESSION_TOKEN) {
+                        await ref.remove();
+                    }
+                    ref.off();
+                } catch(e) { /* silencioso */ }
+            }
+            _fbSessionUser = null;
+        }
+
+        // ── Forzar cierre de sesión de otro usuario ──
+        async function fbForceLogout(username) {
+            if (!initFirebase()) return;
+            await _fbDb.ref('sessions/' + username).remove();
+        }
+
+        // ── Obtener sesiones activas ──
+        async function fbGetSessions() {
+            if (!initFirebase()) return {};
+            try {
+                const snap = await _fbDb.ref('sessions').once('value');
+                return snap.exists() ? snap.val() : {};
+            } catch(e) { return {}; }
+        }
+
+        // ── Expulsión ──
+        function fbHandleExpulsion() {
+            currentUser = null;
+            const overlay  = document.getElementById('login-overlay');
+            const appShell = document.getElementById('app-shell');
+            if (overlay)  overlay.classList.remove('hidden');
+            if (appShell) appShell.style.display = 'none';
+            showToast('⚠️ Sesión cerrada — iniciaste sesión desde otro dispositivo', 'error');
+        }
+
+        // ── Escucha en tiempo real para el panel admin ──
+        function fbWatchSessions() {
+            if (!initFirebase()) return;
+            if (_fbSessionsRef) _fbSessionsRef.off();
+            _fbSessionsRef = _fbDb.ref('sessions');
+            _fbSessionsRef.on('value', function(snap) {
+                const sessions = snap.exists() ? snap.val() : {};
+                const container = document.getElementById('active-sessions-list');
+                if (container) renderActiveSessionsLive(sessions);
+            });
+        }
+
+        async function pingEngineAdmin() {
             const ids = ['admin-h-web','admin-h-gmail','admin-h-sheet','admin-h-ai'];
             const set = (id, txt, color) => {
                 const el = document.getElementById(id);
