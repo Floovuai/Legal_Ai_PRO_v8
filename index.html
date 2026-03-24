@@ -2054,7 +2054,7 @@
             }, 300);
         }
 
-function loadRealData() {
+async function loadRealData() {
             el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
             el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Cargando...</td></tr>`;
             logError("Sincronizando base de datos real...");
