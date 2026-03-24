@@ -1199,7 +1199,7 @@
                 <div class="header"><h1>Registro Maestro</h1></div>
                 <div class="card">
                     <p class="card-title">Google Sheets (Registro Legal)</p>
-                    <div class="table-scroll"><table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table></div>
+                    <div class="table-scroll"><table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>CLIENTE A DEFENDER</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table></div>
                 </div>
             </section>
 
@@ -1238,6 +1238,8 @@
                 </div>
 
                 <!-- Tabla unificada -->
+                <!-- ALERTA REGISTROS PARCIALES — B5 -->
+                <div id="partial-alerts-container"></div>
                 <div class="card">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
                         <p class="card-title" style="margin-bottom:0;">Directorio Activo</p>
@@ -2011,7 +2013,48 @@
             }
         }
 
-        async function loadRealData() {
+        async 
+        // B5 — Alertas de registros parciales pendientes de confirmar
+        function renderPartialAlerts() {
+            const container = document.getElementById('partial-alerts-container');
+            if (!container) return;
+            const parciales = db.filter(c => c.status === 'ASIGNADO' && c.pendiente_confirmar);
+            if (!parciales.length) { container.innerHTML = ''; return; }
+            container.innerHTML = parciales.map(c => `
+                <div style="margin-bottom:1rem;padding:14px 18px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.4);border-radius:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                    <span style="font-size:1.2rem;">⚠️</span>
+                    <div style="flex:1;min-width:200px;">
+                        <p style="margin:0;font-size:0.82rem;color:var(--gold);font-weight:700;">Registro parcial pendiente de confirmar</p>
+                        <p style="margin:4px 0 0;font-size:0.78rem;color:var(--silver);">
+                            Caso <strong style="color:var(--white);">${esc(c.token)}</strong> — 
+                            Cliente a defender: <strong style="color:var(--white);">${esc(c.cliente_a_defender || c.partes || '—')}</strong>
+                        </p>
+                        <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">Faltan datos personales del cliente (NIT, email, teléfono). Completa y guarda.</p>
+                    </div>
+                    <button class="btn-outline" style="font-size:0.75rem;padding:6px 14px;color:var(--gold);border-color:var(--gold);" 
+                        onclick="openPartialClientForm('${esc(c.token)}', '${esc(c.cliente_a_defender || c.partes || '')}', '${esc(c.nit || '')}')">
+                        ✏️ Completar datos
+                    </button>
+                </div>`).join('');
+        }
+
+        // B5 — Abrir formulario pre-cargado con datos del registro parcial
+        function openPartialClientForm(token, nombre, nit) {
+            // Navegar a pestaña clientes
+            document.querySelector('[data-tab="clientes"]')?.click();
+            setTimeout(() => {
+                const n = document.getElementById('new-cli-nombre');
+                const ni = document.getElementById('new-cli-nit');
+                if (n) { n.value = nombre; n.style.borderColor = 'var(--gold)'; }
+                if (ni) { ni.value = nit; }
+                // Guardar token parcial para el save
+                window._partialToken = token;
+                n?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showToast('Datos pre-cargados. Completa y guarda el cliente.', 'ok');
+            }, 300);
+        }
+
+function loadRealData() {
             el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
             el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Cargando...</td></tr>`;
             logError("Sincronizando base de datos real...");
@@ -2077,11 +2120,22 @@
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
                             tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
-                            informe_html: row.informe_html || row['Informe HTML'] || '',
-                            messageId:    row.messageId || row['messageId'] || ''
+                            informe_html:         row.informe_html || row['Informe HTML'] || '',
+                            messageId:            row.messageId || row['messageId'] || '',
+                            nit:                  row['NIT'] || row['nit'] || row['nit_cliente'] || '',
+                            cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
+                            partes_array:         (() => {
+                                const p = row.Partes || row.partes || '';
+                                // Detectar separadores comunes en documentos legales
+                                const sep = p.match(/\s+(?:vs?\.?|contra|c\/)\s+/i);
+                                if (sep) return p.split(sep[0]).map(x => x.trim()).filter(Boolean);
+                                const byComma = p.split(/\s*,\s*/);
+                                return byComma.length >= 2 ? byComma.slice(0,2) : [p, ''];
+                            })()
                         };
                     });
                     updateUI();
+                    renderPartialAlerts();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
                     el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
@@ -2286,6 +2340,33 @@
                                 <button class="btn-asig-main" onclick="finish('${tok}')">⚖️ Confirmar Asignación</button>
                             </div>
                         </div>
+                        <!-- CLIENTE A DEFENDER — B5 -->
+                        <div style="margin-top:12px;padding:12px 16px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;">
+                            <p style="margin:0 0 8px;font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">🛡 Cliente a Defender</p>
+                            ${(() => {
+                                const parts = c.partes_array || [];
+                                const p0 = parts[0] || c.partes || '';
+                                const p1 = parts[1] || '';
+                                const nit = c.nit ? `<span style="font-size:0.7rem;color:var(--silver);margin-left:6px;">NIT/Cédula: ${esc(c.nit)}</span>` : '';
+                                const presel = c.cliente_a_defender || '';
+                                const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
+                                const sel1 = presel === p1 ? 'checked' : '';
+                                let html = `<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;">`;
+                                if (p0) html += `
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                        <input type="radio" name="cad-${tok}" value="${esc(p0)}" ${sel0} style="accent-color:var(--gold);">
+                                        <span style="font-size:0.82rem;color:var(--white);">${esc(p0)}${nit}</span>
+                                    </label>`;
+                                if (p1) html += `
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                        <input type="radio" name="cad-${tok}" value="${esc(p1)}" ${sel1} style="accent-color:var(--gold);">
+                                        <span style="font-size:0.82rem;color:var(--white);">${esc(p1)}</span>
+                                    </label>`;
+                                html += `</div>`;
+                                if (presel) html += `<p style="margin:6px 0 0;font-size:0.7rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
+                                return html;
+                            })()}
+                        </div>
                         <div id="desc-panel-${tok}" class="asig-desc-panel" style="display:none;">
                             ${descFormatted}
                         </div>
@@ -2307,6 +2388,7 @@
                     <td>${esc(c.date)}</td>
                     <td>${esc(c.rama)}</td>
                     <td>${esc(c.partes)}</td>
+                    <td style="color:${c.cliente_a_defender ? 'var(--gold)' : 'var(--silver)'};font-weight:${c.cliente_a_defender ? '600' : 'normal'};font-style:${c.cliente_a_defender ? 'normal' : 'italic'};">${esc(c.cliente_a_defender || '—')}</td>
                     <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
                     <td>${esc(c.venc)}</td>
                 </tr>`
@@ -2526,24 +2608,35 @@
             try {
                 const response = await authFetch(N8N_ASSIGN_WEBHOOK, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        row_number:            caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
-                        'Nombre Cliente':      caseItem.partes,
-                        'Estado Alerta':       'ASIGNADO',
-                        email_cliente:         clientEmail,
-                        nombre_cliente:        caseItem.partes,
-                        abogado_responsable:   lawyerName,
-                        email_abogado:         lawyerObj.email,
-                        asunto:                `Asignación de Caso: ${caseItem.partes}`,
-                        tipo_documento:        caseItem.tipo || caseItem.rama || 'General',
-                        rama:                  caseItem.rama,
-                        vencimiento:           caseItem.venc,
-                        'Fecha de Vencimiento': caseItem.venc,
-                        token:                 caseItem.token,
-                        case_description:      caseItem.desc,
-                        informe_html:          caseItem.informe_html || "<!--FLOOVU_AB_PLACEHOLDER-->",
-                        messageId:             caseItem.messageId || ''
-                    })
+                    body: JSON.stringify((() => {
+                        // B5: leer cliente a defender del radio seleccionado
+                        const _cadRadio = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
+                        const _clienteADefender = _cadRadio ? _cadRadio.value : (caseItem.cliente_a_defender || caseItem.partes || '');
+                        return {
+                            row_number:                  caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
+                            'Nombre Cliente':            caseItem.partes,
+                            'Estado Alerta':             'ASIGNADO',
+                            email_cliente:               clientEmail,
+                            nombre_cliente:              caseItem.partes,
+                            nombre_cliente_identificado: _clienteADefender,
+                            cliente_a_defender:          _clienteADefender,
+                            'Cliente a defender':        _clienteADefender,
+                            nit_cliente:                 caseItem.nit || '',
+                            abogado_responsable:         lawyerName,
+                            email_abogado:               lawyerObj.email,
+                            asunto:                      `Asignación de Caso: ${caseItem.partes}`,
+                            tipo_documento:              caseItem.tipo || caseItem.rama || 'General',
+                            rama:                        caseItem.rama,
+                            vencimiento:                 caseItem.venc,
+                            'Fecha de Vencimiento':      caseItem.venc,
+                            token:                       caseItem.token,
+                            case_description:            caseItem.desc,
+                            informe_html:                caseItem.informe_html || "<!--FLOOVU_AB_PLACEHOLDER-->",
+                            messageId:                   caseItem.messageId || '',
+                            registro_parcial:            !clientEmail,
+                            pendiente_confirmar:         !clientEmail
+                        };
+                    })())
                 });
 
                 if (response.ok) {
