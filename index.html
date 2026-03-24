@@ -2482,13 +2482,19 @@ async function loadRealData() {
                     body: JSON.stringify({ email: currentUser ? currentUser.email : '' })
                 });
                 if (res.ok) {
-                    // El pipeline corre async en n8n — esperamos hasta 30s y recargamos datos
-                    logError('✓ Escaneo iniciado. Procesando en segundo plano...');
-                    showToast('Gmail procesándose. Los casos nuevos aparecerán en segundos.', 'ok');
+                    // Pipeline async en n8n — cada email con múltiples PDFs puede tomar 30-60s
+                    logError('✓ Escaneo iniciado. Procesando emails y PDFs en segundo plano...');
+                    showToast('Gmail procesándose. Los casos nuevos aparecerán en 30-60 segundos.', 'ok');
+                    // Primera recarga a los 30s
                     setTimeout(async () => {
                         await loadRealData();
-                        logError('✓ Datos actualizados.');
-                    }, 8000);
+                        logError('✓ Primera actualización de datos.');
+                    }, 30000);
+                    // Segunda recarga a los 65s por si hay múltiples emails o PDFs pesados
+                    setTimeout(async () => {
+                        await loadRealData();
+                        logError('✓ Datos actualizados (verificación final).');
+                    }, 65000);
                 } else {
                     logError(`Error Sync: ${res.status}`);
                 }
