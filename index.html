@@ -1906,7 +1906,9 @@
         });
 
                 let db = [];
-        let lawyers = [];   // Se carga desde Google Sheets — no hardcodeado en config.js
+        let lawyers = [];      // Se carga desde Google Sheets — no hardcodeado en config.js
+        let clients = [];      // Directorio unificado (manual + casos)
+        let allClientRows = []; // Cache para búsqueda
 
         // Mostrar email de cuenta en sidebar (viene de config.js, no del HTML)
         const _accountEl = document.getElementById('sidebar-account-email');
@@ -2759,8 +2761,6 @@ async function loadRealData() {
         // Fuente 1: hoja CLIENTES (directorio manual)
         // Fuente 2: db (casos del Registro Legal)
         // ══════════════════════════════════════════
-        let clients = [];
-        let allClientRows = []; // cache para búsqueda
 
         async function loadClients() {
             const container = document.getElementById('client-list-container');
