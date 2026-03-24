@@ -1348,14 +1348,38 @@
                 <div class="header"><h1>Configuración</h1></div>
 
                 <div class="dashboard-grid">
-                    <!-- COLUMNA IZQUIERDA: DEBUG -->
+                    <!-- COLUMNA IZQUIERDA: DEBUG DUAL -->
                     <div class="card" style="grid-row: span 2;">
-                        <p class="card-title">Debug: Reporte de Errores</p>
-                        <div class="error-log" id="error-console" style="height: 480px;">
-                            [System] Iniciando consola de depuración v12...
-                            [System] Esperando telemetría de webhooks...
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                            <p class="card-title" style="margin:0;">Debug: Reporte de Errores</p>
+                            <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Cargar Logs n8n</button>
                         </div>
-                        <button class="btn-outline" style="margin-top:1rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar Logs</button>
+
+                        <!-- Tabs -->
+                        <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
+                            <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">📟 Frontend</button>
+                            <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">⚙️ n8n / Workflows <span id="n8n-log-badge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:0.65rem;margin-left:4px;">!</span></button>
+                        </div>
+
+                        <!-- Panel Frontend (existente) -->
+                        <div id="debug-panel-frontend">
+                            <div class="error-log" id="error-console" style="height: 400px;">
+                                [System] Iniciando consola de depuración v12...
+                                [System] Esperando telemetría de webhooks...
+                            </div>
+                            <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                        </div>
+
+                        <!-- Panel n8n logs -->
+                        <div id="debug-panel-n8n" style="display:none;">
+                            <div class="error-log" id="n8n-log-console" style="height:400px;font-size:0.72rem;">
+                                [System] Presiona "Cargar Logs n8n" para ver la telemetría de los workflows...
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                                <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
+                                <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- COLUMNA DERECHA: INFO TÉCNICA -->
@@ -1685,7 +1709,8 @@
             GET_CLIENTS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-clientes',
             CLIENT_SAVE:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
             CLIENT_DELETE:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente',
-            GET_CLIENT_MAILS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails'
+            GET_CLIENT_MAILS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails',
+            GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log'
         }
     };
     </script>
@@ -1901,6 +1926,7 @@
         const N8N_CLIENT_SAVE       = WEBHOOKS.CLIENT_SAVE;
         const N8N_CLIENT_DELETE     = WEBHOOKS.CLIENT_DELETE;
         const N8N_GET_CLIENT_MAILS  = WEBHOOKS.GET_CLIENT_MAILS;
+        const N8N_GET_DEBUG_LOG     = WEBHOOKS.GET_DEBUG_LOG;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -2551,6 +2577,68 @@ async function loadRealData() {
                     showToast(`Error del servidor: ${res.status}`, 'error');
                 }
             } catch(e) { logError(`Error al eliminar: ${e.message}`); showToast('No se pudo conectar con n8n.', 'error'); }
+        }
+
+        function switchDebugTab(tab) {
+            const isFrontend = tab === 'frontend';
+            document.getElementById('debug-panel-frontend').style.display = isFrontend ? 'block' : 'none';
+            document.getElementById('debug-panel-n8n').style.display      = isFrontend ? 'none'  : 'block';
+            document.getElementById('dtab-frontend').style.background = isFrontend ? 'rgba(197,160,89,0.15)' : 'transparent';
+            document.getElementById('dtab-frontend').style.color      = isFrontend ? 'var(--gold)'   : 'var(--silver)';
+            document.getElementById('dtab-frontend').style.border     = isFrontend ? '1px solid rgba(197,160,89,0.5)' : '1px solid rgba(255,255,255,0.1)';
+            document.getElementById('dtab-n8n').style.background = !isFrontend ? 'rgba(197,160,89,0.15)' : 'transparent';
+            document.getElementById('dtab-n8n').style.color      = !isFrontend ? 'var(--gold)'   : 'var(--silver)';
+            document.getElementById('dtab-n8n').style.border     = !isFrontend ? '1px solid rgba(197,160,89,0.5)' : '1px solid rgba(255,255,255,0.1)';
+            if (!isFrontend) loadDebugLog();
+        }
+
+        async function loadDebugLog() {
+            const logEl = document.getElementById('n8n-log-console');
+            const btn   = document.getElementById('btn-refresh-debug');
+            if (!logEl) return;
+            logEl.innerHTML = '<span style="color:var(--silver);">[System] Cargando logs de n8n...</span>';
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Cargando...'; }
+            try {
+                const res = await authFetch(N8N_GET_DEBUG_LOG, { method: 'POST' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                let rows = [];
+                try {
+                    const txt = await res.text();
+                    rows = txt ? JSON.parse(txt) : [];
+                } catch(e) {
+                    throw new Error('Respuesta no es JSON válido');
+                }
+                if (!Array.isArray(rows) || rows.length === 0) {
+                    logEl.innerHTML = '<span style="color:var(--silver);">[System] Sin logs registrados aún. Los workflows deben ejecutarse para generar telemetría.</span>';
+                    return;
+                }
+                // Mostrar errores en badge
+                const errorCount = rows.filter(r => (r.estado || r.Estado || '').toUpperCase() === 'ERROR').length;
+                const badge = document.getElementById('n8n-log-badge');
+                if (badge) { badge.style.display = errorCount > 0 ? 'inline' : 'none'; badge.textContent = errorCount; }
+
+                logEl.innerHTML = '';
+                rows.forEach(r => {
+                    const ts     = r.timestamp || r.Timestamp || '';
+                    const nodo   = r.nodo       || r.Nodo      || '?';
+                    const estado = (r.estado    || r.Estado    || 'OK').toUpperCase();
+                    const error  = r.error      || r.Error     || '';
+                    const extra  = r.datos_extra || r.Datos_extra || '';
+                    const sid    = r.session_id  || r.Session_id  || '';
+
+                    const isErr = estado === 'ERROR';
+                    const line  = document.createElement('div');
+                    line.style.cssText = `padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.71rem;color:${isErr ? '#ef4444' : '#94a3b8'};line-height:1.5;`;
+                    line.innerHTML = `<span style="color:${isErr?'#ef4444':'#c5a059'};font-weight:700;">[${estado}]</span> <span style="color:#fff;">${nodo}</span> <span style="color:#475569;font-size:0.67rem;">${ts}</span>${error ? `<br><span style="color:#ef4444;padding-left:8px;">↳ ${error}</span>` : ''}${extra ? `<br><span style="color:#64748b;padding-left:8px;font-size:0.67rem;">${extra}</span>` : ''}${sid ? `<span style="color:#334155;font-size:0.63rem;float:right;">sid:${sid}</span>` : ''}`;
+                    logEl.prepend(line);
+                });
+                logError(`✓ ${rows.length} logs de n8n cargados.`);
+            } catch(e) {
+                logEl.innerHTML = `<span style="color:#ef4444;">[Error] No se pudo cargar el Debug_Log: ${e.message}</span>`;
+                logError(`Error cargando Debug_Log: ${e.message}`);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '⟳ Cargar Logs n8n'; }
+            }
         }
 
         async function pingEngine() {
