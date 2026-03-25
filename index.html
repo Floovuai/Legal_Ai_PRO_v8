@@ -2254,26 +2254,37 @@ async function loadRealData() {
                         const fechaRaw = row.Fecha || row.fecha || '';
                         const dateStr = (() => {
                             if (!fechaRaw) return new Date().toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-                            // Intentar parsear la fecha cruda
+                            const raw = String(fechaRaw).trim();
                             let d = null;
-                            // Formato DD/MM/YYYY HH:mm (ya correcto)
-                            const dmyMatch = fechaRaw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*(\d{1,2}:\d{2})?/);
+                            // 1. DD/MM/YYYY HH:mm
+                            const dmyMatch = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*(\d{1,2}:\d{2})?/);
                             if (dmyMatch) {
                                 const [, dd, mm, yyyy, time] = dmyMatch;
                                 d = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd));
                                 if (time) { const [h,m] = time.split(':'); d.setHours(parseInt(h), parseInt(m)); }
                             }
-                            // Formato "Mar 25, 2026" o "March 25, 2026" (inglés de GS)
+                            // 2. "Mar 25, 2026" / "March 25, 2026" (extraer del inicio, ignorar basura)
                             if (!d || isNaN(d.getTime())) {
-                                const parsed = new Date(fechaRaw);
+                                // Primero intenta con coma opcional
+                                const engMatch = raw.match(/^([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})/);
+                                if (engMatch) { const p = new Date(engMatch[1]); if (!isNaN(p.getTime())) d = p; }
+                                // Si aún no, busca el patrón en cualquier parte y extrae
+                                if (!d || isNaN(d.getTime())) {
+                                    const looseMon = raw.match(/([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})/);
+                                    if (looseMon) { const p = new Date(`${looseMon[1]} ${looseMon[2]}, ${looseMon[3]}`); if (!isNaN(p.getTime())) d = p; }
+                                }
+                            }
+                            // 3. Intentar parseo directo
+                            if (!d || isNaN(d.getTime())) {
+                                const parsed = new Date(raw);
                                 if (!isNaN(parsed.getTime())) d = parsed;
                             }
-                            // Formato YYYY-MM-DD
+                            // 4. YYYY-MM-DD
                             if (!d || isNaN(d.getTime())) {
-                                const isoMatch = fechaRaw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                const isoMatch = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
                                 if (isoMatch) d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2])-1, parseInt(isoMatch[3]));
                             }
-                            if (!d || isNaN(d.getTime())) return fechaRaw; // fallback: devolver raw
+                            if (!d || isNaN(d.getTime())) return raw;
                             const pad = n => String(n).padStart(2, '0');
                             const fecha = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
                             const hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -2952,18 +2963,24 @@ async function loadRealData() {
             } catch(e) { logError(`Error cargando clientes: ${e.message}`); }
 
             // Combinar con casos del Registro Legal
-            const casesAsClients = db.map(c => ({
-                nombre:   c.partes   || '—',
-                nit:      '',
-                email:    getLawyerEmail(c.lawyer),
-                telefono: '',
-                notas:    `Caso: ${c.rama || ''} | Token: ${c.token || ''}`,
-                token:    c.token,
-                abogado:  c.lawyer   || 'Pendiente',
-                venc:     c.venc     || 'S/D',
-                estado:   c.status   || '—',
-                _source:  'registro'
-            }));
+            const casesAsClients = db.map(c => {
+                // Usar cliente_a_defender si existe, sino primera parte de "partes"
+                const clienteName = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '—';
+                const datosIncompletos = !c.nit || c.nit === 'DESCONOCIDO';
+                return {
+                    nombre:   clienteName,
+                    nit:      (c.nit && c.nit !== 'DESCONOCIDO') ? c.nit : '',
+                    email:    '',
+                    telefono: '',
+                    notas:    `Caso: ${c.rama || ''} | Token: ${c.token || ''}`,
+                    token:    c.token,
+                    abogado:  c.lawyer   || 'Pendiente',
+                    venc:     c.venc     || 'S/D',
+                    estado:   c.status   || '—',
+                    _source:  'registro',
+                    _incompleto: datosIncompletos
+                };
+            });
 
             // Unificar — los del directorio primero, luego casos sin match en directorio
             const nombresDirectorio = new Set(manualClients.map(c => c.nombre.toLowerCase().trim()));
@@ -3010,11 +3027,14 @@ async function loadRealData() {
                     </tr></thead>
                     <tbody>
                         ${list.map((c, i) => `
-                        <tr>
-                            <td style="font-weight:600;color:var(--white);">${esc(c.nombre || '—')}</td>
-                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.nit || '—')}</td>
-                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.email || '—')}</td>
-                            <td style="color:var(--silver);font-size:0.8rem;">${esc(c.telefono || '—')}</td>
+                        <tr${c._incompleto ? ' style="border-left:3px solid #f59e0b;"' : ''}>
+                            <td style="font-weight:600;color:var(--white);">
+                                ${esc(c.nombre || '—')}
+                                ${c._incompleto ? '<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px;">⚠ Datos incompletos — actualizar</div>' : ''}
+                            </td>
+                            <td style="color:${!c.nit || c.nit === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || '—')}</td>
+                            <td style="color:${!c.email || c.email === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || '—')}</td>
+                            <td style="color:${!c.telefono || c.telefono === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || '—')}</td>
                             <td>
                                 ${c._source === 'registro'
                                     ? `<select id="cli-law-${allClientRows.indexOf(c)}" onchange="assignLawyerFromClients(${allClientRows.indexOf(c)}, this.value)"
@@ -4455,18 +4475,20 @@ async function loadRealData() {
 
                 // FIX-INIT-1: función init() llamada por applyRoleUI tras login exitoso
         function init() {
+            // Fase 1: cargar datos base en paralelo (abogados + casos)
             Promise.allSettled([
                 loadLawyers(),
                 loadRealData(),
-                loadClients(),
                 loadBandejaGmail(),
                 loadObservaciones()
             ]).then(results => {
                 results.forEach((r, i) => {
                     if (r.status === 'rejected') {
-                        logError(`Error en carga inicial [${['abogados','casos','clientes','bandeja','observaciones'][i]}]: ${r.reason}`);
+                        logError(`Error en carga inicial [${['abogados','casos','bandeja','observaciones'][i]}]: ${r.reason}`);
                     }
                 });
+                // Fase 2: cargar clientes DESPUES de que db esté lleno
+                loadClients().catch(e => logError(`Error cargando clientes: ${e}`));
                 // Actualizar dashboard admin si aplica
                 if (currentUser && currentUser.role === 'admin') {
                     renderAdminDashboard();
