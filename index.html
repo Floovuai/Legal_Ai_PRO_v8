@@ -176,9 +176,9 @@
         }
 
         .btn-asig-main {
-            background: linear-gradient(135deg, var(--gold), var(--gold-bright));
-            color: #060a10;
-            border: none;
+            background: var(--navy-card);
+            color: var(--gold);
+            border: 1.5px solid var(--gold);
             border-radius: var(--radius-sm);
             font-weight: 800;
             cursor: pointer;
@@ -194,7 +194,10 @@
         }
         .btn-asig-main:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(201,168,76,0.3);
+            background: rgba(201,168,76,0.1);
+            box-shadow: 0 6px 20px rgba(201,168,76,0.25);
+            border-color: var(--gold-bright);
+            color: var(--gold-bright);
         }
 
         /* ── FORMS ── */
@@ -992,7 +995,7 @@
                 <div class="nav-item" data-tab="observaciones">📝 Observaciones</div>
                 <div class="nav-item" data-tab="bandeja">📧 Bandeja Gmail</div>
                 <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
-                <div class="nav-item" data-tab="config">⚙️ Configuración</div>
+                <div class="nav-item" data-tab="usuarios">👥 Gestión de Usuarios</div>
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
             </nav>
 
@@ -1182,7 +1185,108 @@
                         </div>
                     </div>
 
+                    <!-- Debug: Reporte de Errores (movido de Config) -->
+                    <div class="card" style="margin-top:1.5rem;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                            <p class="card-title" style="margin:0;">Debug: Reporte de Errores</p>
+                            <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Cargar Logs n8n</button>
+                        </div>
+                        <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
+                            <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">📟 Frontend</button>
+                            <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">⚙️ n8n / Workflows <span id="n8n-log-badge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:0.65rem;margin-left:4px;">!</span></button>
+                        </div>
+                        <div id="debug-panel-frontend">
+                            <div class="error-log" id="error-console" style="height: 300px;">
+                                [System] Iniciando consola de depuración v12...
+                                [System] Esperando telemetría de webhooks...
+                            </div>
+                            <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                        </div>
+                        <div id="debug-panel-n8n" style="display:none;">
+                            <div class="error-log" id="n8n-log-console" style="height:300px;font-size:0.72rem;">
+                                [System] Presiona "Cargar Logs n8n" para ver la telemetría de los workflows...
+                            </div>
+                            <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                                <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
+                                <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Base de Datos & Conexión (movido de Config) -->
+                    <div class="card" style="margin-top:1.5rem;">
+                        <p class="card-title">🗄️ Base de Datos & Conexión</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.75rem;">
+                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Sheet ID</p>
+                                <p style="font-size:0.82rem;color:var(--white);font-weight:600;">14Go...p-_Fo</p>
+                            </div>
+                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estado API</p>
+                                <p style="font-size:0.82rem;color:#22c55e;font-weight:600;">● ONLINE</p>
+                            </div>
+                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Motor</p>
+                                <p style="font-size:0.82rem;color:var(--gold);font-weight:600;">FLOOVU V9</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div><!-- /dashboard-admin -->
+            </section>
+
+            <section id="usuarios" class="content-section">
+                <div class="header"><h1>Gestión de Usuarios</h1></div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+                    <!-- Generador de hash -->
+                    <div class="card">
+                        <p class="card-title">🔐 Generar Hash de Contraseña</p>
+                        <div class="form-group">
+                            <label for="hash-pass">Nueva contraseña</label>
+                            <div style="position:relative;">
+                                <input type="password" id="hash-pass" placeholder="Escribe la contraseña..." oninput="checkHashStrength(this.value)" style="padding-right:40px;">
+                                <button type="button" onclick="togglePassVisibility('hash-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                            <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:6px;overflow:hidden;">
+                                <div id="hash-strength-fill" style="height:100%;border-radius:2px;width:0%;transition:width 0.3s,background 0.3s;"></div>
+                            </div>
+                            <p id="hash-strength-label" style="font-size:0.68rem;margin-top:4px;color:#475569;">—</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="hash-pass2">Confirmar contraseña</label>
+                            <div style="position:relative;">
+                                <input type="password" id="hash-pass2" placeholder="Repite la contraseña..." style="padding-right:40px;">
+                                <button type="button" onclick="togglePassVisibility('hash-pass2', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                        </div>
+                        <button class="btn-premium" style="width:100%" onclick="generateHashAdmin()">⚡ Generar Hash SHA-256</button>
+                        <div id="hash-result-admin" style="display:none;margin-top:1rem;background:rgba(197,160,89,0.05);border:1px solid rgba(197,160,89,0.2);border-radius:10px;padding:14px;">
+                            <p style="font-size:0.7rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Hash generado — cópialo al index.html</p>
+                            <p id="hash-value-admin" onclick="copyHashAdmin()" style="font-family:monospace;font-size:0.72rem;color:var(--gold);word-break:break-all;line-height:1.6;cursor:pointer;" title="Click para copiar"></p>
+                            <p style="font-size:0.68rem;color:#475569;margin-top:6px;">👆 Click para copiar</p>
+                            <div id="hash-copied-admin" style="display:none;font-size:0.75rem;color:#22c55e;margin-top:6px;">✅ Copiado al portapapeles</div>
+                        </div>
+                    </div>
+
+                    <!-- Usuarios actuales -->
+                    <div class="card">
+                        <p class="card-title">👤 Usuarios Configurados</p>
+                        <p style="font-size:0.78rem;color:var(--silver);margin-bottom:1rem;line-height:1.5;">Estos usuarios tienen acceso al sistema. Para agregar o modificar usuarios, edita el bloque <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">USERS</code> en el <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">index.html</code>.</p>
+                        <div id="users-list-admin"></div>
+                        <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
+                            <p style="font-size:0.72rem;color:var(--silver);line-height:1.5;">
+                                <strong style="color:var(--gold);">Para agregar un usuario:</strong><br>
+                                1. Genera el hash con el generador de la izquierda<br>
+                                2. Abre el <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">index.html</code> en tu editor<br>
+                                3. Busca <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">USERS:</code> y agrega el bloque<br>
+                                4. Sube el archivo a GitHub
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
             </section>
 
             <section id="asignaciones" class="content-section">
@@ -1492,119 +1596,7 @@
                 </div>
             </section>
 
-            <section id="config" class="content-section">
-                <div class="header"><h1>Configuración</h1></div>
-
-                <div class="dashboard-grid">
-                    <!-- COLUMNA IZQUIERDA: DEBUG DUAL -->
-                    <div class="card" style="grid-row: span 2;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                            <p class="card-title" style="margin:0;">Debug: Reporte de Errores</p>
-                            <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Cargar Logs n8n</button>
-                        </div>
-
-                        <!-- Tabs -->
-                        <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
-                            <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">📟 Frontend</button>
-                            <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">⚙️ n8n / Workflows <span id="n8n-log-badge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:0.65rem;margin-left:4px;">!</span></button>
-                        </div>
-
-                        <!-- Panel Frontend (existente) -->
-                        <div id="debug-panel-frontend">
-                            <div class="error-log" id="error-console" style="height: 400px;">
-                                [System] Iniciando consola de depuración v12...
-                                [System] Esperando telemetría de webhooks...
-                            </div>
-                            <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
-                        </div>
-
-                        <!-- Panel n8n logs -->
-                        <div id="debug-panel-n8n" style="display:none;">
-                            <div class="error-log" id="n8n-log-console" style="height:400px;font-size:0.72rem;">
-                                [System] Presiona "Cargar Logs n8n" para ver la telemetría de los workflows...
-                            </div>
-                            <div style="display:flex;gap:8px;margin-top:0.75rem;">
-                                <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
-                                <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- COLUMNA DERECHA: INFO TÉCNICA -->
-                    <div class="card">
-                        <p class="card-title">Base de Datos & Conexión</p>
-                        <p>Sheet ID: <strong>14Go...p-_Fo</strong></p>
-                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Estado API: <span style="color:#22c55e">● ONLINE</span></p>
-                        <p style="margin-top:0.5rem; font-size:0.8rem; color:var(--silver)">Versión del Motor: <strong>FLOOVU Legal AI PRO V9</strong></p>
-                    </div>
-
-                    <div class="card">
-                        <p class="card-title">Diagnóstico de Tuberías (Engine)</p>
-                        <div id="health-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:1rem;">
-                            <div class="health-item">🌍 Webhook: <span id="h-web" style="color:var(--silver)">-</span></div>
-                            <div class="health-item">📧 Gmail: <span id="h-gmail" style="color:var(--silver)">-</span></div>
-                            <div class="health-item">📊 Sheets: <span id="h-sheet" style="color:var(--silver)">-</span></div>
-                            <div class="health-item">🤖 IA: <span id="h-ai" style="color:var(--silver)">-</span></div>
-                        </div>
-                        <button class="btn-premium" style="margin-top:1.5rem; font-size:0.8rem; width:100%" onclick="pingEngine()">🚀 Lanzar Diagnóstico Real</button>
-                    </div>
-                </div>
-
-                <!-- GESTIÓN DE USUARIOS — solo visible para admin -->
-                <div style="margin-top:2rem;">
-                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">👥 Gestión de Usuarios</p>
-
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-
-                        <!-- Generador de hash -->
-                        <div class="card">
-                            <p class="card-title">🔐 Generar Hash de Contraseña</p>
-                            <div class="form-group">
-                                <label for="hash-pass">Nueva contraseña</label>
-                                <div style="position:relative;">
-                                    <input type="password" id="hash-pass" placeholder="Escribe la contraseña..." oninput="checkHashStrength(this.value)" style="padding-right:40px;">
-                                    <button type="button" onclick="togglePassVisibility('hash-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                                </div>
-                                <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:6px;overflow:hidden;">
-                                    <div id="hash-strength-fill" style="height:100%;border-radius:2px;width:0%;transition:width 0.3s,background 0.3s;"></div>
-                                </div>
-                                <p id="hash-strength-label" style="font-size:0.68rem;margin-top:4px;color:#475569;">—</p>
-                            </div>
-                            <div class="form-group">
-                                <label for="hash-pass2">Confirmar contraseña</label>
-                                <div style="position:relative;">
-                                    <input type="password" id="hash-pass2" placeholder="Repite la contraseña..." style="padding-right:40px;">
-                                    <button type="button" onclick="togglePassVisibility('hash-pass2', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                                </div>
-                            </div>
-                            <button class="btn-premium" style="width:100%" onclick="generateHashAdmin()">⚡ Generar Hash SHA-256</button>
-                            <div id="hash-result-admin" style="display:none;margin-top:1rem;background:rgba(197,160,89,0.05);border:1px solid rgba(197,160,89,0.2);border-radius:10px;padding:14px;">
-                                <p style="font-size:0.7rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Hash generado — cópialo al index.html</p>
-                                <p id="hash-value-admin" onclick="copyHashAdmin()" style="font-family:monospace;font-size:0.72rem;color:var(--gold);word-break:break-all;line-height:1.6;cursor:pointer;" title="Click para copiar"></p>
-                                <p style="font-size:0.68rem;color:#475569;margin-top:6px;">👆 Click para copiar</p>
-                                <div id="hash-copied-admin" style="display:none;font-size:0.75rem;color:#22c55e;margin-top:6px;">✅ Copiado al portapapeles</div>
-                            </div>
-                        </div>
-
-                        <!-- Usuarios actuales -->
-                        <div class="card">
-                            <p class="card-title">👤 Usuarios Configurados</p>
-                            <p style="font-size:0.78rem;color:var(--silver);margin-bottom:1rem;line-height:1.5;">Estos usuarios tienen acceso al sistema. Para agregar o modificar usuarios, edita el bloque <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">USERS</code> en el <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.72rem;">index.html</code>.</p>
-                            <div id="users-list-admin"></div>
-                            <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
-                                <p style="font-size:0.72rem;color:var(--silver);line-height:1.5;">
-                                    <strong style="color:var(--gold);">Para agregar un usuario:</strong><br>
-                                    1. Genera el hash con el generador de la izquierda<br>
-                                    2. Abre el <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">index.html</code> en tu editor<br>
-                                    3. Busca <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">USERS:</code> y agrega el bloque<br>
-                                    4. Sube el archivo a GitHub
-                                </p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
+            <!-- Config section ELIMINADA — contenido movido a Dashboard (debug, BD) y Gestión de Usuarios (nueva pestaña) -->
 
             <section id="version" class="content-section">
                 <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
@@ -1872,12 +1864,12 @@
 
         // Pestañas visibles por rol
         const ROLE_TABS = {
-            admin:    ['config', 'version'],          // SOLO ve estas
+            admin:    ['usuarios', 'version'],          // SOLO ve estas
             operator: ['dashboard','asignaciones','expedientes','abogados','clientes','observaciones','bandeja','calendario','version']
         };
 
         // Pestañas que NADIE ve excepto admin
-        const ADMIN_ONLY_TABS = ['config'];
+        const ADMIN_ONLY_TABS = ['usuarios'];
 
         let currentUser = null;
 
@@ -1950,7 +1942,7 @@
 
         // Pestañas que ve cada rol
         const OPERATOR_TABS = ['dashboard','asignaciones','expedientes','abogados','clientes','calendario','version'];
-        const ADMIN_TABS    = ['dashboard','config','version'];
+        const ADMIN_TABS    = ['dashboard','usuarios','version'];
 
         function applyRoleUI(user) {
             // Mostrar nombre y rol en sidebar
@@ -2124,7 +2116,7 @@
 
             if (tabId === 'abogados') {
                 if (lawyers.length > 0) { renderLawyers(); updateUI(); } else { loadLawyers(); }
-            } else if (tabId === 'config') {
+            } else if (tabId === 'usuarios') {
                 renderUsersAdmin();
                 updateUI();
             } else if (tabId === 'clientes') {
@@ -2254,18 +2246,43 @@ async function loadRealData() {
                         const venc = row['Fecha de Vencimiento'] || row['vencimiento'] ||
                                      row['vencimiento_explicito'] || row['Vencimiento'] || 'S/D';
 
-                        // FASE 3: guardar fecha con hora — el sheet solo trae fecha,
-                        // añadimos la hora actual de recepción en el cliente
+                        // FASE 3: parser robusto de fechas — normaliza CUALQUIER formato a DD/MM/AAAA HH:mm
                         const fechaRaw = row.Fecha || row.fecha || '';
-                        const dateStr  = fechaRaw
-                            ? `${fechaRaw} ${new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'})}`
-                            : new Date().toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                        const dateStr = (() => {
+                            if (!fechaRaw) return new Date().toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+                            // Intentar parsear la fecha cruda
+                            let d = null;
+                            // Formato DD/MM/YYYY HH:mm (ya correcto)
+                            const dmyMatch = fechaRaw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\s*(\d{1,2}:\d{2})?/);
+                            if (dmyMatch) {
+                                const [, dd, mm, yyyy, time] = dmyMatch;
+                                d = new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd));
+                                if (time) { const [h,m] = time.split(':'); d.setHours(parseInt(h), parseInt(m)); }
+                            }
+                            // Formato "Mar 25, 2026" o "March 25, 2026" (inglés de GS)
+                            if (!d || isNaN(d.getTime())) {
+                                const parsed = new Date(fechaRaw);
+                                if (!isNaN(parsed.getTime())) d = parsed;
+                            }
+                            // Formato YYYY-MM-DD
+                            if (!d || isNaN(d.getTime())) {
+                                const isoMatch = fechaRaw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                                if (isoMatch) d = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2])-1, parseInt(isoMatch[3]));
+                            }
+                            if (!d || isNaN(d.getTime())) return fechaRaw; // fallback: devolver raw
+                            const pad = n => String(n).padStart(2, '0');
+                            const fecha = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+                            const hora = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                            return d.getHours() || d.getMinutes() ? `${fecha} ${hora}` : fecha;
+                        })();
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
                         const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
                                          row['score'] || row['Score'] || row.score || '0';
-                        // Score viene del sheet como string — parsearlo correctamente
-                        const score = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
+                        // Score viene del sheet como string 0-100 — normalizar a escala 0-10
+                        let scoreParsed = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
+                        // Si viene en escala 0-100 (ej: 85), convertir a 0-10 (ej: 8.5)
+                        const score = scoreParsed > 10 ? parseFloat((scoreParsed / 10).toFixed(1)) : scoreParsed;
 
                         // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
                         let desc = row['Resumen del Documento'] || row['resumen'] || '';
@@ -2283,7 +2300,7 @@ async function loadRealData() {
 
                         return {
                             date:         dateStr,
-                            dateOnly:     fechaRaw || new Date().toLocaleDateString('es-CO'),
+                            dateOnly:     dateStr.split(' ')[0] || new Date().toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'}),
                             rama:         row.Rama  || row.rama  || 'General',
                             partes:       row.Partes || row.partes || row.nombre_cliente || 'Sin Partes',
                             venc,
