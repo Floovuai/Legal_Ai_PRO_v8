@@ -2049,6 +2049,8 @@
         let lawyers = [];      // Se carga desde Google Sheets — no hardcodeado en config.js
         let clients = [];      // Directorio unificado (manual + casos)
         let allClientRows = []; // Cache para búsqueda
+        let observacionesData = [];
+        let bandejaData = [];
 
         // Mostrar email de cuenta en sidebar (viene de config.js, no del HTML)
         const _accountEl = document.getElementById('sidebar-account-email');
@@ -4292,7 +4294,6 @@ async function loadRealData() {
         // ══════════════════════════════════════════
         // V9: OBSERVACIONES
         // ══════════════════════════════════════════
-        let observacionesData = [];
 
         async function loadObservaciones() {
             try {
@@ -4371,7 +4372,6 @@ async function loadRealData() {
         // ══════════════════════════════════════════
         // V9: BANDEJA GMAIL
         // ══════════════════════════════════════════
-        let bandejaData = [];
 
         async function loadBandejaGmail() {
             try {
