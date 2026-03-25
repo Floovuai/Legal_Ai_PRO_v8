@@ -1632,12 +1632,12 @@
                     <div class="table-scroll">
                         <table>
                             <thead><tr>
-                                <th>FECHA</th>
+                                <th>VENCIMIENTO</th>
                                 <th>PARTES</th>
                                 <th>RAMA</th>
                                 <th>TIPO</th>
                                 <th>ABOGADO</th>
-                                <th>VENCIMIENTO</th>
+                                <th>CALENDARIO</th>
                             </tr></thead>
                             <tbody id="cal-content"><tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
                         </table>
@@ -2514,20 +2514,25 @@ async function loadRealData() {
                 el('dash-deadlines').innerHTML = `<div style="text-align:center;padding:2rem;color:var(--silver);font-size:0.85rem;opacity:0.5;">Sin vencimientos próximos</div>`;
             }
 
-            // Agenda Judicial
-            if (conVenc.length) {
-                el('cal-content').innerHTML = conVenc.map(c =>
-                    `<tr>
+            // Agenda Judicial — solo casos ASIGNADOS con abogado vinculado
+            const conVencAsig = conVenc.filter(c => c.lawyer && c.status === 'ASIGNADO');
+            if (conVencAsig.length) {
+                el('cal-content').innerHTML = conVencAsig.map(c => {
+                    // Estado calendario: si tiene fecha de vencimiento real = programado
+                    const calEstado = (c.venc && c.venc !== 'S/D' && c.venc !== 'N/A')
+                        ? `<span style="color:#22c55e;font-weight:700;font-size:0.78rem;">● Programado</span>`
+                        : `<span style="color:#f97316;font-weight:700;font-size:0.78rem;">○ Sin programar</span>`;
+                    return `<tr>
                         <td style="color:var(--gold);font-family:monospace;font-size:0.82rem;font-weight:700;">${esc(c.venc)}</td>
                         <td style="font-weight:600;color:var(--white);">${esc(c.partes)}</td>
                         <td>${esc(c.rama)}</td>
                         <td style="color:var(--silver);font-size:0.82rem;">${esc(c.tipo || '—')}</td>
-                        <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Sin asignar')}</td>
-                        <td style="color:var(--gold);font-family:monospace;">${esc(c.venc)}</td>
-                    </tr>`
-                ).join('');
+                        <td style="color:var(--white);">${esc(c.lawyer)}</td>
+                        <td>${calEstado}</td>
+                    </tr>`;
+                }).join('');
             } else {
-                el('cal-content').innerHTML = `<tr><td colspan="6" class="empty-state">No hay vencimientos con fecha definida</td></tr>`;
+                el('cal-content').innerHTML = `<tr><td colspan="6" class="empty-state">No hay vencimientos con casos asignados</td></tr>`;
             }
 
             // Asignaciones
@@ -2605,16 +2610,16 @@ async function loadRealData() {
                                 const presel = c.cliente_a_defender || '';
                                 const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
                                 const sel1 = presel === p1 ? 'checked' : '';
-                                let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;">`;
+                                let html = `<div style="display:flex;flex-direction:column;gap:6px;">`;
                                 if (p0) html += `
-                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;max-width:100%;flex:1;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
                                         <input type="radio" name="cad-${tok}" value="${esc(p0)}" ${sel0} style="accent-color:var(--gold);flex-shrink:0;">
-                                        <span style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p0)}</span>${nit}
+                                        <span style="font-size:0.82rem;color:var(--white);word-break:break-word;">${esc(p0)}</span>${nit}
                                     </label>`;
                                 if (p1) html += `
-                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;max-width:100%;flex:1;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
                                         <input type="radio" name="cad-${tok}" value="${esc(p1)}" ${sel1} style="accent-color:var(--gold);flex-shrink:0;">
-                                        <span style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p1)}</span>
+                                        <span style="font-size:0.82rem;color:var(--white);word-break:break-word;">${esc(p1)}</span>
                                     </label>`;
                                 html += `</div>`;
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
@@ -2624,7 +2629,7 @@ async function loadRealData() {
                             <div class="asig-client-fields">
                                 <div>
                                     <label for="asig-nit-${tok}">NIT / CÉDULA</label>
-                                    <input type="text" id="asig-nit-${tok}" placeholder="Ej: 900.123.456-7" value="${esc(c.nit || '')}">
+                                    <input type="text" id="asig-nit-${tok}" placeholder="Ej: 900.123.456-7" value="${esc(String(c.nit || ''))}">
                                 </div>
                                 <div>
                                     <label for="asig-email-${tok}">EMAIL DEL CLIENTE</label>
