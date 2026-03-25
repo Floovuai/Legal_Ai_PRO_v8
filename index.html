@@ -1978,6 +1978,8 @@
 
             // Iniciar el sistema
             init();
+            // Auto-refresh de servicios para admin
+            if (user.role === 'admin') startHealthAutoRefresh();
             // Mostrar dashboard según rol
             showDashboardForRole(user.role);
         }
@@ -4466,8 +4468,20 @@ async function loadRealData() {
                     }
                 });
                 // Actualizar dashboard admin si aplica
-                if (currentUser && currentUser.role === 'admin') renderAdminDashboard();
+                if (currentUser && currentUser.role === 'admin') {
+                    renderAdminDashboard();
+                    pingEngineAdmin();
+                }
             });
+        }
+
+        // Auto-refresh: verificar servicios cada 60s si es admin
+        let _healthInterval = null;
+        function startHealthAutoRefresh() {
+            if (_healthInterval) clearInterval(_healthInterval);
+            _healthInterval = setInterval(() => {
+                if (currentUser && currentUser.role === 'admin') pingEngineAdmin();
+            }, 60000);
         }
     </script>
 </body>
