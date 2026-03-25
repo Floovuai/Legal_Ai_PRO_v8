@@ -1932,7 +1932,9 @@
             CLIENT_SAVE:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
             CLIENT_DELETE:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente',
             GET_CLIENT_MAILS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails',
-            GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log'
+            GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log',
+            SAVE_OBS:           'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-observacion',
+            GET_OBS:            'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-observaciones'
         }
     };
     </script>
@@ -2612,14 +2614,14 @@ async function loadRealData() {
                                 const sel1 = presel === p1 ? 'checked' : '';
                                 let html = `<div style="display:flex;flex-direction:column;gap:6px;">`;
                                 if (p0) html += `
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;overflow:hidden;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
                                         <input type="radio" name="cad-${tok}" value="${esc(p0)}" ${sel0} style="accent-color:var(--gold);flex-shrink:0;">
-                                        <span style="font-size:0.82rem;color:var(--white);word-break:break-word;">${esc(p0)}</span>${nit}
+                                        <span style="font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">${esc(p0)}</span>${nit}
                                     </label>`;
                                 if (p1) html += `
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;overflow:hidden;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
                                         <input type="radio" name="cad-${tok}" value="${esc(p1)}" ${sel1} style="accent-color:var(--gold);flex-shrink:0;">
-                                        <span style="font-size:0.82rem;color:var(--white);word-break:break-word;">${esc(p1)}</span>
+                                        <span style="font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;">${esc(p1)}</span>
                                     </label>`;
                                 html += `</div>`;
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
@@ -4684,14 +4686,15 @@ async function loadRealData() {
             if (_anotacionesCache[tok]) { renderAnotaciones(tok, _anotacionesCache[tok]); return; }
             list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>`;
             try {
-                const res = await authFetch(N8N_GET_DATA, {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.GET_OBS, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'get_anotaciones', token: tok })
+                    body: JSON.stringify({ token: tok })
                 });
                 if (res.ok) {
                     const txt = await res.text();
-                    const data = txt ? JSON.parse(txt) : [];
-                    const anotaciones = Array.isArray(data) ? data.filter(r => (r.token || r.Token || '') === tok && (r.Tipo || r.tipo || '').includes('SEGUIMIENTO')) : [];
+                    const data = txt ? JSON.parse(txt) : {};
+                    const anotaciones = Array.isArray(data.anotaciones) ? data.anotaciones : [];
                     _anotacionesCache[tok] = anotaciones;
                     renderAnotaciones(tok, anotaciones);
                 } else {
@@ -4725,15 +4728,14 @@ async function loadRealData() {
             if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
-                const url = WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA;
+                const url = WH.SAVE_OBS;
                 const res = await authFetch(url, {
                     method: 'POST',
                     body: JSON.stringify({
                         token: tok,
                         tipo: 'SEGUIMIENTO',
-                        descripcion: texto,
-                        autor: currentUser?.name || 'Operador',
-                        fecha: new Date().toLocaleString('es-CO')
+                        texto: texto,
+                        operador: currentUser?.name || 'Operador'
                     })
                 });
                 if (res.ok) {
