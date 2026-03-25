@@ -573,7 +573,80 @@
         .deadline-badge.proximo { background: rgba(249,115,22,0.18); color: #f97316; }
         .deadline-badge.normal  { background: rgba(201,168,76,0.12); color: var(--gold); }
 
-        /* ── ERROR LOG ── */
+        /* ── EXPEDIENTES CARDS ── */
+        .exp-card {
+            background: linear-gradient(145deg, rgba(10,15,28,0.97), rgba(6,10,18,0.97));
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .exp-card:hover {
+            border-color: rgba(201,168,76,0.2);
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+        }
+        .exp-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .exp-card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 0.75rem;
+        }
+        .exp-meta-chip {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 0.72rem;
+            color: var(--silver);
+        }
+        .exp-panel {
+            display: none;
+            margin-top: 0.75rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.35);
+            border-radius: var(--radius-sm);
+            border-left: 2px solid var(--gold);
+            animation: slideDown 0.25s ease-out;
+        }
+        .exp-panel.open { display: block; }
+        .exp-panel-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+        }
+
+        /* ── ASIG CLIENT FIELDS ── */
+        .asig-client-fields {
+            margin-top: 10px;
+            padding: 12px 16px;
+            background: rgba(201,168,76,0.04);
+            border: 1px solid rgba(201,168,76,0.15);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .asig-client-fields label { font-size: 0.68rem; letter-spacing: 1px; color: rgba(201,168,76,0.5); margin-bottom: 3px; }
+        .asig-client-fields input { height: 34px; font-size: 0.8rem; }
+
+        @media (max-width: 768px) {
+            .exp-card-header { flex-direction: column; }
+            .asig-client-fields { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .exp-panel-btns { flex-direction: column; }
+        }
+
         .error-log {
             font-family: 'Fira Code', 'Courier New', monospace;
             background: #000;
@@ -1302,10 +1375,19 @@
             </section>
 
             <section id="expedientes" class="content-section">
-                <div class="header"><h1>Registro Maestro</h1></div>
-                <div class="card">
-                    <p class="card-title">Google Sheets (Registro Legal)</p>
-                    <div class="table-scroll"><table><thead><tr><th>TOKEN</th><th>FECHA</th><th>RAMA</th><th>PARTES</th><th>CLIENTE A DEFENDER</th><th>ABOGADO</th><th>VENCIMIENTO</th></tr></thead><tbody id="exp-rows"><tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr></tbody></table></div>
+                <div class="header">
+                    <h1>Registro Legal</h1>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span id="exp-new-badge" style="display:none;background:#f97316;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:1px;">🔔 NUEVOS REGISTROS</span>
+                        <button class="btn-outline" onclick="loadRealData()">🔄 Actualizar</button>
+                        <input type="text" id="exp-search" placeholder="Buscar cliente, token, abogado..." oninput="filtrarExpedientes(this.value)" style="width:240px;height:34px;font-size:0.8rem;">
+                    </div>
+                </div>
+                <div class="notification-banner" style="border-color:rgba(34,197,94,0.25);background:linear-gradient(90deg,rgba(34,197,94,0.06),rgba(34,197,94,0.02));margin-bottom:1.5rem;">
+                    <span style="font-size:0.82rem;">📁 Solo muestra casos ya asignados a un abogado. Cada tarjeta incluye seguimiento y historial de emails.</span>
+                </div>
+                <div id="exp-cards-container">
+                    <div class="empty-state"><span class="empty-icon">📁</span>Cargando registro legal...</div>
                 </div>
             </section>
 
@@ -2185,50 +2267,13 @@
             }
         }
 
-        async 
-        // B5 — Alertas de registros parciales pendientes de confirmar
-        function renderPartialAlerts() {
-            const container = document.getElementById('partial-alerts-container');
-            if (!container) return;
-            const parciales = db.filter(c => c.status === 'ASIGNADO' && c.pendiente_confirmar);
-            if (!parciales.length) { container.innerHTML = ''; return; }
-            container.innerHTML = parciales.map(c => `
-                <div style="margin-bottom:1rem;padding:14px 18px;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.4);border-radius:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                    <span style="font-size:1.2rem;">⚠️</span>
-                    <div style="flex:1;min-width:200px;">
-                        <p style="margin:0;font-size:0.82rem;color:var(--gold);font-weight:700;">Registro parcial pendiente de confirmar</p>
-                        <p style="margin:4px 0 0;font-size:0.78rem;color:var(--silver);">
-                            Caso <strong style="color:var(--white);">${esc(c.token)}</strong> — 
-                            Cliente a defender: <strong style="color:var(--white);">${esc(c.cliente_a_defender || c.partes || '—')}</strong>
-                        </p>
-                        <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">Faltan datos personales del cliente (NIT, email, teléfono). Completa y guarda.</p>
-                    </div>
-                    <button class="btn-outline" style="font-size:0.75rem;padding:6px 14px;color:var(--gold);border-color:var(--gold);" 
-                        onclick="openPartialClientForm('${esc(c.token)}', '${esc(c.cliente_a_defender || c.partes || '')}', '${esc(c.nit || '')}')">
-                        ✏️ Completar datos
-                    </button>
-                </div>`).join('');
-        }
-
-        // B5 — Abrir formulario pre-cargado con datos del registro parcial
-        function openPartialClientForm(token, nombre, nit) {
-            // Navegar a pestaña clientes
-            document.querySelector('[data-tab="clientes"]')?.click();
-            setTimeout(() => {
-                const n = document.getElementById('new-cli-nombre');
-                const ni = document.getElementById('new-cli-nit');
-                if (n) { n.value = nombre; n.style.borderColor = 'var(--gold)'; }
-                if (ni) { ni.value = nit; }
-                // Guardar token parcial para el save
-                window._partialToken = token;
-                n?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showToast('Datos pre-cargados. Completa y guarda el cliente.', 'ok');
-            }, 300);
-        }
+        // B5 — renderPartialAlerts y openPartialClientForm eliminados
+        // Los datos del cliente ahora se confirman directamente en la tarjeta de Asignaciones
 
 async function loadRealData() {
             el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
-            el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Cargando...</td></tr>`;
+            const expContainer = document.getElementById('exp-cards-container');
+            if (expContainer) expContainer.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>Cargando...</div>`;
             logError("Sincronizando base de datos real...");
             try {
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST' });
@@ -2241,7 +2286,8 @@ async function loadRealData() {
                     } catch(parseErr) {
                         logError(`⚠️ Respuesta no es JSON válido: ${parseErr.message}`);
                         el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Respuesta inválida de n8n.</td></tr>`;
-                        el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de formato.</td></tr>`;
+                        const _expParse = document.getElementById('exp-cards-container');
+                        if (_expParse) _expParse.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Error de formato.</div>`;
                         return;
                     }
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
@@ -2343,16 +2389,17 @@ async function loadRealData() {
                         };
                     });
                     updateUI();
-                    renderPartialAlerts();
                     logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
                     el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
-                    el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error de sincronización.</td></tr>`;
+                    const _expErr = document.getElementById('exp-cards-container');
+                    if (_expErr) _expErr.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Error de sincronización.</div>`;
                     logError(`Error de sincronización: HTTP ${res.status}`);
                 }
             } catch(e) {
                 el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n.</td></tr>`;
-                el('exp-rows').innerHTML  = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión.</td></tr>`;
+                const _expErr2 = document.getElementById('exp-cards-container');
+                if (_expErr2) _expErr2.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Sin conexión.</div>`;
                 logError(`Error de sincronización: ${e.message}`);
             }
         }
@@ -2381,7 +2428,8 @@ async function loadRealData() {
                 el('dash-rows').innerHTML       = `<tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr>`;
                 el('dash-deadlines').innerHTML  = `<span class="empty-icon">📅</span>Sin actividad`;
                 el('asig-content').innerHTML    = `<span class="empty-icon">⚖️</span>Sin casos pendientes de despacho`;
-                el('exp-rows').innerHTML        = `<tr><td colspan="6" class="empty-state">La base de datos se encuentra vacía</td></tr>`;
+                const _expEmpty = document.getElementById('exp-cards-container');
+                if (_expEmpty) _expEmpty.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>La base de datos se encuentra vacía</div>`;
                 el('cal-content').innerHTML     = `<tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr>`;
                 el('kpi-hours').innerText       = '0h';
                 el('kpi-score').innerText       = '—';
@@ -2543,37 +2591,54 @@ async function loadRealData() {
                             <button class="btn-outline" style="color:var(--gold);border-color:var(--gold);" onclick="fetchClientMails('${tok}', '${esc(c.partes)}')">📧 Correos del Cliente</button>
                             <div style="flex-grow:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                                 <select id="law-sel-${tok}" style="max-width:200px;">${lawyerOptions}</select>
-                                <input type="email" id="cli-em-${tok}" placeholder="Email del Cliente"
-                                    style="max-width:200px;background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;">
                                 <button class="btn-asig-main" onclick="finish('${tok}')">⚖️ Confirmar Asignación</button>
                             </div>
                         </div>
                         <!-- CLIENTE A DEFENDER — B5 -->
-                        <div style="margin-top:12px;padding:12px 16px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;">
-                            <p style="margin:0 0 8px;font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">🛡 Cliente a Defender</p>
+                        <div style="margin-top:10px;padding:10px 14px;background:rgba(212,175,55,0.07);border:1px solid rgba(212,175,55,0.25);border-radius:10px;">
+                            <p style="margin:0 0 6px;font-size:0.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">🛡 Cliente a Defender</p>
                             ${(() => {
                                 const parts = c.partes_array || [];
                                 const p0 = parts[0] || c.partes || '';
                                 const p1 = parts[1] || '';
-                                const nit = c.nit ? `<span style="font-size:0.7rem;color:var(--silver);margin-left:6px;">NIT/Cédula: ${esc(c.nit)}</span>` : '';
+                                const nit = c.nit ? `<span style="font-size:0.68rem;color:var(--silver);margin-left:6px;">${esc(c.nit)}</span>` : '';
                                 const presel = c.cliente_a_defender || '';
                                 const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
                                 const sel1 = presel === p1 ? 'checked' : '';
-                                let html = `<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;">`;
+                                let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;">`;
                                 if (p0) html += `
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
-                                        <input type="radio" name="cad-${tok}" value="${esc(p0)}" ${sel0} style="accent-color:var(--gold);">
-                                        <span style="font-size:0.82rem;color:var(--white);">${esc(p0)}${nit}</span>
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;max-width:100%;flex:1;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                        <input type="radio" name="cad-${tok}" value="${esc(p0)}" ${sel0} style="accent-color:var(--gold);flex-shrink:0;">
+                                        <span style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p0)}</span>${nit}
                                     </label>`;
                                 if (p1) html += `
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
-                                        <input type="radio" name="cad-${tok}" value="${esc(p1)}" ${sel1} style="accent-color:var(--gold);">
-                                        <span style="font-size:0.82rem;color:var(--white);">${esc(p1)}</span>
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color 0.2s;max-width:100%;flex:1;min-width:0;" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>r.closest('label').style.borderColor='var(--border)');this.style.borderColor='var(--gold)';">
+                                        <input type="radio" name="cad-${tok}" value="${esc(p1)}" ${sel1} style="accent-color:var(--gold);flex-shrink:0;">
+                                        <span style="font-size:0.8rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(p1)}</span>
                                     </label>`;
                                 html += `</div>`;
-                                if (presel) html += `<p style="margin:6px 0 0;font-size:0.7rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
+                                if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
                                 return html;
                             })()}
+                            <!-- Datos provisorios del cliente para confirmar en asignación -->
+                            <div class="asig-client-fields">
+                                <div>
+                                    <label for="asig-nit-${tok}">NIT / CÉDULA</label>
+                                    <input type="text" id="asig-nit-${tok}" placeholder="Ej: 900.123.456-7" value="${esc(c.nit || '')}">
+                                </div>
+                                <div>
+                                    <label for="asig-email-${tok}">EMAIL DEL CLIENTE</label>
+                                    <input type="email" id="asig-email-${tok}" placeholder="cliente@empresa.com" value="${esc(c.email_cliente || '')}">
+                                </div>
+                                <div>
+                                    <label for="asig-tel-${tok}">TELÉFONO</label>
+                                    <input type="text" id="asig-tel-${tok}" placeholder="+57 300 000 0000">
+                                </div>
+                                <div>
+                                    <label for="asig-notas-${tok}">NOTAS</label>
+                                    <input type="text" id="asig-notas-${tok}" placeholder="Observaciones del cliente">
+                                </div>
+                            </div>
                         </div>
                         <div id="desc-panel-${tok}" class="asig-desc-panel" style="display:none;">
                             ${descFormatted}
@@ -2589,18 +2654,8 @@ async function loadRealData() {
                     : `<span class="empty-icon">⚖️</span>Sin casos pendientes`;
             }
 
-            // Registro maestro
-            el('exp-rows').innerHTML = db.map(c =>
-                `<tr>
-                    <td style="color:var(--gold);font-family:monospace;">${esc(c.token)}</td>
-                    <td>${esc(c.date)}</td>
-                    <td>${esc(c.rama)}</td>
-                    <td>${esc(c.partes)}</td>
-                    <td style="color:${c.cliente_a_defender ? 'var(--gold)' : 'var(--silver)'};font-weight:${c.cliente_a_defender ? '600' : 'normal'};font-style:${c.cliente_a_defender ? 'normal' : 'italic'};">${esc(c.cliente_a_defender || '—')}</td>
-                    <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
-                    <td>${esc(c.venc)}</td>
-                </tr>`
-            ).join('');
+            // Registro Legal — solo casos ASIGNADOS, vista tarjetas
+            renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
         }
 
         // F4-04: Toast — reemplaza alert() nativo
@@ -2859,7 +2914,10 @@ async function loadRealData() {
             if (!caseItem) { showToast('Caso no encontrado. Recarga la página.', 'error'); return; }
 
             const lawyerName  = document.getElementById(`law-sel-${caseToken}`).value;
-            const clientEmail = document.getElementById(`cli-em-${caseToken}`).value;
+            const clientEmail = document.getElementById(`asig-email-${caseToken}`)?.value?.trim() || '';
+            const clientNit   = document.getElementById(`asig-nit-${caseToken}`)?.value || caseItem.nit || '';
+            const clientTel   = document.getElementById(`asig-tel-${caseToken}`)?.value || '';
+            const clientNotas = document.getElementById(`asig-notas-${caseToken}`)?.value || '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
@@ -2890,14 +2948,16 @@ async function loadRealData() {
                         const _clienteADefender = _cadRadio ? _cadRadio.value : (caseItem.cliente_a_defender || caseItem.partes || '');
                         return {
                             row_number:                  caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
-                            'Nombre Cliente':            caseItem.partes,
+                            'Nombre Cliente':            _clienteADefender,
                             'Estado Alerta':             'ASIGNADO',
                             email_cliente:               clientEmail,
-                            nombre_cliente:              caseItem.partes,
+                            nombre_cliente:              _clienteADefender,
                             nombre_cliente_identificado: _clienteADefender,
                             cliente_a_defender:          _clienteADefender,
                             'Cliente a defender':        _clienteADefender,
-                            nit_cliente:                 caseItem.nit || '',
+                            nit_cliente:                 clientNit,
+                            telefono_cliente:            clientTel,
+                            notas_cliente:               clientNotas,
                             abogado_responsable:         lawyerName,
                             email_abogado:               lawyerObj.email,
                             asunto:                      `Asignación de Caso: ${caseItem.partes}`,
@@ -2908,9 +2968,7 @@ async function loadRealData() {
                             token:                       caseItem.token,
                             case_description:            caseItem.desc,
                             informe_html:                caseItem.informe_html || "<!--FLOOVU_AB_PLACEHOLDER-->",
-                            messageId:                   caseItem.messageId || '',
-                            registro_parcial:            !clientEmail,
-                            pendiente_confirmar:         !clientEmail
+                            messageId:                   caseItem.messageId || ''
                         };
                     })())
                 });
@@ -2922,12 +2980,35 @@ async function loadRealData() {
                     log(`✓ n8n: recepción confirmada.`);
                     if (resData?.debug) log(`📡 ${resData.debug}`);
                     log(`✓ Informe enviado a ${lawyerObj.email}.`);
+
+                    // Guardar cliente completo en hoja CLIENTES
+                    const _cadRadio2 = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
+                    const _clienteName = _cadRadio2 ? _cadRadio2.value : (caseItem.cliente_a_defender || caseItem.partes || '');
+                    try {
+                        await authFetch(N8N_CLIENT_SAVE, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                nombre:   _clienteName,
+                                nit:      clientNit,
+                                email:    clientEmail,
+                                telefono: clientTel,
+                                notas:    clientNotas || `Caso: ${caseItem.rama || ''} | Token: ${caseItem.token}`
+                            })
+                        });
+                        log(`✓ Cliente guardado en directorio.`);
+                    } catch(saveErr) {
+                        log(`⚠️ Cliente no guardado en directorio: ${saveErr.message}`);
+                    }
+
                     log(`✓ Operación finalizada.`);
                     setTimeout(() => {
-                        overlay.classList.remove('visible');   // F5-08
-                        caseItem.status = 'ASIGNADO';          // F2-04: token NO se sobreescribe
+                        overlay.classList.remove('visible');
+                        caseItem.status = 'ASIGNADO';
                         caseItem.lawyer = lawyerName;
+                        caseItem.cliente_a_defender = _clienteName;
+                        caseItem.nit = clientNit;
                         updateUI();
+                        loadClients();
                     }, 1000);
                 } else {
                     throw new Error(`Error en n8n: ${response.status} ${response.statusText}`);
@@ -3494,8 +3575,8 @@ async function loadRealData() {
                 return;
             }
 
-            // Buscar email del cliente: primero del campo ingresado, luego del directorio
-            let clientEmail = (document.getElementById(`cli-em-${tok}`) || {}).value || '';
+            // Buscar email del cliente: primero del nuevo campo asig-email, luego del directorio
+            let clientEmail = (document.getElementById(`asig-email-${tok}`) || {}).value || '';
             if (!clientEmail) {
                 const found = allClientRows.find(r =>
                     r.nombre && clientName &&
@@ -4473,7 +4554,238 @@ async function loadRealData() {
             renderBandeja(filtered);
         }
 
-                // FIX-INIT-1: función init() llamada por applyRoleUI tras login exitoso
+                // ══════════════════════════════════════════
+        // REGISTRO LEGAL — tarjetas con seguimiento
+        // ══════════════════════════════════════════
+
+        let _expAllData = [];
+
+        function renderExpedientesCards(list) {
+            _expAllData = list || [];
+            const container = document.getElementById('exp-cards-container');
+            if (!container) return;
+            if (!list || !list.length) {
+                container.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>No hay casos asignados aún.</div>`;
+                return;
+            }
+
+            // Badge de nuevos
+            const badge = document.getElementById('exp-new-badge');
+            if (badge) {
+                const recientes = list.filter(c => {
+                    // nuevo = fecha hoy
+                    const d = c.dateOnly || '';
+                    const hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'});
+                    return d === hoy;
+                });
+                if (recientes.length > 0) { badge.style.display = 'inline'; badge.textContent = `🔔 ${recientes.length} NUEVO${recientes.length > 1 ? 'S' : ''}`; }
+                else badge.style.display = 'none';
+            }
+
+            container.innerHTML = list.map(c => {
+                const tok = esc(c.token);
+                const clienteNombre = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '—';
+                const vencColor = (() => {
+                    if (!c.venc || c.venc === 'S/D' || c.venc === 'N/A') return 'var(--silver)';
+                    const m = c.venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                    if (!m) return 'var(--silver)';
+                    const diff = Math.ceil((new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])) - new Date()) / 86400000);
+                    return diff <= 3 ? '#ef4444' : diff <= 10 ? '#f97316' : '#22c55e';
+                })();
+
+                return `
+                <div class="exp-card" id="exp-card-${tok}">
+                    <div class="exp-card-header">
+                        <div style="min-width:0;flex:1;">
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                                <span style="font-family:monospace;font-size:0.75rem;color:var(--gold);background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px;flex-shrink:0;">${tok}</span>
+                                <span style="font-size:0.68rem;text-transform:uppercase;color:rgba(201,168,76,0.6);font-weight:700;letter-spacing:1px;">${esc(c.rama)}</span>
+                            </div>
+                            <h3 style="font-size:1rem;color:var(--white);font-weight:700;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">🛡 ${esc(clienteNombre)}</h3>
+                            <p style="margin:0;font-size:0.78rem;color:var(--silver);">Partes: ${esc(c.partes)}</p>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0;">
+                            <div style="font-size:0.72rem;color:var(--silver);margin-bottom:2px;">Recibido: ${esc(c.date)}</div>
+                            <div style="font-size:0.78rem;font-weight:700;color:${vencColor};">📅 ${c.venc && c.venc !== 'S/D' ? esc(c.venc) : 'Sin vencimiento'}</div>
+                        </div>
+                    </div>
+                    <div class="exp-card-meta">
+                        <span class="exp-meta-chip">👨‍⚖️ ${esc(c.lawyer || 'Sin abogado')}</span>
+                        ${c.nit ? `<span class="exp-meta-chip">🪪 ${esc(c.nit)}</span>` : ''}
+                        <span class="exp-meta-chip">${esc(c.tipo || c.rama || 'General')}</span>
+                        <span class="exp-meta-chip" style="color:${c.priority === 'ALTA' ? '#ef4444' : c.priority === 'MEDIA' ? '#f97316' : '#22c55e'};">⚡ ${esc(c.priority || 'MEDIA')}</span>
+                    </div>
+                    <div class="exp-panel-btns">
+                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('seg-${tok}')">📝 Seguimiento</button>
+                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('hist-${tok}'); loadExpedienteEmails('${tok}', '${esc(clienteNombre)}')">📧 Historial Emails</button>
+                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('res-${tok}')">📄 Resumen</button>
+                    </div>
+
+                    <!-- Panel Seguimiento -->
+                    <div id="seg-${tok}" class="exp-panel">
+                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📝 Anotaciones de Seguimiento</p>
+                        <div id="seg-list-${tok}" style="margin-bottom:10px;max-height:200px;overflow-y:auto;">
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Cargando anotaciones...</p>
+                        </div>
+                        <textarea id="seg-input-${tok}" rows="2" placeholder="Nueva anotación..." style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--white);font-size:0.82rem;resize:vertical;font-family:inherit;"></textarea>
+                        <button class="btn-premium" style="margin-top:8px;height:32px;font-size:0.78rem;padding:0 16px;" onclick="guardarSeguimiento('${tok}')">💾 Guardar</button>
+                    </div>
+
+                    <!-- Panel Historial Emails -->
+                    <div id="hist-${tok}" class="exp-panel">
+                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📧 Historial de Emails del Caso</p>
+                        <div id="hist-list-${tok}">
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>
+                        </div>
+                    </div>
+
+                    <!-- Panel Resumen -->
+                    <div id="res-${tok}" class="exp-panel">
+                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📄 Resumen del Caso</p>
+                        <div style="font-size:0.82rem;color:var(--silver-lt);line-height:1.7;">${c.desc || '<em>Sin resumen disponible.</em>'}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Cargar anotaciones de los paneles abiertos (ninguno al inicio)
+        }
+
+        function toggleExpPanel(panelId) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            const isOpen = panel.classList.contains('open');
+            // Cerrar todos los paneles del mismo card
+            const tok = panelId.split('-').slice(1).join('-');
+            ['seg','hist','res'].forEach(prefix => {
+                const p = document.getElementById(`${prefix}-${tok}`);
+                if (p) p.classList.remove('open');
+            });
+            // Abrir el solicitado si estaba cerrado
+            if (!isOpen) {
+                panel.classList.add('open');
+                // Si es seguimiento, cargar anotaciones
+                if (panelId.startsWith('seg-')) {
+                    cargarAnotaciones(tok);
+                }
+            }
+        }
+
+        // Cache local de anotaciones por token
+        const _anotacionesCache = {};
+
+        async function cargarAnotaciones(tok) {
+            const list = document.getElementById(`seg-list-${tok}`);
+            if (!list) return;
+            if (_anotacionesCache[tok]) { renderAnotaciones(tok, _anotacionesCache[tok]); return; }
+            list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>`;
+            try {
+                const res = await authFetch(N8N_GET_DATA, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get_anotaciones', token: tok })
+                });
+                if (res.ok) {
+                    const txt = await res.text();
+                    const data = txt ? JSON.parse(txt) : [];
+                    const anotaciones = Array.isArray(data) ? data.filter(r => (r.token || r.Token || '') === tok && (r.Tipo || r.tipo || '').includes('SEGUIMIENTO')) : [];
+                    _anotacionesCache[tok] = anotaciones;
+                    renderAnotaciones(tok, anotaciones);
+                } else {
+                    list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
+                }
+            } catch(e) {
+                list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
+            }
+        }
+
+        function renderAnotaciones(tok, list) {
+            const el = document.getElementById(`seg-list-${tok}`);
+            if (!el) return;
+            if (!list || !list.length) {
+                el.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
+                return;
+            }
+            el.innerHTML = list.map(a => `
+                <div style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.3);">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                        <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">${esc(a.Autor || a.autor || currentUser?.name || 'Operador')}</span>
+                        <span style="font-size:0.67rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
+                    </div>
+                    <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);">${esc(a.Descripcion || a.descripcion || a.Observacion || '')}</p>
+                </div>`).join('');
+        }
+
+        async function guardarSeguimiento(tok) {
+            const input = document.getElementById(`seg-input-${tok}`);
+            const texto = input?.value?.trim();
+            if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const url = WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA;
+                const res = await authFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        token: tok,
+                        tipo: 'SEGUIMIENTO',
+                        descripcion: texto,
+                        autor: currentUser?.name || 'Operador',
+                        fecha: new Date().toLocaleString('es-CO')
+                    })
+                });
+                if (res.ok) {
+                    showToast('Anotación guardada.', 'ok');
+                    input.value = '';
+                    delete _anotacionesCache[tok]; // invalidar cache
+                    cargarAnotaciones(tok);
+                } else {
+                    showToast(`Error al guardar: ${res.status}`, 'error');
+                }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+
+        async function loadExpedienteEmails(tok, clienteNombre) {
+            const container = document.getElementById(`hist-list-${tok}`);
+            if (!container) return;
+            container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>`;
+            try {
+                // Buscar en db los registros del mismo cliente (por nombre) que ya están en el Registro Legal
+                const mismasCausas = db.filter(c =>
+                    (c.cliente_a_defender || c.partes || '').toLowerCase().trim() ===
+                    (clienteNombre || '').toLowerCase().trim()
+                );
+                if (!mismasCausas.length) {
+                    container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin historial de emails para este cliente.</p>`;
+                    return;
+                }
+                container.innerHTML = mismasCausas.map(c => `
+                    <div style="padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.2);">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                            <div style="min-width:0;flex:1;">
+                                <p style="margin:0;font-size:0.8rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${esc(c.tipo || c.rama || 'Documento legal')}</p>
+                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `· Vence: ${esc(c.venc)}` : ''}</p>
+                            </div>
+                            <span style="font-family:monospace;font-size:0.7rem;color:var(--gold);background:rgba(201,168,76,0.1);padding:2px 7px;border-radius:4px;flex-shrink:0;">${esc(c.token)}</span>
+                        </div>
+                    </div>`).join('');
+            } catch(e) {
+                container.innerHTML = `<p style="font-size:0.78rem;color:#ef4444;">Error: ${esc(e.message)}</p>`;
+            }
+        }
+
+        function filtrarExpedientes(q) {
+            if (!q || !q.trim()) { renderExpedientesCards(_expAllData); return; }
+            const query = q.toLowerCase();
+            const filtered = _expAllData.filter(c =>
+                (c.token || '').toLowerCase().includes(query) ||
+                (c.partes || '').toLowerCase().includes(query) ||
+                (c.cliente_a_defender || '').toLowerCase().includes(query) ||
+                (c.lawyer || '').toLowerCase().includes(query) ||
+                (c.rama || '').toLowerCase().includes(query)
+            );
+            renderExpedientesCards(filtered);
+        }
+
+        // FIN REGISTRO LEGAL
+
         function init() {
             // Fase 1: cargar datos base en paralelo (abogados + casos)
             Promise.allSettled([
