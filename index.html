@@ -3057,13 +3057,15 @@ async function loadRealData() {
                     log(`✓ Operación finalizada.`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
-                        caseItem.status = 'ASIGNADO';
-                        caseItem.lawyer = lawyerName;
-                        caseItem.cliente_a_defender = clienteADefender;
-                        caseItem.nit = clientNit;
-                        updateUI();
-                        loadClients();
-                    }, 1000);
+                        // FIX: Hacer refresh REAL de los datos desde GS para sincronizar con W1B
+                        // En lugar de solo actualizar en memoria, recargar desde la fuente
+                        loadRealData().then(() => {
+                            loadClients();
+                            showToast('Caso asignado y sincronizado correctamente.', 'success');
+                        }).catch(err => {
+                            logError(`Error al recargar datos: ${err.message}`);
+                        });
+                    }, 2000);
                 } else {
                     throw new Error(`Error en n8n: ${response.status} ${response.statusText}`);
                 }
