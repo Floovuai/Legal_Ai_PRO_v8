@@ -2990,6 +2990,9 @@ async function loadRealData() {
             const clientTel   = document.getElementById(`asig-tel-${caseToken}`)?.value || '';
             const clientNotas = document.getElementById(`asig-notas-${caseToken}`)?.value || '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
+            // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
+            const _cadRadioOuter = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
+            const clienteADefender = _cadRadioOuter ? _cadRadioOuter.value : (caseItem.cliente_a_defender || caseItem.partes || '');
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
             // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
@@ -3015,17 +3018,16 @@ async function loadRealData() {
                     method: 'POST',
                     body: JSON.stringify((() => {
                         // B5: leer cliente a defender del radio seleccionado
-                        const _cadRadio = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
-                        const _clienteADefender = _cadRadio ? _cadRadio.value : (caseItem.cliente_a_defender || caseItem.partes || '');
+                        // FIX BUG 1: usar clienteADefender definido FUERA del IIFE
                         return {
                             row_number:                  caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
-                            'Nombre Cliente':            _clienteADefender,
+                            'Nombre Cliente':            clienteADefender,
                             'Estado Alerta':             'ASIGNADO',
                             email_cliente:               clientEmail,
-                            nombre_cliente:              _clienteADefender,
-                            nombre_cliente_identificado: _clienteADefender,
-                            cliente_a_defender:          _clienteADefender,
-                            'Cliente a defender':        _clienteADefender,
+                            nombre_cliente:              clienteADefender,
+                            nombre_cliente_identificado: clienteADefender,
+                            cliente_a_defender:          clienteADefender,
+                            'Cliente a defender':        clienteADefender,
                             nit_cliente:                 clientNit,
                             telefono_cliente:            clientTel,
                             notas_cliente:               clientNotas,
@@ -3057,7 +3059,7 @@ async function loadRealData() {
                         overlay.classList.remove('visible');
                         caseItem.status = 'ASIGNADO';
                         caseItem.lawyer = lawyerName;
-                        caseItem.cliente_a_defender = _clienteName;
+                        caseItem.cliente_a_defender = clienteADefender;
                         caseItem.nit = clientNit;
                         updateUI();
                         loadClients();
