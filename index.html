@@ -1945,7 +1945,7 @@
 
         // ── Webhooks de n8n ───────────────────────────────────
         WEBHOOKS: {
-            ASSIGN:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-cliente',
+            ASSIGN:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-caso',
             LAWYER_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-abogado',
             LAWYER_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-abogado',
             FORCE_SYNC:    'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-force-sync',
@@ -3009,25 +3009,6 @@ async function loadRealData() {
                     if (resData?.debug) log(`📡 ${resData.debug}`);
                     log(`✓ Informe enviado a ${lawyerObj.email}.`);
 
-                    // Guardar cliente completo en hoja CLIENTES
-                    const _cadRadio2 = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
-                    const _clienteName = _cadRadio2 ? _cadRadio2.value : (caseItem.cliente_a_defender || caseItem.partes || '');
-                    try {
-                        await authFetch(N8N_CLIENT_SAVE, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                nombre:   _clienteName,
-                                nit:      clientNit,
-                                email:    clientEmail,
-                                telefono: clientTel,
-                                notas:    clientNotas || `Caso: ${caseItem.rama || ''} | Token: ${caseItem.token}`
-                            })
-                        });
-                        log(`✓ Cliente guardado en directorio.`);
-                    } catch(saveErr) {
-                        log(`⚠️ Cliente no guardado en directorio: ${saveErr.message}`);
-                    }
-
                     log(`✓ Operación finalizada.`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
@@ -3092,9 +3073,9 @@ async function loadRealData() {
             });
 
             // Unificar — los del directorio primero, luego casos sin match en directorio
-            const nombresDirectorio = new Set(manualClients.map(c => c.nombre.toLowerCase().trim()));
+            const nombresDirectorio = new Set(manualClients.map(c => (c.nombre || '').toLowerCase().trim()));
             const casesNuevos = casesAsClients.filter(c =>
-                !nombresDirectorio.has(c.nombre.toLowerCase().trim())
+                !nombresDirectorio.has((c.nombre || '').toLowerCase().trim())
             );
 
             clients = [...manualClients, ...casesNuevos];
