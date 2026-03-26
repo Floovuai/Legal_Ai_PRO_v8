@@ -2438,14 +2438,14 @@ async function loadRealData() {
                             desc,
                             token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
                             row_number:   row.row_number || null,
-                            lawyer:       row['abogado_responsable'] || null,
+                            lawyer:       row['Abogado asignado'] || row['Abogado Asignado'] || row['abogado_asignado'] || row['abogado_responsable'] || null,
                             priority:     row.Prioridad || row.prioridad || 'Media',
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
                             tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
                             informe_html:         row.informe_html || row['Informe HTML'] || '',
                             messageId:            row.messageId || row['messageId'] || '',
-                            nit:                  row['NIT'] || row['nit'] || row['nit_cliente'] || '',
+                            nit:                  row['NIT_Cedula'] || row['NIT'] || row['nit'] || row['nit_cedula'] || row['nit_cliente'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
                             partes_array:         (() => {
                                 const p = row.Partes || row.partes || '';
