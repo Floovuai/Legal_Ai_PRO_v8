@@ -4588,8 +4588,9 @@ async function loadRealData() {
         // ══════════════════════════════════════════
 
         async function loadObservaciones() {
+            const WH = window.FLOOVU_CONFIG.WEBHOOKS;
             try {
-                // Cargar tokens de casos para el selector
+                // 1. Cargar tokens de casos para el selector (desde Registro Legal)
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST', body: '{}' });
                 if (res.ok) {
                     const txt = await res.text();
@@ -4604,8 +4605,14 @@ async function loadRealData() {
                             if (tok) sel.innerHTML += `<option value="${esc(tok)}">${esc(tok)} — ${esc(partes).slice(0,50)}</option>`;
                         });
                     }
-                    // Cargar observaciones del sheet Notificaciones filtradas por tipo OBSERVACION
-                    observacionesData = casos.filter(c => (c.Tipo || '').includes('OBS') || (c.Tipo || '').includes('NOTA'));
+                }
+                // 2. Cargar TODAS las observaciones en 1 request (bulk)
+                observacionesData = [];
+                const obsRes = await authFetch(WH.GET_OBS, { method: 'POST', body: '{}' });
+                if (obsRes.ok) {
+                    const obsTxt = await obsRes.text();
+                    const obsData = obsTxt ? JSON.parse(obsTxt) : {};
+                    observacionesData = obsData.anotaciones || [];
                 }
             } catch(e) { logError('Error cargando observaciones: ' + e.message); }
             renderObservaciones(observacionesData);
@@ -4645,12 +4652,13 @@ async function loadRealData() {
             if (!texto) { showToast('Escriba una observacion', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
-                const res = await authFetch(WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA, {
+                const res = await authFetch(WH.SAVE_OBS || WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA, {
                     method: 'POST',
                     body: JSON.stringify({
                         token, tipo,
-                        descripcion: texto,
-                        autor: currentUser?.name || 'Operador',
+                        texto: texto,
+                        anotacion: texto,
+                        operador: currentUser?.name || 'Operador',
                         fecha: new Date().toLocaleString('es-CO')
                     })
                 });
