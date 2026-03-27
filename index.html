@@ -2043,7 +2043,9 @@
                     body: JSON.stringify({ username, hash })
                 });
                 if (res.ok) {
-                    const data = await res.json();
+                    const _txt = await res.text();
+                    let data = {};
+                    try { if (_txt) data = JSON.parse(_txt); } catch(_e) {}
                     if (data.ok) {
                         user = { username: data.username, name: data.nombre, email: data.email, role: data.rol, hash, _fromSheet: true };
                     }
@@ -3041,6 +3043,7 @@ async function loadRealData() {
                             telefono_cliente:            clientTel,
                             notas_cliente:               clientNotas,
                             abogado_responsable:         lawyerName,
+                            abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
                             asunto:                      `Asignación de Caso: ${caseItem.partes}`,
                             tipo_documento:              caseItem.tipo || caseItem.rama || 'General',
@@ -3106,7 +3109,9 @@ async function loadRealData() {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.GET_USUARIOS, { method: 'POST' });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
+                const _txt2 = await res.text();
+                let data = {};
+                try { if (_txt2) data = JSON.parse(_txt2); } catch(_e) {}
                 const lista = data.usuarios || [];
                 if (!lista.length) {
                     container.innerHTML = '<p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">Sin usuarios en el Sheet aún.</p>';
@@ -3156,7 +3161,9 @@ async function loadRealData() {
                     method: 'POST',
                     body: JSON.stringify({ username, hash, nombre, email, rol })
                 });
-                const data = await res.json();
+                const _txt3 = await res.text();
+                let data = {};
+                try { if (_txt3) data = JSON.parse(_txt3); } catch(_e) {}
                 if (res.ok && data.ok) {
                     showMsg(`✅ Usuario @${username} creado correctamente.`, true);
                     ['nu-nombre','nu-username','nu-email','nu-pass','nu-pass2'].forEach(id => {
@@ -3178,7 +3185,9 @@ async function loadRealData() {
                     method: 'POST',
                     body: JSON.stringify({ username })
                 });
-                const data = await res.json();
+                const _txt4 = await res.text();
+                let data = {};
+                try { if (_txt4) data = JSON.parse(_txt4); } catch(_e) {}
                 if (res.ok && data.ok) {
                     showToast(`Usuario @${username} eliminado.`, 'ok');
                     loadUsuariosAdmin();
@@ -3779,7 +3788,9 @@ async function loadRealData() {
                     body: JSON.stringify({ email: clientEmail, nombre: clientName })
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const data = await res.json();
+                const _txt5 = await res.text();
+                let data = {};
+                try { if (_txt5) data = JSON.parse(_txt5); } catch(_e) {}
                 const mails = Array.isArray(data) ? data : (data.mails || data.emails || []);
 
                 if (!mails.length) {
@@ -4581,7 +4592,8 @@ async function loadRealData() {
                 // Cargar tokens de casos para el selector
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST', body: '{}' });
                 if (res.ok) {
-                    const data = await res.json();
+                    const txt = await res.text();
+                    const data = txt ? JSON.parse(txt) : [];
                     const casos = Array.isArray(data) ? data : [];
                     const sel = document.getElementById('obs-token');
                     if (sel) {
@@ -4658,7 +4670,8 @@ async function loadRealData() {
             try {
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST', body: '{}' });
                 if (res.ok) {
-                    const data = await res.json();
+                    const txt = await res.text();
+                    const data = txt ? JSON.parse(txt) : [];
                     bandejaData = Array.isArray(data) ? data : [];
                     updateBandejaKPIs(bandejaData);
                     renderBandeja(bandejaData);
