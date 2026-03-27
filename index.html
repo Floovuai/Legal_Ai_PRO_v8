@@ -1507,6 +1507,14 @@
                                 <label for="edit-cli-telefono">Teléfono</label>
                                 <input type="text" id="edit-cli-telefono">
                             </div>
+                            <div class="form-group">
+                                <label for="edit-cli-abogado">Abogado Asignado</label>
+                                <select id="edit-cli-abogado"
+                                    style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);
+                                           border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                    <option value="">— Sin asignar —</option>
+                                </select>
+                            </div>
                             <div class="form-group" style="grid-column:1/-1;">
                                 <label for="edit-cli-notas">Notas</label>
                                 <input type="text" id="edit-cli-notas">
@@ -2435,6 +2443,7 @@ async function loadRealData() {
                             partes:       row.Partes || row.partes || row.nombre_cliente || 'Sin Partes',
                             venc,
                             status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
+                            es_nuevo_caso: (row['Es_Nuevo_Caso'] || row['es_nuevo_caso'] || '').toString().toUpperCase() === 'TRUE',
                             desc,
                             token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
                             row_number:   row.row_number || null,
@@ -3645,6 +3654,15 @@ async function loadRealData() {
             document.getElementById('edit-cli-email').value     = c.email    || '';
             document.getElementById('edit-cli-telefono').value  = c.telefono || '';
             document.getElementById('edit-cli-notas').value     = c.notas    || '';
+            // Populate abogado dropdown with current lawyers list
+            const sel = document.getElementById('edit-cli-abogado');
+            if (sel) {
+                sel.innerHTML = '<option value="">— Sin asignar —</option>' +
+                    (lawyers || []).map(l =>
+                        `<option value="${esc(l.name)}" ${(c.abogado || '') === l.name ? 'selected' : ''}>${esc(l.name)}</option>`
+                    ).join('');
+                sel.value = c.abogado || '';
+            }
             document.getElementById('client-edit-modal').classList.add('visible');
         }
 
@@ -3661,6 +3679,7 @@ async function loadRealData() {
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
+            const abogado  = document.getElementById('edit-cli-abogado')?.value || '';
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
@@ -3669,7 +3688,7 @@ async function loadRealData() {
                     // Directorio manual: delete + save
                     await authFetch(N8N_CLIENT_DELETE, { method: 'POST', body: JSON.stringify({ nit: original.nit }) });
                     const res = await authFetch(N8N_CLIENT_SAVE, {
-                        method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas })
+                        method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas, abogado })
                     });
                     if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
                 } else {
@@ -4714,123 +4733,261 @@ async function loadRealData() {
         }
 
                 // ══════════════════════════════════════════
-        // REGISTRO LEGAL — tarjetas con seguimiento
+        // REGISTRO LEGAL — agrupado por cliente + badge NUEVO
+        // FASE 3
         // ══════════════════════════════════════════
 
         let _expAllData = [];
+        const _anotacionesCache = {};
+        // Set de tokens marcados como vistos en esta sesión
+        const _casosVistos = new Set();
 
         function renderExpedientesCards(list) {
             _expAllData = list || [];
             const container = document.getElementById('exp-cards-container');
             if (!container) return;
-            if (!list || !list.length) {
+            if (!list || list.length === 0) {
                 container.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>No hay casos asignados aún.</div>`;
                 return;
             }
 
-            // Badge de nuevos
+            // Badge global de nuevos (fecha hoy o marcados como es_nuevo_caso)
             const badge = document.getElementById('exp-new-badge');
             if (badge) {
-                const recientes = list.filter(c => {
-                    // nuevo = fecha hoy
-                    const d = c.dateOnly || '';
-                    const hoy = new Date().toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'});
-                    return d === hoy;
-                });
-                if (recientes.length > 0) { badge.style.display = 'inline'; badge.textContent = `🔔 ${recientes.length} NUEVO${recientes.length > 1 ? 'S' : ''}`; }
-                else badge.style.display = 'none';
+                const nuevos = list.filter(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
+                if (nuevos.length > 0) {
+                    badge.style.display = 'inline';
+                    badge.textContent = `⚡ ${nuevos.length} NUEVO${nuevos.length > 1 ? 'S' : ''}`;
+                } else {
+                    badge.style.display = 'none';
+                }
             }
 
-            container.innerHTML = list.map(c => {
-                const tok = esc(c.token);
-                const clienteNombre = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '—';
-                const vencColor = (() => {
-                    if (!c.venc || c.venc === 'S/D' || c.venc === 'N/A') return 'var(--silver)';
-                    const m = c.venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                    if (!m) return 'var(--silver)';
-                    const diff = Math.ceil((new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])) - new Date()) / 86400000);
-                    return diff <= 3 ? '#ef4444' : diff <= 10 ? '#f97316' : '#22c55e';
-                })();
+            // Agrupar por cliente
+            const grupos = {};
+            list.forEach(c => {
+                const key = (c.cliente_a_defender || c.partes || 'Sin cliente').trim();
+                if (!grupos[key]) grupos[key] = [];
+                grupos[key].push(c);
+            });
+
+            // Ordenar grupos: primero los que tienen algún caso nuevo
+            const gruposOrdenados = Object.entries(grupos).sort(([, casosA], [, casosB]) => {
+                const tieneNuevoA = casosA.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token)) ? 1 : 0;
+                const tieneNuevoB = casosB.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token)) ? 1 : 0;
+                return tieneNuevoB - tieneNuevoA;
+            });
+
+            container.innerHTML = gruposOrdenados.map(([clienteNombre, casos]) => {
+                const tieneNuevo = casos.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
+                const badgeNuevo = tieneNuevo
+                    ? `<span style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;margin-left:8px;">⚡ NUEVO</span>`
+                    : '';
+
+                // Último vencimiento del grupo (más próximo con color)
+                const vencimientos = casos
+                    .map(c => c.venc)
+                    .filter(v => v && v !== 'S/D' && v !== 'N/A');
+
+                const totalCasos = casos.length;
+                const abogado = casos[0]?.lawyer || 'Sin abogado';
+
+                // Cards de casos del cliente
+                const casosHTML = casos.map(c => renderCasoCard(c, clienteNombre)).join('');
+
+                const grupoId = `grupo-${clienteNombre.replace(/[^a-z0-9]/gi, '_')}`;
 
                 return `
-                <div class="exp-card" id="exp-card-${tok}">
-                    <div class="exp-card-header">
-                        <div style="min-width:0;flex:1;">
-                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-                                <span style="font-family:monospace;font-size:0.75rem;color:var(--gold);background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px;flex-shrink:0;">${tok}</span>
-                                <span style="font-size:0.68rem;text-transform:uppercase;color:rgba(201,168,76,0.6);font-weight:700;letter-spacing:1px;">${esc(c.rama)}</span>
-                            </div>
-                            <h3 style="font-size:1rem;color:var(--white);font-weight:700;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">🛡 ${esc(clienteNombre)}</h3>
-                            <p style="margin:0;font-size:0.78rem;color:var(--silver);">Partes: ${esc(c.partes)}</p>
+                <div class="cliente-grupo" style="margin-bottom:1.5rem;">
+                    <!-- Header del cliente -->
+                    <div class="cliente-grupo-header" onclick="toggleGrupo('${grupoId}')"
+                         style="display:flex;align-items:center;justify-content:space-between;
+                                background:linear-gradient(90deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02));
+                                border:1px solid rgba(201,168,76,0.2);border-radius:10px;
+                                padding:12px 16px;cursor:pointer;user-select:none;
+                                transition:background 0.2s;">
+                        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                            <span style="font-size:1.1rem;">👤</span>
+                            <span style="font-size:0.95rem;font-weight:700;color:var(--white);
+                                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                ${esc(clienteNombre)}
+                            </span>
+                            ${badgeNuevo}
                         </div>
-                        <div style="text-align:right;flex-shrink:0;">
-                            <div style="font-size:0.72rem;color:var(--silver);margin-bottom:2px;">Recibido: ${esc(c.date)}</div>
-                            <div style="font-size:0.78rem;font-weight:700;color:${vencColor};">📅 ${c.venc && c.venc !== 'S/D' ? esc(c.venc) : 'Sin vencimiento'}</div>
-                        </div>
-                    </div>
-                    <div class="exp-card-meta">
-                        <span class="exp-meta-chip">👨‍⚖️ ${esc(c.lawyer || 'Sin abogado')}</span>
-                        ${c.nit ? `<span class="exp-meta-chip">🪪 ${esc(c.nit)}</span>` : ''}
-                        <span class="exp-meta-chip">${esc(c.tipo || c.rama || 'General')}</span>
-                        <span class="exp-meta-chip" style="color:${c.priority === 'ALTA' ? '#ef4444' : c.priority === 'MEDIA' ? '#f97316' : '#22c55e'};">⚡ ${esc(c.priority || 'MEDIA')}</span>
-                    </div>
-                    <div class="exp-panel-btns">
-                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('seg-${tok}')">📝 Seguimiento</button>
-                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('hist-${tok}'); loadExpedienteEmails('${tok}', '${esc(clienteNombre)}')">📧 Historial Emails</button>
-                        <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;" onclick="toggleExpPanel('res-${tok}')">📄 Resumen</button>
-                    </div>
-
-                    <!-- Panel Seguimiento -->
-                    <div id="seg-${tok}" class="exp-panel">
-                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📝 Anotaciones de Seguimiento</p>
-                        <div id="seg-list-${tok}" style="margin-bottom:10px;max-height:200px;overflow-y:auto;">
-                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Cargando anotaciones...</p>
-                        </div>
-                        <textarea id="seg-input-${tok}" rows="2" placeholder="Nueva anotación..." style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--white);font-size:0.82rem;resize:vertical;font-family:inherit;"></textarea>
-                        <button class="btn-premium" style="margin-top:8px;height:32px;font-size:0.78rem;padding:0 16px;" onclick="guardarSeguimiento('${tok}')">💾 Guardar</button>
-                    </div>
-
-                    <!-- Panel Historial Emails -->
-                    <div id="hist-${tok}" class="exp-panel">
-                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📧 Historial de Emails del Caso</p>
-                        <div id="hist-list-${tok}">
-                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>
+                        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                            <span style="font-size:0.72rem;color:var(--silver);">
+                                👨‍⚖️ ${esc(abogado)}
+                            </span>
+                            <span style="font-size:0.72rem;color:rgba(201,168,76,0.7);
+                                         background:rgba(201,168,76,0.1);padding:2px 10px;
+                                         border-radius:20px;font-weight:700;">
+                                ${totalCasos} caso${totalCasos !== 1 ? 's' : ''}
+                            </span>
+                            <span id="chevron-${grupoId}"
+                                  style="color:var(--gold);font-size:0.8rem;transition:transform 0.2s;">▼</span>
                         </div>
                     </div>
-
-                    <!-- Panel Resumen -->
-                    <div id="res-${tok}" class="exp-panel">
-                        <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">📄 Resumen del Caso</p>
-                        <div style="font-size:0.82rem;color:var(--silver-lt);line-height:1.7;">${c.desc || '<em>Sin resumen disponible.</em>'}</div>
+                    <!-- Casos del cliente -->
+                    <div id="${grupoId}" style="margin-top:8px;padding-left:12px;
+                                                 border-left:2px solid rgba(201,168,76,0.15);">
+                        ${casosHTML}
                     </div>
                 </div>`;
             }).join('');
+        }
 
-            // Cargar anotaciones de los paneles abiertos (ninguno al inicio)
+        function toggleGrupo(grupoId) {
+            const el = document.getElementById(grupoId);
+            const chevron = document.getElementById(`chevron-${grupoId}`);
+            if (!el) return;
+            const isOpen = el.style.display !== 'none';
+            el.style.display = isOpen ? 'none' : 'block';
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
+        function marcarComoVisto(tok) {
+            _casosVistos.add(tok);
+            // Quitar badge ⚡ NUEVO de la tarjeta
+            const badge = document.getElementById(`nuevo-badge-${tok}`);
+            if (badge) badge.style.display = 'none';
+            // Recalcular badge global
+            const nuevosRestantes = _expAllData.filter(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
+            const globalBadge = document.getElementById('exp-new-badge');
+            if (globalBadge) {
+                if (nuevosRestantes.length > 0) {
+                    globalBadge.style.display = 'inline';
+                    globalBadge.textContent = `⚡ ${nuevosRestantes.length} NUEVO${nuevosRestantes.length > 1 ? 'S' : ''}`;
+                } else {
+                    globalBadge.style.display = 'none';
+                }
+            }
+            // Quitar badge del header del grupo
+            const grupoHeaders = document.querySelectorAll('.cliente-grupo-header span[style*="f97316"]');
+            // Re-render del grupo específico no es necesario — la tarjeta ya muestra sin badge
+        }
+
+        function renderCasoCard(c, clienteNombre) {
+            const tok = esc(c.token);
+            const esNuevo = c.es_nuevo_caso && !_casosVistos.has(c.token);
+
+            const vencColor = (() => {
+                if (!c.venc || c.venc === 'S/D' || c.venc === 'N/A') return 'var(--silver)';
+                const m = c.venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (!m) return 'var(--silver)';
+                const diff = Math.ceil((new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])) - new Date()) / 86400000);
+                return diff <= 3 ? '#ef4444' : diff <= 10 ? '#f97316' : '#22c55e';
+            })();
+
+            const badgeNuevoCard = esNuevo
+                ? `<span id="nuevo-badge-${tok}"
+                          style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;
+                                 padding:2px 8px;border-radius:20px;letter-spacing:1px;">⚡ NUEVO</span>`
+                : `<span id="nuevo-badge-${tok}" style="display:none;"></span>`;
+
+            return `
+            <div class="exp-card" id="exp-card-${tok}" style="margin-bottom:10px;">
+                <div class="exp-card-header">
+                    <div style="min-width:0;flex:1;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                            <span style="font-family:monospace;font-size:0.75rem;color:var(--gold);
+                                         background:rgba(201,168,76,0.1);padding:2px 8px;
+                                         border-radius:4px;flex-shrink:0;">${tok}</span>
+                            <span style="font-size:0.68rem;text-transform:uppercase;color:rgba(201,168,76,0.6);
+                                         font-weight:700;letter-spacing:1px;">${esc(c.rama)}</span>
+                            ${badgeNuevoCard}
+                        </div>
+                        <h3 style="font-size:0.95rem;color:var(--white);font-weight:700;margin:0 0 2px;
+                                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">
+                            📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                        </h3>
+                        <p style="margin:0;font-size:0.78rem;color:var(--silver);">
+                            Partes: ${esc(c.partes)}
+                        </p>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                        <div style="font-size:0.72rem;color:var(--silver);margin-bottom:2px;">
+                            Recibido: ${esc(c.date)}
+                        </div>
+                        <div style="font-size:0.78rem;font-weight:700;color:${vencColor};">
+                            📅 ${c.venc && c.venc !== 'S/D' ? esc(c.venc) : 'Sin vencimiento'}
+                        </div>
+                    </div>
+                </div>
+                <div class="exp-card-meta">
+                    <span class="exp-meta-chip">👨‍⚖️ ${esc(c.lawyer || 'Sin abogado')}</span>
+                    ${c.nit ? `<span class="exp-meta-chip">🪪 ${esc(c.nit)}</span>` : ''}
+                    <span class="exp-meta-chip">${esc(c.tipo || c.rama || 'General')}</span>
+                    <span class="exp-meta-chip"
+                          style="color:${c.priority === 'ALTA' ? '#ef4444' : c.priority === 'MEDIA' ? '#f97316' : '#22c55e'};">
+                        ⚡ ${esc(c.priority || 'MEDIA')}
+                    </span>
+                </div>
+                <div class="exp-panel-btns">
+                    <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;"
+                            onclick="toggleExpPanel('seg-${tok}'); marcarComoVisto('${tok}')">
+                        📝 Seguimiento
+                    </button>
+                    <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;"
+                            onclick="toggleExpPanel('hist-${tok}'); loadExpedienteEmails('${tok}', '${esc(clienteNombre)}'); marcarComoVisto('${tok}')">
+                        📧 Historial Emails
+                    </button>
+                    <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;"
+                            onclick="toggleExpPanel('res-${tok}'); marcarComoVisto('${tok}')">
+                        📄 Resumen
+                    </button>
+                </div>
+
+                <!-- Panel Seguimiento -->
+                <div id="seg-${tok}" class="exp-panel">
+                    <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
+                               letter-spacing:1px;margin:0 0 8px;">📝 Anotaciones de Seguimiento</p>
+                    <div id="seg-list-${tok}" style="margin-bottom:10px;max-height:200px;overflow-y:auto;">
+                        <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Cargando anotaciones...</p>
+                    </div>
+                    <textarea id="seg-input-${tok}" rows="2" placeholder="Nueva anotación..."
+                              style="width:100%;padding:8px 12px;background:rgba(255,255,255,0.04);
+                                     border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+                                     color:var(--white);font-size:0.82rem;resize:vertical;font-family:inherit;"></textarea>
+                    <button class="btn-premium" style="margin-top:8px;height:32px;font-size:0.78rem;padding:0 16px;"
+                            onclick="guardarSeguimiento('${tok}')">
+                        💾 Guardar
+                    </button>
+                </div>
+
+                <!-- Panel Historial Emails -->
+                <div id="hist-${tok}" class="exp-panel">
+                    <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
+                               letter-spacing:1px;margin:0 0 8px;">📧 Historial de Emails del Caso</p>
+                    <div id="hist-list-${tok}">
+                        <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>
+                    </div>
+                </div>
+
+                <!-- Panel Resumen -->
+                <div id="res-${tok}" class="exp-panel">
+                    <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
+                               letter-spacing:1px;margin:0 0 8px;">📄 Resumen del Caso</p>
+                    <div style="font-size:0.82rem;color:var(--silver-lt);line-height:1.7;">
+                        ${c.desc || '<em>Sin resumen disponible.</em>'}
+                    </div>
+                </div>
+            </div>`;
         }
 
         function toggleExpPanel(panelId) {
             const panel = document.getElementById(panelId);
             if (!panel) return;
             const isOpen = panel.classList.contains('open');
-            // Cerrar todos los paneles del mismo card
             const tok = panelId.split('-').slice(1).join('-');
             ['seg','hist','res'].forEach(prefix => {
                 const p = document.getElementById(`${prefix}-${tok}`);
                 if (p) p.classList.remove('open');
             });
-            // Abrir el solicitado si estaba cerrado
             if (!isOpen) {
                 panel.classList.add('open');
-                // Si es seguimiento, cargar anotaciones
-                if (panelId.startsWith('seg-')) {
-                    cargarAnotaciones(tok);
-                }
+                if (panelId.startsWith('seg-')) cargarAnotaciones(tok);
             }
         }
-
-        // Cache local de anotaciones por token
-        const _anotacionesCache = {};
 
         async function cargarAnotaciones(tok) {
             const list = document.getElementById(`seg-list-${tok}`);
@@ -4865,12 +5022,19 @@ async function loadRealData() {
                 return;
             }
             el.innerHTML = list.map(a => `
-                <div style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.3);">
+                <div style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
+                             margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.3);">
                     <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-                        <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">${esc(a.Autor || a.autor || currentUser?.name || 'Operador')}</span>
-                        <span style="font-size:0.67rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
+                        <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
+                            ${esc(a.Autor || a.autor || currentUser?.name || 'Operador')}
+                        </span>
+                        <span style="font-size:0.65rem;color:var(--silver);">
+                            ${esc(a.Fecha || a.fecha || '')}
+                        </span>
                     </div>
-                    <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);">${esc(a.Descripcion || a.descripcion || a.Observacion || '')}</p>
+                    <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);line-height:1.5;">
+                        ${esc(a.Texto || a.texto || '')}
+                    </p>
                 </div>`).join('');
         }
 
@@ -4880,8 +5044,7 @@ async function loadRealData() {
             if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
-                const url = WH.SAVE_OBS;
-                const res = await authFetch(url, {
+                const res = await authFetch(WH.SAVE_OBS, {
                     method: 'POST',
                     body: JSON.stringify({
                         token: tok,
@@ -4893,7 +5056,7 @@ async function loadRealData() {
                 if (res.ok) {
                     showToast('Anotación guardada.', 'ok');
                     input.value = '';
-                    delete _anotacionesCache[tok]; // invalidar cache
+                    delete _anotacionesCache[tok];
                     cargarAnotaciones(tok);
                 } else {
                     showToast(`Error al guardar: ${res.status}`, 'error');
@@ -4906,7 +5069,6 @@ async function loadRealData() {
             if (!container) return;
             container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>`;
             try {
-                // Buscar en db los registros del mismo cliente (por nombre) que ya están en el Registro Legal
                 const mismasCausas = db.filter(c =>
                     (c.cliente_a_defender || c.partes || '').toLowerCase().trim() ===
                     (clienteNombre || '').toLowerCase().trim()
@@ -4916,17 +5078,26 @@ async function loadRealData() {
                     return;
                 }
                 container.innerHTML = mismasCausas.map(c => `
-                    <div style="padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.2);">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
+                    <div style="padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:6px;
+                                 margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.2);">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                                     gap:8px;flex-wrap:wrap;">
                             <div style="min-width:0;flex:1;">
-                                <p style="margin:0;font-size:0.8rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${esc(c.tipo || c.rama || 'Documento legal')}</p>
-                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `· Vence: ${esc(c.venc)}` : ''}</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--white);font-weight:600;
+                                           white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                                </p>
+                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">
+                                    📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `· Vence: ${esc(c.venc)}` : ''}
+                                </p>
                             </div>
-                            <span style="font-family:monospace;font-size:0.7rem;color:var(--gold);background:rgba(201,168,76,0.1);padding:2px 7px;border-radius:4px;flex-shrink:0;">${esc(c.token)}</span>
+                            <span style="font-family:monospace;font-size:0.7rem;color:var(--gold);
+                                          background:rgba(201,168,76,0.1);padding:2px 7px;
+                                          border-radius:4px;flex-shrink:0;">${esc(c.token)}</span>
                         </div>
                     </div>`).join('');
             } catch(e) {
-                container.innerHTML = `<p style="font-size:0.78rem;color:#ef4444;">Error: ${esc(e.message)}</p>`;
+                container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Error cargando historial.</p>`;
             }
         }
 
@@ -4935,15 +5106,16 @@ async function loadRealData() {
             const query = q.toLowerCase();
             const filtered = _expAllData.filter(c =>
                 (c.token || '').toLowerCase().includes(query) ||
-                (c.partes || '').toLowerCase().includes(query) ||
-                (c.cliente_a_defender || '').toLowerCase().includes(query) ||
+                (c.cliente_a_defender || c.partes || '').toLowerCase().includes(query) ||
                 (c.lawyer || '').toLowerCase().includes(query) ||
+                (c.tipo || '').toLowerCase().includes(query) ||
                 (c.rama || '').toLowerCase().includes(query)
             );
             renderExpedientesCards(filtered);
         }
 
         // FIN REGISTRO LEGAL
+
 
         function init() {
             // Fase 1: cargar datos base en paralelo (abogados + casos)
