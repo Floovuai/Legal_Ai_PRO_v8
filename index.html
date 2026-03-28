@@ -414,7 +414,7 @@
             max-width: 600px;
             padding: 2rem;
             border-radius: var(--radius-md);
-            font-family: 'Fira Code', 'Courier New', monospace;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             max-height: 80vh;
             overflow-y: auto;
             box-sizing: border-box;
@@ -529,7 +529,7 @@
             margin-bottom: 0.5rem;
         }
         .kpi-v2-value {
-            font-family: 'Space Mono', monospace;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 2.4rem;
             font-weight: 700;
             color: var(--gold-bright);
@@ -708,7 +708,7 @@
         }
 
         .error-log {
-            font-family: 'Fira Code', 'Courier New', monospace;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background: #000;
             padding: 1rem;
             border-radius: var(--radius-sm);
@@ -1179,7 +1179,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 .premium-footer span {
     color: var(--gold);
     font-weight: 700;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
 .premium-footer .support-badge {
     display: inline-flex;
@@ -1196,7 +1196,93 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
     background: rgba(201,168,76,0.2);
     box-shadow: 0 0 10px rgba(201,168,76,0.15);
 }
+
+.premium-footer-fixed {
+    position: fixed; bottom: 0; left: 260px; width: calc(100% - 260px);
+    z-index: 500; background: linear-gradient(to top, var(--navy-bg) 70%, transparent);
+    border-top: none; pointer-events: none;
+}
+@media (max-width: 900px) {
+    .premium-footer-fixed {
+        left: 0; width: 100%;
+    }
+}
+
+/* FASE 5: PANEL DE AGENCIA (Hub en una sola pantalla) */
+.agencia-hub-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 1.5rem; margin-top: 1rem;
+}
+.agencia-hub-header h2 {
+    font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--gold);
+    margin: 0; letter-spacing: 1px;
+}
+.agencia-hub-header p {
+    font-size: 0.8rem; color: var(--silver); margin: 0.3rem 0 0; opacity: 0.7;
+}
+
+.agencia-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.agencia-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; gap: 1rem;
+    position: relative; overflow: hidden;
+}
+
+.agencia-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    background: var(--gold); opacity: 0; transition: opacity 0.3s;
+}
+
+.agencia-card:hover {
+    background: rgba(201,168,76,0.05);
+    border-color: rgba(201,168,76,0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), 0 0 15px rgba(201,168,76,0.1);
+}
+
+.agencia-card:hover::before { opacity: 1; }
+
+.agencia-card-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; color: var(--gold);
+}
+
+.agencia-card-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--white); margin: 0;
+}
+
+.agencia-card-desc {
+    font-size: 0.75rem; color: var(--silver); line-height: 1.5; margin: 0; flex-grow: 1; opacity: 0.8;
+}
+
+.agencia-card-action {
+    font-size: 0.7rem; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    display: flex; align-items: center; gap: 5px; margin-top: auto;
+}
+.agencia-card-action svg { width: 14px; height: 14px; transition: transform 0.3s; }
+.agencia-card:hover .agencia-card-action svg { transform: translateX(5px); }
+
+@media (max-width: 768px) {
+    .agencia-hub-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+    .agencia-hub-grid { grid-template-columns: 1fr; }
+}
 </style>
+
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
@@ -1394,7 +1480,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                     <div style="display:flex;gap:8px;align-items:center;">
                         <div class="header-last-access" style="display:none;align-items:center;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);padding:6px 12px;border-radius:20px;gap:8px;">
                             <span style="font-size:0.6rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;opacity:0.8;">Último acceso:</span>
-                            <span id="header-last-login-time" style="font-size:0.7rem;color:var(--gold);font-family:'Space Mono',monospace;font-weight:700;">—</span>
+                            <span id="header-last-login-time" style="font-size:0.7rem;color:var(--gold);font-family: 'Plus Jakarta Sans', sans-serif;font-weight:700;">—</span>
                         </div>
                         <button class="btn-outline" style="height:34px;font-size:0.76rem;padding:0 12px;color:#22c55e;border-color:rgba(34,197,94,0.35);gap:5px;display:flex;align-items:center;" onclick="exportClientsExcel()">
                             📊 Excel
