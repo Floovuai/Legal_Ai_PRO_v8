@@ -565,7 +565,7 @@
             margin-bottom: 0;
         }
         .kpi-v2-delta {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Space Mono', 'Fira Code', monospace;
             font-size: 0.65rem;
             font-weight: 800;
             padding: 2px 6px;
@@ -1650,7 +1650,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="kpi-total">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Total en el sistema</p>
-                                <span class="kpi-v2-delta up">↗ 12.5%</span>
+                                <span class="kpi-v2-delta" id="trend-cases">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-total" style="width:100%"></div></div>
                         </div>
@@ -1661,7 +1661,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="kpi-pending" style="color:var(--kpi-alert)">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Requieren acción</p>
-                                <span class="kpi-v2-delta down">↘ 4.2%</span>
+                                <span class="kpi-v2-delta" id="trend-pending">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-pending" style="width:0%;background:var(--kpi-alert)"></div></div>
                         </div>
@@ -1672,7 +1672,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="kpi-hours" style="color:var(--kpi-ok)">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Productividad IA</p>
-                                <span class="kpi-v2-delta up">↗ 8.4%</span>
+                                <span class="kpi-v2-delta" id="trend-hours">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-hours" style="width:80%;background:var(--kpi-ok)"></div></div>
                         </div>
@@ -1683,7 +1683,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="kpi-score">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Precisión de análisis</p>
-                                <span class="kpi-v2-delta up">↗ 1.2%</span>
+                                <span class="kpi-v2-delta" id="trend-score">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-score" style="width:80%"></div></div>
                         </div>
@@ -1728,7 +1728,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="admin-kpi-casos">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Total en el sistema</p>
-                                <span class="kpi-v2-delta up">↗ 12.5%</span>
+                                <span class="kpi-v2-delta" id="admin-trend-cases">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:100%"></div></div>
                         </div>
@@ -1739,7 +1739,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="admin-kpi-score" style="color:#b39ddb;text-shadow:0 0 24px rgba(124,92,191,0.4);">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Promedio de análisis</p>
-                                <span class="kpi-v2-delta up">↗ 3.1%</span>
+                                <span class="kpi-v2-delta" id="admin-trend-score">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-score" style="width:0%;background:linear-gradient(90deg,#7c5cbf,#b39ddb)"></div></div>
                         </div>
@@ -1750,7 +1750,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="admin-kpi-hours" style="color:var(--kpi-ok);text-shadow:0 0 24px rgba(34,197,94,0.3);">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Productividad generada</p>
-                                <span class="kpi-v2-delta up">↗ 8.4%</span>
+                                <span class="kpi-v2-delta" id="admin-trend-hours">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:70%;background:linear-gradient(90deg,var(--kpi-ok),#86efac)"></div></div>
                         </div>
@@ -1761,7 +1761,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             <div class="kpi-v2-value" id="admin-kpi-asignados" style="color:var(--kpi-alert);text-shadow:0 0 24px rgba(249,115,22,0.3);">--</div>
                             <div class="kpi-v2-footer">
                                 <p class="kpi-v2-sub">Del total procesados</p>
-                                <span class="kpi-v2-delta down">↘ 2.8%</span>
+                                <span class="kpi-v2-delta" id="admin-trend-asig">--</span>
                             </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-asig" style="width:0%;background:linear-gradient(90deg,var(--kpi-alert),#fdba74)"></div></div>
                         </div>
@@ -3046,6 +3046,89 @@ async function loadRealData() {
             panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         }
 
+        // ══════════════════════════════════════════
+        // TREND BADGES — cálculo real (últimos 7d vs 7d anteriores)
+        // ══════════════════════════════════════════
+        function calculateTrends(cases) {
+            const now = new Date();
+            now.setHours(23, 59, 59, 999);
+            const d7ago = new Date(now);
+            d7ago.setDate(d7ago.getDate() - 7);
+            d7ago.setHours(0, 0, 0, 0);
+            const d14ago = new Date(now);
+            d14ago.setDate(d14ago.getDate() - 14);
+            d14ago.setHours(0, 0, 0, 0);
+
+            function parseTrendDate(str) {
+                if (!str) return null;
+                const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+                const d = new Date(str);
+                return isNaN(d.getTime()) ? null : d;
+            }
+
+            const recent = cases.filter(c => {
+                const d = parseTrendDate(c.dateOnly || c.date);
+                return d && d >= d7ago;
+            });
+            const previous = cases.filter(c => {
+                const d = parseTrendDate(c.dateOnly || c.date);
+                return d && d >= d14ago && d < d7ago;
+            });
+
+            function pctChange(cur, prev) {
+                if (prev === 0 && cur === 0) return { pct: '0.0', dir: 'neutral' };
+                if (prev === 0) return { pct: '100', dir: cur > 0 ? 'up' : 'neutral' };
+                const change = ((cur - prev) / prev) * 100;
+                return {
+                    pct: Math.abs(change).toFixed(1),
+                    dir: change > 0.1 ? 'up' : change < -0.1 ? 'down' : 'neutral'
+                };
+            }
+
+            // Casos procesados
+            const casesTrend = pctChange(recent.length, previous.length);
+
+            // Pendientes
+            const recentPend = recent.filter(c => c.status === 'PENDIENTE').length;
+            const prevPend = previous.filter(c => c.status === 'PENDIENTE').length;
+            const pendingTrend = pctChange(recentPend, prevPend);
+
+            // Horas ahorradas (ahorroMin)
+            const recentMin = recent.reduce((a, c) => a + (c.ahorroMin || 0), 0);
+            const prevMin = previous.reduce((a, c) => a + (c.ahorroMin || 0), 0);
+            const hoursTrend = pctChange(recentMin, prevMin);
+
+            // Score IA promedio
+            const rScores = recent.filter(c => c.score > 0).map(c => c.score);
+            const pScores = previous.filter(c => c.score > 0).map(c => c.score);
+            const rAvg = rScores.length ? rScores.reduce((a, b) => a + b, 0) / rScores.length : 0;
+            const pAvg = pScores.length ? pScores.reduce((a, b) => a + b, 0) / pScores.length : 0;
+            const scoreTrend = pctChange(rAvg, pAvg);
+
+            // Asignados
+            const recentAsig = recent.filter(c => c.lawyer && c.lawyer !== 'Pendiente').length;
+            const prevAsig = previous.filter(c => c.lawyer && c.lawyer !== 'Pendiente').length;
+            const assignedTrend = pctChange(recentAsig, prevAsig);
+
+            return { cases: casesTrend, pending: pendingTrend, hours: hoursTrend, score: scoreTrend, assigned: assignedTrend };
+        }
+
+        function updateTrendBadge(elId, trend, invertColor) {
+            const tbEl = document.getElementById(elId);
+            if (!tbEl) return;
+            if (trend.pct === '0.0') {
+                tbEl.textContent = '→ 0%';
+                tbEl.className = 'kpi-v2-delta';
+                return;
+            }
+            const arrow = trend.dir === 'up' ? '↗' : trend.dir === 'down' ? '↘' : '→';
+            tbEl.textContent = arrow + ' ' + trend.pct + '%';
+            let cssDir = trend.dir === 'neutral' ? '' : trend.dir;
+            if (invertColor && cssDir) cssDir = cssDir === 'up' ? 'down' : 'up';
+            tbEl.className = 'kpi-v2-delta ' + cssDir;
+        }
+
         function updateUI() {
             if (!db.length) {
                 el('chart-area').innerHTML      = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span>Sin datos en métricas</span></div>`;
@@ -3059,6 +3142,9 @@ async function loadRealData() {
                 el('kpi-score').innerText       = '—';
                 el('kpi-total').innerText       = '0';
                 el('kpi-pending').innerText     = '0';
+                ['trend-cases','trend-pending','trend-hours','trend-score'].forEach(function(id) {
+                    var _t = document.getElementById(id); if (_t) { _t.textContent = '--'; _t.className = 'kpi-v2-delta'; }
+                });
                 return;
             }
 
@@ -3102,6 +3188,13 @@ async function loadRealData() {
             if (scoreBar) scoreBar.style.width = avgScore ? `${(parseFloat(avgScore)/10)*100}%` : '0%';
             if (pendBar)  pendBar.style.width  = totalCases ? `${(pendingCases/totalCases)*100}%` : '0%';
             if (hoursBar) hoursBar.style.width = totalHours > 0 ? `${Math.min(parseFloat(totalHours)/20*100, 100)}%` : '0%';
+
+            // Trend badges operador — cálculo real últimos 7d vs 7d anteriores
+            const trends = calculateTrends(db);
+            updateTrendBadge('trend-cases', trends.cases);
+            updateTrendBadge('trend-pending', trends.pending, true); // invertido: menos pendientes = bueno (verde)
+            updateTrendBadge('trend-hours', trends.hours);
+            updateTrendBadge('trend-score', trends.score);
 
             // Gráfico rama jurídica — canvas futurista
             const ramaCount = {};
@@ -4687,6 +4780,13 @@ async function loadRealData() {
                 if (scoreBar && avgScore) scoreBar.style.width = `${Math.min(parseFloat(avgScore)/10*100,100)}%`;
                 if (asigBar  && total)   asigBar.style.width  = `${Math.min(asignados/total*100,100)}%`;
             }, 100);
+
+            // Trend badges admin — cálculo real últimos 7d vs 7d anteriores
+            const adminTrends = calculateTrends(db);
+            updateTrendBadge('admin-trend-cases', adminTrends.cases);
+            updateTrendBadge('admin-trend-score', adminTrends.score);
+            updateTrendBadge('admin-trend-hours', adminTrends.hours);
+            updateTrendBadge('admin-trend-asig', adminTrends.assigned);
 
             // Tabla últimos casos (sin datos privados — solo métricas)
             const tbody = document.getElementById('admin-dash-rows');
