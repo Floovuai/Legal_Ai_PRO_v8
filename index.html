@@ -1149,15 +1149,15 @@ input:focus, select:focus, textarea:focus {
 /* Premium Empty State en contenedor */
 .empty-state-svg {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 3rem 1rem; border: 1px dashed rgba(255,255,255,0.08);
+    padding: 1.5rem 1rem; border: 1px dashed rgba(255,255,255,0.08);
     border-radius: 12px; background: rgba(0,0,0,0.15);
-    margin: 1rem 0;
+    margin: 0.5rem 0;
 }
 .empty-state-svg.no-bg {
     background: transparent; border: none; padding: 3rem 1rem;
 }
 .empty-state-svg svg {
-    width: 42px; height: 42px; margin-bottom: 1rem; opacity: 0.6;
+    width: 32px; height: 32px; margin-bottom: 0.5rem; opacity: 0.6;
     filter: drop-shadow(0 0 8px rgba(201,168,76,0.25));
 }
 .empty-state-svg span {
@@ -1401,12 +1401,13 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
 /* Contenedor del gráfico donat para que no explote en altura */
 #chart-area {
-    min-height: 140px !important;
-    max-height: 200px !important;
+    min-height: 120px !important;
+    max-height: 190px !important;
     flex-grow: 1 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    overflow: hidden !important;
 }
 
 @media (max-width: 1024px) {
@@ -1691,16 +1692,16 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                     <!-- Fila central -->
                     <div class="dashboard-grid two-cols" style="margin-bottom:1.5rem;">
 
-                        <div class="card" style="padding:0.75rem;">
-                            <p class="card-title" style="margin-bottom:0.25rem;">Distribución por Rama Jurídica</p>
-                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:140px;max-height:200px;">
-                                <span class="empty-state" style="padding:0.75rem;">Iniciando Gráficos...</span>
+                        <div class="card" style="padding:0.6rem 0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.15rem;font-size:0.7rem;">Distribución por Rama Jurídica</p>
+                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:120px;max-height:190px;overflow:hidden;">
+                                <span class="empty-state" style="padding:0.5rem;">Iniciando Gráficos...</span>
                             </div>
                         </div>
 
-                        <div class="card" style="padding:0.75rem;">
-                            <p class="card-title" style="margin-bottom:0.25rem;">⚠️ Próximos Vencimientos</p>
-                            <div id="dash-deadlines" class="empty-state-svg" style="min-height:auto;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24" style="width:36px;height:36px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin actividad</span></div>
+                        <div class="card" style="padding:0.6rem 0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.15rem;font-size:0.7rem;">⚠️ Próximos Vencimientos</p>
+                            <div id="dash-deadlines" class="empty-state-svg" style="min-height:auto;padding:1rem 0.75rem;margin:0.25rem 0;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24" style="width:28px;height:28px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span style="font-size:0.72rem;">Sin actividad</span></div>
                         </div>
                     </div>
 
@@ -4971,7 +4972,7 @@ async function loadRealData() {
         function drawFuturisticDonut(container, labels, data) {
             container.innerHTML = '';
             const W = container.clientWidth || 380;
-            const H = 300;
+            const H = 180;
             const canvas = document.createElement('canvas');
             canvas.width  = W * window.devicePixelRatio;
             canvas.height = H * window.devicePixelRatio;
@@ -4990,9 +4991,9 @@ async function loadRealData() {
 
             const cx = W / 2;
             const cy = H * 0.44;
-            const outerR = Math.min(W, H) * 0.33;
+            const outerR = Math.min(W, H) * 0.30;
             const innerR = outerR * 0.58;
-            const gapAngle = 0.035; // gap between segments
+            const gapAngle = 0.035;
 
             // ── Draw glow backdrop ──
             const glowGrad = ctx.createRadialGradient(cx, cy, innerR * 0.5, cx, cy, outerR * 1.3);
@@ -5063,11 +5064,11 @@ async function loadRealData() {
             ctx.fillText('CASOS', cx, cy + outerR * 0.18);
 
             // ── Legend ──
-            const legendY   = cy + outerR + 22;
-            const itemW     = 110;
+            const legendY   = cy + outerR + 14;
+            const itemW     = 100;
             const perRow    = Math.floor(W / itemW);
             const rows      = Math.ceil(labels.length / perRow);
-            const legendH   = rows * 22;
+            const legendH   = rows * 18;
             // expand canvas if needed
             if (legendY + legendH > H - 4) {
                 canvas.height = (legendY + legendH + 12) * window.devicePixelRatio;
@@ -5083,7 +5084,7 @@ async function loadRealData() {
                 const totalW = Math.min(perRow, labels.length) * itemW;
                 const offsetX = (W - totalW) / 2;
                 const lx = offsetX + col * itemW;
-                const ly = legendY + row * 22;
+                const ly = legendY + row * 18;
 
                 // Dot
                 ctx.beginPath();
@@ -5095,7 +5096,7 @@ async function loadRealData() {
                 ctx.shadowBlur  = 0;
 
                 // Label
-                ctx.font      = `600 11px "Plus Jakarta Sans", sans-serif`;
+                ctx.font      = `600 10px "Plus Jakarta Sans", sans-serif`;
                 ctx.fillStyle = 'rgba(168,189,208,0.8)';
                 const pct = Math.round(s.val / total * 100);
                 ctx.fillText(`${s.label} ${pct}%`, lx + 16, ly);
