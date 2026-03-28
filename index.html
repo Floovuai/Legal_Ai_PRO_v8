@@ -60,7 +60,7 @@
         .sidebar {
             background: linear-gradient(180deg, #030609 0%, #020407 100%);
             border-right: 1px solid rgba(201,168,76,0.08);
-            padding: 2rem 1.25rem;
+            padding: 1rem 1.25rem; /* Reducido de 2rem */
             display: flex;
             flex-direction: column;
             overflow-y: auto;
@@ -70,11 +70,11 @@
             box-shadow: 2px 0 24px rgba(0,0,0,0.4);
         }
         .brand {
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.5rem; /* Reducido de 2.5rem */
             color: var(--gold);
             font-size: 1.5rem;
             border-bottom: 1px solid rgba(201,168,76,0.1);
-            padding-bottom: 1.25rem;
+            padding-bottom: 1rem;
             line-height: 1.1;
         }
         .brand-main { display: block; }
@@ -360,8 +360,10 @@
             grid-template-columns: repeat(3, 1fr); 
             gap: 1.25rem; 
             align-items: stretch;
+            min-height: 0; /* Permite que el contenido se encoja si el contenedor tiene height */
         }
         .dashboard-grid.two-cols { grid-template-columns: 1fr 1fr; }
+        .dashboard-grid.debug-split { grid-template-columns: 1.3fr 0.7fr; } /* Proporción para debug y n8n */
         .full-width { grid-column: 1 / -1; }
 
         /* ── EMPTY STATE ── */
@@ -1338,12 +1340,20 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 /* 4. SPLIT PANEL (ESTADO, RAMA, ETC.) MULTICOLUMNAS EN 1 SOLA LÍNEA */
 .split-panel {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; 
-    /* O forzar grid estricto: */
     grid-template-columns: 1fr 1fr 1fr !important;
     gap: 12px !important;
     flex-grow: 1 !important;
     min-height: 0 !important; /* crucial para flex child */
+}
+
+/* Sub-grid para el panel de debug y n8n en el dashboard de administrador */
+.admin-debug-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 15px !important;
+    margin-top: 15px !important;
+    flex-grow: 1 !important;
+    min-height: 380px !important;
 }
 
 /* Las tarjetas toman todo el alto sobrante en las columnas */
@@ -1367,7 +1377,11 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 .dash-card-content, #asig-content, #dash-deadlines, #active-sessions-list {
     flex-grow: 1 !important;
     overflow-y: auto !important;
-    min-height: 100px !important;
+    min-height: 120px !important;
+    max-height: 480px !important; /* Cap para evitar estiramiento excesivo */
+}
+#active-sessions-list {
+    max-height: 250px !important; /* Más restrictivo para sesiones activas */
 }
 .dash-card-content::-webkit-scrollbar { width: 4px; }
 .dash-card-content::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
@@ -1375,7 +1389,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 /* Contenedor del gráfico donat para que no explote en altura */
 #chart-area {
     min-height: 180px !important;
-    max-height: 100% !important;
+    max-height: 280px !important;
     flex-grow: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -1549,18 +1563,25 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                 <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
 
                 <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
-<p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Registros & Core</p>
-<div class="nav-item" data-tab="expedientes">📁 Registro Legal</div>
-                <div class="nav-item" data-tab="abogados">👨‍⚖️ Abogados</div>
-                <div class="nav-item" data-tab="clientes">👥 Clientes</div>
-                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
-<p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Herramientas</p>
-<div class="nav-item" data-tab="observaciones">📝 Observaciones</div>
-                <div class="nav-item" data-tab="bandeja">📧 Bandeja Gmail</div>
-                <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
-                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
-<p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Sistema</p>
-<div class="nav-item" data-tab="usuarios">👥 Gestión de Usuarios</div>
+                <!-- Sección condicional en JS para ocultar en rol AGENCIA -->
+                <div id="nav-section-core">
+                    <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Registros & Core</p>
+                    <div class="nav-item" data-tab="expedientes">📁 Registro Legal</div>
+                    <div class="nav-item" data-tab="abogados">👨‍⚖️ Abogados</div>
+                    <div class="nav-item" data-tab="clientes">👥 Clientes</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                </div>
+                
+                <div id="nav-section-tools">
+                    <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Herramientas</p>
+                    <div class="nav-item" data-tab="observaciones">📝 Observaciones</div>
+                    <div class="nav-item" data-tab="bandeja">📧 Bandeja Gmail</div>
+                    <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                </div>
+
+                <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Sistema</p>
+                <div class="nav-item" data-tab="usuarios">👥 Gestión de Usuarios</div>
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
             </nav>
 
@@ -1765,55 +1786,56 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             </div>
                         </div>
 
-                    </div>
+                    <div class="admin-debug-grid">
+                        <!-- Debug: Reporte de Errores -->
+                        <div class="card">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                                <p class="card-title" style="margin:0;">📟 Reporte de Telemetría</p>
+                                <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Actualizar</button>
+                            </div>
+                            <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
+                                <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">Frontend</button>
+                                <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">Backoffice</button>
+                            </div>
+                            <div id="debug-panel-frontend" class="dash-card-content">
+                                <div class="error-log" id="error-console" style="height: 220px;">
+                                    [System] Iniciando telemetría...
+                                </div>
+                                <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar Consola</button>
+                            </div>
+                            <div id="debug-panel-n8n" class="dash-card-content" style="display:none;">
+                                <div class="error-log" id="n8n-log-console" style="height:220px;font-size:0.72rem;">
+                                    [System] Esperando logs...
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                                    <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
+                                    <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                                </div>
+                            </div>
+                        </div>
 
-                    <!-- Debug: Reporte de Errores (ancho completo si es necesario o integrado) -->
-                    <div class="card" style="margin-top:1.25rem;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                            <p class="card-title" style="margin:0;">Debug: Reporte de Errores</p>
-                            <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Cargar Logs n8n</button>
-                        </div>
-                        <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
-                            <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">📟 Frontend</button>
-                            <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">⚙️ n8n / Workflows <span id="n8n-log-badge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:0.65rem;margin-left:4px;">!</span></button>
-                        </div>
-                        <div id="debug-panel-frontend">
-                            <div class="error-log" id="error-console" style="height: 300px;">
-                                [System] Iniciando consola de depuración v12...
-                                [System] Esperando telemetría de webhooks...
-                            </div>
-                            <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
-                        </div>
-                        <div id="debug-panel-n8n" style="display:none;">
-                            <div class="error-log" id="n8n-log-console" style="height:300px;font-size:0.72rem;">
-                                [System] Presiona "Cargar Logs n8n" para ver la telemetría de los workflows...
-                            </div>
-                            <div style="display:flex;gap:8px;margin-top:0.75rem;">
-                                <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
-                                <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                        <!-- Estado de Conexión & Motor -->
+                        <div class="card">
+                            <p class="card-title">⚙️ Parámetros del Motor</p>
+                            <div class="dash-card-content">
+                                <div style="display:flex;flex-direction:column;gap:12px;">
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estado del Cluster</p>
+                                        <p style="font-size:0.85rem;color:#22c55e;font-weight:600;">● OPERATIVO (v12.0.4)</p>
+                                    </div>
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Instancia Base de Datos</p>
+                                        <p style="font-size:0.85rem;color:var(--white);font-weight:600;">Google Cloud / Sheet-IA</p>
+                                    </div>
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Protocolo</p>
+                                        <p style="font-size:0.85rem;color:var(--gold);font-weight:600;">HTTPS / Secure-Node</p>
+                                    </div>
+                                    <button class="btn-premium" style="width:100%;margin-top:5px;" onclick="pingEngineAdmin()">🚀 Re-Vincular Motor</button>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Base de Datos & Conexión (movido de Config) -->
-                    <div class="card" style="margin-top:1.5rem;">
-                        <p class="card-title">🗄️ Base de Datos & Conexión</p>
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-top:0.75rem;">
-                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
-                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Sheet ID</p>
-                                <p style="font-size:0.82rem;color:var(--white);font-weight:600;">14Go...p-_Fo</p>
-                            </div>
-                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
-                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estado API</p>
-                                <p style="font-size:0.82rem;color:#22c55e;font-weight:600;">● ONLINE</p>
-                            </div>
-                            <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
-                                <p style="font-size:0.72rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Motor</p>
-                                <p style="font-size:0.82rem;color:var(--gold);font-weight:600;">FLOOVU V9</p>
-                            </div>
-                        </div>
-                    </div>
-
                 </div><!-- /dashboard-admin -->
             </section>
 
@@ -2607,6 +2629,17 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                 const tabId = tab.getAttribute('data-tab');
                 tab.style.display = allowedTabs.includes(tabId) ? 'flex' : 'none';
             });
+
+            // Control de secciones de navegación (Agency no ve Core/Tools)
+            const navSectionCore = document.getElementById('nav-section-core');
+            const navSectionTools = document.getElementById('nav-section-tools');
+            if (user.role === 'admin') {
+                if (navSectionCore) navSectionCore.style.display = 'none';
+                if (navSectionTools) navSectionTools.style.display = 'none';
+            } else {
+                if (navSectionCore) navSectionCore.style.display = 'block';
+                if (navSectionTools) navSectionTools.style.display = 'block';
+            }
 
             // Ocultar secciones a las que el rol no tiene acceso
             document.querySelectorAll('.content-section').forEach(section => {
