@@ -1386,7 +1386,9 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
     max-height: 480px !important; /* Cap para evitar estiramiento excesivo */
 }
 #active-sessions-list {
-    max-height: 250px !important; /* Más restrictivo para sesiones activas */
+    max-height: none !important;
+    overflow-y: visible !important;
+    min-height: auto !important;
 }
 .dash-card-content::-webkit-scrollbar { width: 4px; }
 .dash-card-content::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
@@ -1835,7 +1837,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                                 <p class="card-title" style="margin:0;">🔐 Sesiones Activas</p>
                                 <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="renderActiveSessions()">↻ Actualizar</button>
                             </div>
-                            <div id="active-sessions-list" class="dash-card-content" style="max-height:300px;">
+                            <div id="active-sessions-list" style="display:flex;flex-direction:column;gap:6px;">
                                 <p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando sesiones...</p>
                             </div>
                         </div>
@@ -4574,7 +4576,7 @@ async function loadRealData() {
             const now = Date.now();
 
             if (!sessions || Object.keys(sessions).length === 0) {
-                container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1.5rem 1rem;">No hay sesiones activas en este momento.</p>';
+                container.innerHTML = '<p style="color:var(--silver);font-size:0.78rem;opacity:0.5;text-align:center;padding:0.75rem;">No hay sesiones activas.</p>';
                 return;
             }
 
@@ -4582,35 +4584,25 @@ async function loadRealData() {
                 const lastSeenAgo = Math.round((now - data.lastSeen) / 1000);
                 const isOnline    = lastSeenAgo < 30;
                 const loginDate   = new Date(data.loginTime || data.lastSeen).toLocaleString('es-CO', { dateStyle:'short', timeStyle:'short' });
-                const role        = data.role === 'admin' ? 'Agencia' : 'Operador';
+                const role        = data.role === 'admin' ? 'AGC' : 'OPR';
                 const roleColor   = data.role === 'admin' ? 'var(--gold)' : '#97C459';
                 const statusColor = isOnline ? '#22c55e' : 'var(--kpi-alert)';
-                const statusText  = isOnline ? '● En línea' : ('● Hace ' + lastSeenAgo + 's');
+                const statusDot   = isOnline ? '●' : '○';
+                const statusTip   = isOnline ? 'En línea' : ('Hace ' + lastSeenAgo + 's');
                 const ua          = data.userAgent || '';
-                const device      = ua.includes('Mobile') ? '📱 Móvil' : ua.includes('Tablet') ? '📱 Tablet' : '🖥️ Escritorio';
-                const browser     = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Otro';
+                const devIcon     = ua.includes('Mobile') ? '📱' : '🖥️';
 
-                return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;margin-bottom:8px;">' +
-                    '<div style="display:flex;align-items:center;gap:14px;">' +
-                        '<div style="width:38px;height:38px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">' +
-                            (data.role === 'admin' ? '👑' : '👤') +
+                return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;">' +
+                    '<span style="font-size:0.85rem;flex-shrink:0;">' + (data.role === 'admin' ? '👑' : '👤') + '</span>' +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<div style="display:flex;align-items:center;gap:6px;">' +
+                            '<span style="font-size:0.75rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.name || username) + '</span>' +
+                            '<span style="font-size:0.6rem;font-weight:700;color:' + roleColor + ';letter-spacing:0.5px;background:rgba(201,168,76,0.08);padding:1px 5px;border-radius:4px;flex-shrink:0;">' + role + '</span>' +
+                            '<span style="font-size:0.65rem;color:' + statusColor + ';font-weight:700;flex-shrink:0;" title="' + statusTip + '">' + statusDot + '</span>' +
                         '</div>' +
-                        '<div>' +
-                            '<p style="margin:0;font-size:0.9rem;font-weight:700;color:var(--white);">' + esc(data.name || username) + '</p>' +
-                            '<p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">@' + esc(username) + ' · ' + esc(data.email || '—') + '</p>' +
-                        '</div>' +
+                        '<p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.email || username) + ' · ' + devIcon + ' · ' + loginDate + '</p>' +
                     '</div>' +
-                    '<div style="display:flex;align-items:center;gap:20px;">' +
-                        '<div style="text-align:right;">' +
-                            '<p style="margin:0;font-size:0.7rem;color:' + roleColor + ';font-weight:700;letter-spacing:1px;text-transform:uppercase;">' + role + '</p>' +
-                            '<p style="margin:2px 0 0;font-size:0.7rem;color:var(--silver);">' + device + ' · ' + browser + '</p>' +
-                        '</div>' +
-                        '<div style="text-align:right;">' +
-                            '<p style="margin:0;font-size:0.72rem;color:var(--silver);">Login: ' + loginDate + '</p>' +
-                            '<p style="margin:2px 0 0;font-size:0.75rem;font-weight:700;color:' + statusColor + ';">' + statusText + '</p>' +
-                        '</div>' +
-                        '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:8px;padding:7px 14px;font-size:0.75rem;font-weight:700;cursor:pointer;transition:0.2s;white-space:nowrap;" onmouseover="this.style.background=\'rgba(239,68,68,0.2)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.08)\'">✕ Cerrar sesión</button>' +
-                    '</div>' +
+                    '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:0.62rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.06)\'">✕</button>' +
                 '</div>';
             }).join('');
         }
