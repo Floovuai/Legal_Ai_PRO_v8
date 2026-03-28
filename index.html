@@ -1751,34 +1751,34 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
                     <div class="dashboard-grid two-cols">
                         <!-- Estado de servicios -->
-                        <div class="card">
-                            <p class="card-title">🔌 Estado de Servicios</p>
-                            <div style="display:flex;flex-direction:column;gap:10px;margin-top:0.5rem;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-                                    <span style="font-size:0.9rem;color:var(--silver-lt);">🌍 Webhook n8n</span>
-                                    <span id="admin-h-web" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.5rem;">🔌 Estado de Servicios</p>
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">🌍 Webhook n8n</span>
+                                    <span id="admin-h-web" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-                                    <span style="font-size:0.9rem;color:var(--silver-lt);">📧 Gmail</span>
-                                    <span id="admin-h-gmail" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">📧 Gmail</span>
+                                    <span id="admin-h-gmail" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-                                    <span style="font-size:0.9rem;color:var(--silver-lt);">📊 Google Sheets</span>
-                                    <span id="admin-h-sheet" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">📊 Google Sheets</span>
+                                    <span id="admin-h-sheet" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:rgba(201,168,76,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-                                    <span style="font-size:0.9rem;color:var(--silver-lt);">🤖 Motor IA</span>
-                                    <span id="admin-h-ai" style="font-size:0.82rem;font-weight:700;color:var(--silver);">—</span>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">🤖 Motor IA</span>
+                                    <span id="admin-h-ai" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
                                 </div>
                             </div>
-                            <button class="btn-premium" style="width:100%;margin-top:1.25rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
+                            <button class="btn-premium" style="width:100%;margin-top:0.5rem;padding:7px;font-size:0.75rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
                         </div>
 
                         <!-- Distribución de casos -->
-                        <div class="card">
-                            <p class="card-title">📊 Distribución por Rama</p>
-                            <div id="admin-chart-area" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
-                                <span class="empty-state">Sin datos aún</span>
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.25rem;">📊 Distribución por Rama</p>
+                            <div id="admin-chart-area" style="display:flex;justify-content:center;align-items:center;min-height:160px;max-height:200px;">
+                                <span class="empty-state" style="padding:1rem;">Sin datos aún</span>
                             </div>
                         </div>
 
