@@ -1281,7 +1281,113 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 @media (max-width: 480px) {
     .agencia-hub-grid { grid-template-columns: 1fr; }
 }
+
+/* OVERRIDE DEFINITIVO TIPOGRAFIA NUMEROS */
+.kpi-val, .kpi-value, .kpi-card h3, .kpi-card span, .kpi-card div, 
+.kpi-card-v2 h3, .kpi-card-v2 span, .kpi-card-v2 div, 
+#dash-kpis h3, #dash-kpis span, #dash-kpis div,
+.kpi-number, .kpi-delta, .kpi-label, .val, .delta {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* FASE ÚLTIMA: AJUSTE TOTAL DE LAYOUT A 1 PANTALLA Y MULTICOLUMNAS */
+
+/* 1. RESTAURAR TIPOGRAFIA 'Space Mono' PARA NÚMEROS (Solicitado por el usuario) */
+.kpi-val, .kpi-value, .kpi-card h3, .kpi-card-v2 h3, 
+.kpi-card span, .kpi-card-v2 span, #dash-kpis h3, #dash-kpis .kpi-val,
+.kpi-number, .kpi-delta, .kpi-label, .val, .delta {
+    font-family: 'Space Mono', 'Fira Code', monospace !important;
+}
+
+/* 2. COMPACTAR DASHBOARD A 1 PANTALLA (No Scroll) */
+#tab-dashboard {
+    height: calc(100vh - 80px) !important;
+    overflow-y: auto !important; /* por si acaso en pantallas muy pequeñas */
+    overflow-x: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 5px 20px 20px !important;
+    box-sizing: border-box !important;
+}
+
+/* Ocultar hub de agencia si estorbaba visualmente o integrarlo arriba rápido */
+.agencia-hub-header { margin-bottom: 0.5rem !important; margin-top: 0.5rem !important; }
+.agencia-hub-header h2 { font-size: 1.3rem !important; }
+
+/* 3. KPIs EN 4 COLUMNAS ESTRICTAS */
+#dash-kpis.dash-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+    flex-shrink: 0 !important;
+}
+.kpi-card-v2 {
+    padding: 12px 15px !important;
+    min-height: 90px !important;
+}
+.kpi-card-v2 h3 { font-size: 1.8rem !important; margin: 4px 0 !important; }
+.kpi-card-v2 p { margin-top: 4px !important; }
+
+/* 4. SPLIT PANEL (ESTADO, RAMA, ETC.) MULTICOLUMNAS EN 1 SOLA LÍNEA */
+.split-panel {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; 
+    /* O forzar grid estricto: */
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 12px !important;
+    flex-grow: 1 !important;
+    min-height: 0 !important; /* crucial para flex child */
+}
+
+/* Las tarjetas toman todo el alto sobrante en las columnas */
+.dash-card {
+    margin-bottom: 0 !important;
+    padding: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.dash-card-header {
+    flex-shrink: 0 !important;
+    padding-bottom: 8px !important;
+}
+
+/* Para contenido dinámico dentro (listas, tablas) que haga scroll interno si sobra, 
+   pero que mantenga la estructura a 1 pantalla. */
+.dash-card-content, #asig-content, #dash-deadlines, #active-sessions-list {
+    flex-grow: 1 !important;
+    overflow-y: auto !important;
+    min-height: 100px !important;
+}
+.dash-card-content::-webkit-scrollbar { width: 4px; }
+.dash-card-content::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+
+/* Contenedor del gráfico donat para que no explote en altura */
+#chart-area {
+    min-height: 180px !important;
+    max-height: 100% !important;
+    flex-grow: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+@media (max-width: 1024px) {
+    .split-panel { grid-template-columns: 1fr 1fr !important; }
+    #dash-kpis.dash-grid { grid-template-columns: 1fr 1fr !important; }
+    #tab-dashboard { height: auto !important; overflow-y: visible !important; }
+}
+
+@media (max-width: 600px) {
+    .split-panel { grid-template-columns: 1fr !important; }
+    #dash-kpis.dash-grid { grid-template-columns: 1fr !important; }
+}
 </style>
+
 
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -2643,7 +2749,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
         document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => {
             // Verificar que el tab está permitido para el rol actual
             const tabId = i.dataset.tab;
-            const allowed = currentUser && currentUser.role === 'admin' ? ADMIN_TABS : OPERATOR_TABS;
+            const allowed = currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia') ? ADMIN_TABS : OPERATOR_TABS;
             if (!allowed.includes(tabId)) return;
 
             document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
@@ -3719,7 +3825,7 @@ async function loadRealData() {
         // ══════════════════════════════════════════
 
         function exportClientsExcel() {
-            var isAdmin = currentUser && currentUser.role === 'admin';
+            var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia');
             var NL = '\n', sep = ',';
             var q  = function(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; };
             var csv = '\uFEFF';
@@ -3860,7 +3966,7 @@ async function loadRealData() {
         }
 
         function exportClientsPDF() {
-            var isAdmin = currentUser && currentUser.role === 'admin';
+            var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia');
             var now     = new Date().toLocaleDateString('es-CO', { dateStyle: 'long' });
             var G = '#C9A84C', D = '#060a14', S = '#7a8fa6';
 
@@ -5547,7 +5653,7 @@ async function loadRealData() {
                 // Fase 2: cargar clientes DESPUES de que db esté lleno
                 loadClients().catch(e => logError(`Error cargando clientes: ${e}`));
                 // Actualizar dashboard admin si aplica
-                if (currentUser && currentUser.role === 'admin') {
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) {
                     renderAdminDashboard();
                     pingEngineAdmin();
                 }
@@ -5559,7 +5665,7 @@ async function loadRealData() {
         function startHealthAutoRefresh() {
             if (_healthInterval) clearInterval(_healthInterval);
             _healthInterval = setInterval(() => {
-                if (currentUser && currentUser.role === 'admin') pingEngineAdmin();
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
         }
     </script>
