@@ -535,6 +535,7 @@
             color: rgba(201,168,76,0.5);
             font-weight: 700;
             margin-bottom: 0.5rem;
+            font-family: inherit;
         }
         .kpi-v2-value {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -598,10 +599,10 @@
 
         /* ── DEADLINE ITEMS ── */
         .deadline-item {
-            display: flex; align-items: center; gap: 0.75rem;
-            padding: 0.7rem 0.875rem;
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 0.65rem;
             border-radius: var(--radius-sm);
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.25rem;
             border: 1px solid transparent;
             transition: 0.2s;
         }
@@ -1379,13 +1380,18 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
 /* Para contenido dinámico dentro (listas, tablas) que haga scroll interno si sobra, 
    pero que mantenga la estructura a 1 pantalla. */
-.dash-card-content, #asig-content, #dash-deadlines, #active-sessions-list {
+.dash-card-content, #asig-content, #active-sessions-list {
     flex-grow: 1 !important;
     overflow-y: auto !important;
     min-height: 120px !important;
-    max-height: 480px !important; /* Cap para evitar estiramiento excesivo */
+    max-height: 480px !important;
 }
 #active-sessions-list {
+    max-height: none !important;
+    overflow-y: visible !important;
+    min-height: auto !important;
+}
+#dash-deadlines {
     max-height: none !important;
     overflow-y: visible !important;
     min-height: auto !important;
@@ -1395,8 +1401,8 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
 /* Contenedor del gráfico donat para que no explote en altura */
 #chart-area {
-    min-height: 180px !important;
-    max-height: 280px !important;
+    min-height: 140px !important;
+    max-height: 200px !important;
     flex-grow: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -1685,16 +1691,16 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                     <!-- Fila central -->
                     <div class="dashboard-grid two-cols" style="margin-bottom:1.5rem;">
 
-                        <div class="card">
-                            <p class="card-title">Distribución por Rama Jurídica</p>
-                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:220px;">
-                                <span class="empty-state">Iniciando Gráficos...</span>
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.25rem;">Distribución por Rama Jurídica</p>
+                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:140px;max-height:200px;">
+                                <span class="empty-state" style="padding:0.75rem;">Iniciando Gráficos...</span>
                             </div>
                         </div>
 
-                        <div class="card">
-                            <p class="card-title">⚠️ Próximos Vencimientos</p>
-                            <div id="dash-deadlines" class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin actividad</span></div>
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.25rem;">⚠️ Próximos Vencimientos</p>
+                            <div id="dash-deadlines" class="empty-state-svg" style="min-height:auto;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24" style="width:36px;height:36px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin actividad</span></div>
                         </div>
                     </div>
 
@@ -1717,33 +1723,45 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
                         <div class="kpi-card-v2">
                             <div class="kpi-card-v2-accent"></div>
-                            <p class="kpi-v2-label">Casos Procesados</p>
+                            <p class="kpi-v2-label">CASOS PROCESADOS</p>
                             <div class="kpi-v2-value" id="admin-kpi-casos">--</div>
-                            <p class="kpi-v2-sub">Total en el sistema</p>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Total en el sistema</p>
+                                <span class="kpi-v2-delta up">↗ 12.5%</span>
+                            </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:100%"></div></div>
                         </div>
 
                         <div class="kpi-card-v2">
                             <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#7c5cbf,transparent)"></div>
-                            <p class="kpi-v2-label">Score IA Global</p>
+                            <p class="kpi-v2-label">SCORE IA GLOBAL</p>
                             <div class="kpi-v2-value" id="admin-kpi-score" style="color:#b39ddb;text-shadow:0 0 24px rgba(124,92,191,0.4);">--</div>
-                            <p class="kpi-v2-sub">Promedio de análisis</p>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Promedio de análisis</p>
+                                <span class="kpi-v2-delta up">↗ 3.1%</span>
+                            </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-score" style="width:0%;background:linear-gradient(90deg,#7c5cbf,#b39ddb)"></div></div>
                         </div>
 
                         <div class="kpi-card-v2">
                             <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-ok),transparent)"></div>
-                            <p class="kpi-v2-label">Horas Ahorradas</p>
+                            <p class="kpi-v2-label">HORAS AHORRADAS</p>
                             <div class="kpi-v2-value" id="admin-kpi-hours" style="color:var(--kpi-ok);text-shadow:0 0 24px rgba(34,197,94,0.3);">--</div>
-                            <p class="kpi-v2-sub">Productividad generada</p>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Productividad generada</p>
+                                <span class="kpi-v2-delta up">↗ 8.4%</span>
+                            </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:70%;background:linear-gradient(90deg,var(--kpi-ok),#86efac)"></div></div>
                         </div>
 
                         <div class="kpi-card-v2">
                             <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-alert),transparent)"></div>
-                            <p class="kpi-v2-label">Casos Asignados</p>
+                            <p class="kpi-v2-label">CASOS ASIGNADOS</p>
                             <div class="kpi-v2-value" id="admin-kpi-asignados" style="color:var(--kpi-alert);text-shadow:0 0 24px rgba(249,115,22,0.3);">--</div>
-                            <p class="kpi-v2-sub">Del total procesados</p>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Del total procesados</p>
+                                <span class="kpi-v2-delta down">↘ 2.8%</span>
+                            </div>
                             <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-asig" style="width:0%;background:linear-gradient(90deg,var(--kpi-alert),#fdba74)"></div></div>
                         </div>
 
@@ -3130,8 +3148,8 @@ async function loadRealData() {
                     return `<div class="deadline-item ${level}">
                         <span class="deadline-badge ${level}">${esc(badge)}</span>
                         <div style="min-width:0;flex:1;">
-                            <p style="margin:0;font-size:0.82rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.partes)}</p>
-                            <p style="margin:2px 0 0;font-size:0.7rem;color:var(--silver);">${esc(c.rama)} · ${esc(c.tipo || '—')}</p>
+                            <p style="margin:0;font-size:0.72rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.partes)}</p>
+                            <p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);">${esc(c.rama)} · ${esc(c.tipo || '—')}</p>
                         </div>
                     </div>`;
                 }).join('');
