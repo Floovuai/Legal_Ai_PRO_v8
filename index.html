@@ -355,7 +355,13 @@
         tr:hover td { background: rgba(201,168,76,0.025); }
 
         /* ── GRIDS ── */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 1.25rem; 
+            align-items: stretch;
+        }
+        .dashboard-grid.two-cols { grid-template-columns: 1fr 1fr; }
         .full-width { grid-column: 1 / -1; }
 
         /* ── EMPTY STATE ── */
@@ -1649,7 +1655,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                     </div>
 
                     <!-- Fila central -->
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+                    <div class="dashboard-grid two-cols" style="margin-bottom:1.5rem;">
 
                         <div class="card">
                             <p class="card-title">Distribución por Rama Jurídica</p>
@@ -1748,21 +1754,21 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                             </div>
                         </div>
 
+                        <!-- Sesiones activas -->
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                                <p class="card-title" style="margin-bottom:0;">🔐 Sesiones Activas</p>
+                                <button class="btn-outline" style="font-size:0.75rem;height:32px;padding:0 12px;" onclick="renderActiveSessions()">↻ Actualizar</button>
+                            </div>
+                            <div id="active-sessions-list">
+                                <p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando sesiones...</p>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Sesiones activas -->
-                    <div class="card" style="margin-top:1.5rem;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-                            <p class="card-title" style="margin-bottom:0;">🔐 Sesiones Activas</p>
-                            <button class="btn-outline" style="font-size:0.75rem;height:32px;padding:0 12px;" onclick="renderActiveSessions()">↻ Actualizar</button>
-                        </div>
-                        <div id="active-sessions-list">
-                            <p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando sesiones...</p>
-                        </div>
-                    </div>
-
-                    <!-- Debug: Reporte de Errores (movido de Config) -->
-                    <div class="card" style="margin-top:1.5rem;">
+                    <!-- Debug: Reporte de Errores (ancho completo si es necesario o integrado) -->
+                    <div class="card" style="margin-top:1.25rem;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
                             <p class="card-title" style="margin:0;">Debug: Reporte de Errores</p>
                             <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Cargar Logs n8n</button>
