@@ -1297,12 +1297,12 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
     .agencia-hub-grid { grid-template-columns: 1fr; }
 }
 
-/* OVERRIDE DEFINITIVO TIPOGRAFIA NUMEROS */
+/* OVERRIDE DEFINITIVO TIPOGRAFIA NUMEROS — Space Mono como base */
 .kpi-val, .kpi-value, .kpi-card h3, .kpi-card span, .kpi-card div, 
 .kpi-card-v2 h3, .kpi-card-v2 span, .kpi-card-v2 div, 
 #dash-kpis h3, #dash-kpis span, #dash-kpis div,
-.kpi-number, .kpi-delta, .kpi-label, .val, .delta {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+.kpi-number, .kpi-delta, .kpi-v2-delta, .kpi-label, .val, .delta {
+    font-family: 'Space Mono', 'Fira Code', monospace !important;
 }
 
 /* FASE ÚLTIMA: AJUSTE TOTAL DE LAYOUT A 1 PANTALLA Y MULTICOLUMNAS */
@@ -1310,7 +1310,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 /* 1. RESTAURAR TIPOGRAFIA 'Space Mono' PARA NÚMEROS (Solicitado por el usuario) */
 .kpi-val, .kpi-value, .kpi-card h3, .kpi-card-v2 h3, 
 .kpi-card span, .kpi-card-v2 span, #dash-kpis h3, #dash-kpis .kpi-val,
-.kpi-number, .kpi-delta, .kpi-label, .val, .delta {
+.kpi-number, .kpi-delta, .kpi-v2-delta, .kpi-label, .val, .delta {
     font-family: 'Space Mono', 'Fira Code', monospace !important;
 }
 
