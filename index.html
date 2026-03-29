@@ -5545,6 +5545,9 @@ async function loadRealData() {
                                          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                 ${esc(clienteNombre)}
                             </span>
+                            <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;white-space:nowrap;margin-left:5px;">
+                                ${casos.map(c => c.token).filter(Boolean).join(' / ')}
+                            </span>
                             ${badgeNuevo}
                         </div>
                         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
