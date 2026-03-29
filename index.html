@@ -4428,38 +4428,18 @@ async function loadRealData() {
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
             try {
-                if (source === 'directorio') {
-                    // Directorio manual: delete + save
+                // Unificar edición: siempre actualizar la hoja CLIENTES
+                if (original.nit) {
                     await authFetch(N8N_CLIENT_DELETE, { method: 'POST', body: JSON.stringify({ nit: original.nit }) });
-                    const res = await authFetch(N8N_CLIENT_SAVE, {
-                        method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas, abogado })
-                    });
-                    if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
-                } else {
-                    // Caso del Registro Legal: actualizar via webhook de asignación
+                }
+                const res = await authFetch(N8N_CLIENT_SAVE, {
+                    method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas, abogado })
+                });
+                if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
+
+                if (source !== 'directorio') {
                     const caseItem = db.find(c => c.token === original.token);
-                    if (caseItem) {
-                        const res = await authFetch(N8N_ASSIGN_WEBHOOK, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                token:                 original.token,
-                                row_number:            caseItem.row_number || null,
-                                'Nombre Cliente':      nombre,
-                                nombre_cliente:        nombre,
-                                abogado_responsable:   caseItem.lawyer || '',
-                                email_abogado:         getLawyerEmail(caseItem.lawyer),
-                                'Estado Alerta':       caseItem.status || 'ASIGNADO',
-                                rama:                  caseItem.rama,
-                                vencimiento:           caseItem.venc,
-                                'Fecha de Vencimiento': caseItem.venc,
-                                case_description:      caseItem.desc,
-                                informe_html:          caseItem.informe_html || '<!--FLOOVU_AB_PLACEHOLDER-->'
-                            })
-                        });
-                        if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
-                        // Actualizar en memoria
-                        if (caseItem) caseItem.partes = nombre;
-                    }
+                    if (caseItem) caseItem.partes = nombre;
                 }
                 await loadClients();
                 closeClientModal();
