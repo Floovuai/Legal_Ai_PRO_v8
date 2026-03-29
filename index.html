@@ -3031,6 +3031,7 @@ async function loadRealData() {
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
                         const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
+                                         row['Score IA'] || row['Score_IA'] || row['score_ia'] ||
                                          row['score'] || row['Score'] || row.score || '0';
                         // Score viene del sheet como string 0-100 — normalizar a escala 0-10
                         let scoreParsed = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
