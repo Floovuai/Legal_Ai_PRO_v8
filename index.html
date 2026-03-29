@@ -3076,7 +3076,14 @@ async function loadRealData() {
                             score,
                             tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
                             dictamen:     row['Dictamen JSON'] || row['Dictamen Json'] || row['dictamen_json'] || null,
-                            informe_html:         row.informe_html || row['Informe HTML'] || '',
+                            informe_html:         (() => {
+                                let html = row.informe_html || row['Informe HTML'] || '';
+                                let tok = row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00');
+                                if (html && html.includes('Abogado Asignado') && !html.includes('>Token</td>')) {
+                                    html = html.replace(/(<tr><td[^>]*>Abogado Asignado<\/td>)/, `<tr><td style="padding:10px;font-weight:bold;color:#495057;border-bottom:1px solid #eee;width:150px;">Token</td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:bold;font-family:monospace;color:#2980b9;">${tok}</td></tr>$1`);
+                                }
+                                return html;
+                            })(),
                             messageId:            row['Email ID'] || row.messageId || row['messageId'] || '',
                             nit:                  row['NIT_Cedula'] || row['NIT'] || row['nit'] || row['nit_cedula'] || row['nit_cliente'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
