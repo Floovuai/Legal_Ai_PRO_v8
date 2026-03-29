@@ -2023,12 +2023,19 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
                     <div style="display:flex;gap:8px;align-items:center;">
                         <span id="exp-new-badge" style="display:none;background:#f97316;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:1px;">🔔 NUEVOS REGISTROS</span>
                         <button class="btn-outline" onclick="loadRealData()">🔄 Actualizar</button>
-                        <input type="text" id="exp-search" placeholder="Buscar cliente, token, abogado..." oninput="filtrarExpedientes(this.value)" style="width:240px;height:34px;font-size:0.8rem;">
                     </div>
                 </div>
-                <div class="notification-banner" style="border-color:rgba(34,197,94,0.25);background:linear-gradient(90deg,rgba(34,197,94,0.06),rgba(34,197,94,0.02));margin-bottom:1.5rem;">
+                <div class="notification-banner" style="border-color:rgba(34,197,94,0.25);background:linear-gradient(90deg,rgba(34,197,94,0.06),rgba(34,197,94,0.02));margin-bottom:1rem;">
                     <span style="font-size:0.82rem;">📁 Solo muestra casos ya asignados a un abogado. Cada tarjeta incluye seguimiento y historial de emails.</span>
                 </div>
+
+                <!-- Buscador de Expedientes Destacado -->
+                <div style="margin-bottom:1.5rem; position:relative; max-width:100%;">
+                    <input type="text" id="exp-search" placeholder="Buscar Caso por Token, Nombre de Cliente o NIT..." oninput="filtrarExpedientes(this.value)" 
+                           style="width:100%; height:50px; border-radius:12px; border: 2px solid var(--gold); background:rgba(201,168,76,0.08); color:var(--white); padding:0 15px 0 45px; font-size:1rem; box-shadow:0 0 15px rgba(201,168,76,0.15); transition:all 0.3s ease; box-sizing:border-box;">
+                    <span style="position:absolute; left:15px; top:50%; transform:translateY(-50%); font-size:1.2rem; filter:grayscale(0.2);">🔍</span>
+                </div>
+
                 <div id="exp-cards-container">
                     <div class="empty-state"><span class="empty-icon">📁</span>Cargando registro legal...</div>
                 </div>
@@ -5850,11 +5857,12 @@ async function loadRealData() {
             if (!q || !q.trim()) { renderExpedientesCards(_expAllData); return; }
             const query = q.toLowerCase();
             const filtered = _expAllData.filter(c =>
-                (c.token || '').toLowerCase().includes(query) ||
-                (c.cliente_a_defender || c.partes || '').toLowerCase().includes(query) ||
-                (c.lawyer || '').toLowerCase().includes(query) ||
-                (c.tipo || '').toLowerCase().includes(query) ||
-                (c.rama || '').toLowerCase().includes(query)
+                String(c.token || '').toLowerCase().includes(query) ||
+                String(c.cliente_a_defender || c.partes || '').toLowerCase().includes(query) ||
+                String(c.nit || c.nit_cedula || '').toLowerCase().includes(query) ||
+                String(c.lawyer || '').toLowerCase().includes(query) ||
+                String(c.tipo || '').toLowerCase().includes(query) ||
+                String(c.rama || '').toLowerCase().includes(query)
             );
             renderExpedientesCards(filtered);
         }
