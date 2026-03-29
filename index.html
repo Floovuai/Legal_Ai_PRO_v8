@@ -3055,7 +3055,7 @@ async function loadRealData() {
                             date:         dateStr,
                             dateOnly:     dateStr.split(' ')[0] || new Date().toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'}),
                             rama:         row.Rama  || row.rama  || 'General',
-                            partes:       row.Partes || row.partes || row.nombre_cliente || 'Sin Partes',
+                            partes:       row.Partes || row.partes || row.nombre_cliente || row['Cliente a defender'] || row.asunto || row.subject || 'Caso sin clasificar',
                             venc,
                             status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
                             es_nuevo_caso: (row['Es_Nuevo_Caso'] || row['es_nuevo_caso'] || '').toString().toUpperCase() === 'TRUE',
