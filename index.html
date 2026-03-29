@@ -5785,9 +5785,10 @@ async function loadRealData() {
                 if (res.ok) {
                     const txt = await res.text();
                     const data = txt ? JSON.parse(txt) : {};
-                    const anotaciones = Array.isArray(data.anotaciones) ? data.anotaciones : [];
-                    _anotacionesCache[tok] = anotaciones;
-                    renderAnotaciones(tok, anotaciones);
+                    const todas = Array.isArray(data.anotaciones) ? data.anotaciones : [];
+                    const relacionadas = todas.filter(a => (a.Token || a.token) === tok);
+                    _anotacionesCache[tok] = relacionadas;
+                    renderAnotaciones(tok, relacionadas);
                 } else {
                     list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
                 }
