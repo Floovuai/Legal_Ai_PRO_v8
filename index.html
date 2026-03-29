@@ -3075,8 +3075,9 @@ async function loadRealData() {
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
                             tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
+                            dictamen:     row['Dictamen JSON'] || row['Dictamen Json'] || row['dictamen_json'] || null,
                             informe_html:         row.informe_html || row['Informe HTML'] || '',
-                            messageId:            row.messageId || row['messageId'] || '',
+                            messageId:            row['Email ID'] || row.messageId || row['messageId'] || '',
                             nit:                  row['NIT_Cedula'] || row['NIT'] || row['nit'] || row['nit_cedula'] || row['nit_cliente'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
                             partes_array:         (() => {
@@ -5597,6 +5598,50 @@ async function loadRealData() {
             if (chevron) chevron.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
         }
 
+        function getDictamenHTML(c) {
+            if (!c.dictamen) return c.desc || '<em>Sin resumen disponible.</em>';
+            try {
+                const d = typeof c.dictamen === 'string' ? JSON.parse(c.dictamen) : c.dictamen;
+                if (!d || (!d.analisis_documento && !d.estrategia_tactica)) return c.desc || '<em>Sin resumen disponible.</em>';
+
+                const section = (title, items, color) => {
+                    let content = '';
+                    const entries = Object.entries(items);
+                    if (entries.length === 0) return '';
+                    
+                    for (const [key, val] of entries) {
+                        if (val && val !== 'N/A' && val !== 'null' && val !== 'NINGUNA' && val !== 'NO APLICAN') {
+                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            content += `<p style="margin:4px 0;"><strong>${label}:</strong> ${esc(String(val))}</p>`;
+                        }
+                    }
+                    if (!content && title.includes('ANALISIS')) return ''; // Skip empty analysis
+                    if (!content) content = '<p style="margin:4px 0;font-style:italic;opacity:0.6;">Sin hallazgos relevantes.</p>';
+
+                    return `
+                        <div style="margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border-left:4px solid ${color};">
+                            <h4 style="margin:0 0 10px;color:${color};font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">${title}</h4>
+                            <div style="font-size:0.8rem;color:var(--silver-lt);font-family:inherit;">${content}</div>
+                        </div>`;
+                };
+
+                return `
+                    <div style="margin-bottom:15px;padding:10px;background:rgba(201,168,76,0.05);border-radius:8px;border:1px dashed rgba(201,168,76,0.2);">
+                        <p style="margin:0;font-size:0.75rem;color:var(--gold);"><strong>Abogado Responsable:</strong> ${esc(c.lawyer || 'PENDIENTE DE ASIGNACIÓN')}</p>
+                    </div>
+                    ${section('1. ANÁLISIS DEL DOCUMENTO', d.analisis_documento || {}, 'var(--gold)')}
+                    ${section('2. NULIDADES Y EXCEPCIONES', d.nulidades_excepciones || {}, '#ef4444')}
+                    ${section('3. ANÁLISIS DEL CASO', d.analisis_caso || {}, '#22c55e')}
+                    ${section('4. ESTRATEGIA TÁCTICA', d.estrategia_tactica || {}, '#3b82f6')}
+                    ${section('5. ALERTA DE VACÍOS', d.alerta_vacios || {}, '#f39c12')}
+                    ${section('6. VENCIMIENTO PROCESAL', d.calculo_vencimiento_procesal || {}, '#9b59b6')}
+                `;
+            } catch (e) {
+                console.error("Error parsing dictamen for", c.token, e);
+                return c.desc || '<em>Sin resumen disponible.</em>';
+            }
+        }
+
         function marcarComoVisto(tok) {
             _casosVistos.add(tok);
             // Quitar badge ⚡ NUEVO de la tarjeta
@@ -5687,6 +5732,11 @@ async function loadRealData() {
                             onclick="toggleExpPanel('res-${tok}'); marcarComoVisto('${tok}')">
                         📄 Resumen
                     </button>
+                    ${c.messageId ? `
+                    <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;border-color:rgba(201,168,76,0.2);color:rgba(255,255,255,0.7);"
+                            onclick="window.open('https://mail.google.com/mail/u/0/#inbox/${esc(c.messageId)}', '_blank')">
+                        📎 Ver Gmail
+                    </button>` : ''}
                 </div>
 
                 <!-- Panel Seguimiento -->
@@ -5718,9 +5768,9 @@ async function loadRealData() {
                 <!-- Panel Resumen -->
                 <div id="res-${tok}" class="exp-panel">
                     <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
-                               letter-spacing:1px;margin:0 0 8px;">📄 Resumen del Caso</p>
-                    <div style="font-size:0.82rem;color:var(--silver-lt);line-height:1.7;">
-                        ${c.desc || '<em>Sin resumen disponible.</em>'}
+                               letter-spacing:1px;margin:0 0 12px;">📊 Resumen Detallado (Dictamen IA)</p>
+                    <div style="line-height:1.6;">
+                        ${getDictamenHTML(c)}
                     </div>
                 </div>
             </div>`;
@@ -5840,8 +5890,13 @@ async function loadRealData() {
                                     📄 ${esc(c.tipo || c.rama || 'Documento legal')}
                                 </p>
                                 <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">
-                                    📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `· Vence: ${esc(c.venc)}` : ''}
+                                    📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `• Vence: ${esc(c.venc)}` : ''}
                                 </p>
+                                ${c.messageId ? `
+                                <button class="btn-outline" style="font-size:0.65rem;height:24px;padding:0 8px;margin-top:6px;border-color:rgba(201,168,76,0.3);color:var(--gold);"
+                                        onclick="window.open('https://mail.google.com/mail/u/0/#inbox/${esc(c.messageId)}', '_blank')">
+                                    📎 Ver Documento (Gmail)
+                                </button>` : ''}
                             </div>
                             <span style="font-family:monospace;font-size:0.7rem;color:var(--gold);
                                           background:rgba(201,168,76,0.1);padding:2px 7px;
