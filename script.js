@@ -153,6 +153,8 @@
             GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log',
             SAVE_OBS:           'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-observacion',
             GET_OBS:            'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-observaciones',
+            EDIT_OBS:           'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-editar-anotacion',
+            DELETE_OBS:         'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-anotacion',
             GET_USUARIOS:       'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-usuarios',
             SAVE_USUARIO:       'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-usuario-admin',
             DEL_USUARIO:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-usuario-admin',
@@ -3453,26 +3455,123 @@ async function loadRealData() {
                 el.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
                 return;
             }
-            el.innerHTML = list.map(a => `
-                <div style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
-                             margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.3);">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-                        <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
-                            ${esc(a.Autor || a.autor || currentUser?.name || 'Operador')}
-                        </span>
-                        <span style="font-size:0.65rem;color:var(--silver);">
-                            ${esc(a.Fecha || a.fecha || '')}
-                        </span>
+            el.innerHTML = list.map(a => {
+                const id = a.ID || a.id || '';
+                const vis = a.Visibilidad || a.visibilidad || 'Interno';
+                const isPublic = vis === 'Público' || vis === 'Publico';
+                const visLabel = isPublic
+                    ? `<span style="font-size:0.65rem;font-weight:700;color:#22c55e;letter-spacing:0.5px;">👁️ Portal</span>`
+                    : `<span style="font-size:0.65rem;font-weight:700;color:var(--silver);letter-spacing:0.5px;">🔒 Interno</span>`;
+                const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
+                return `
+                <div id="ant-${esc(id)}" style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
+                             margin-bottom:6px;border-left:2px solid ${borderColor};">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
+                                ${esc(a.Autor || a.autor || a.Operador || a.operador || currentUser?.name || 'Operador')}
+                            </span>
+                            ${visLabel}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
+                            ${id ? `
+                            <button onclick="abrirEditarAnotacion('${esc(id)}','${tok}')" title="Editar"
+                                style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
+                            <button onclick="eliminarAnotacion('${esc(id)}','${tok}')" title="Eliminar"
+                                style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
+                            ` : ''}
+                        </div>
                     </div>
-                    <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);line-height:1.5;">
+                    <p id="ant-txt-${esc(id)}" style="margin:0;font-size:0.8rem;color:var(--silver-lt);line-height:1.5;">
                         ${esc(a.Texto || a.texto || '')}
                     </p>
-                </div>`).join('');
+                </div>`;
+            }).join('');
+        }
+
+        function abrirEditarAnotacion(id, tok) {
+            const anotacion = (_anotacionesCache[tok] || []).find(a => (a.ID || a.id) === id);
+            if (!anotacion) return;
+            const textoActual = anotacion.Texto || anotacion.texto || '';
+            const visActual = anotacion.Visibilidad || anotacion.visibilidad || 'Interno';
+            const isPublic = visActual === 'Público' || visActual === 'Publico';
+            const modal = document.createElement('div');
+            modal.id = 'modal-editar-ant';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px;width:90%;max-width:480px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Anotación</span>
+                        <button onclick="document.getElementById('modal-editar-ant').remove()"
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">✕</button>
+                    </div>
+                    <textarea id="modal-ant-texto" rows="4"
+                        style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
+                               border-radius:6px;color:var(--white);padding:8px;font-size:0.85rem;resize:vertical;box-sizing:border-box;"
+                    >${textoActual}</textarea>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                        <input type="checkbox" id="modal-ant-vis" ${isPublic ? 'checked' : ''}
+                            style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
+                        <label for="modal-ant-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
+                            👁️ Visible en Portal del Cliente
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+                        <button onclick="document.getElementById('modal-editar-ant').remove()"
+                            style="padding:6px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;
+                                   background:none;color:var(--silver);cursor:pointer;font-size:0.8rem;">Cancelar</button>
+                        <button onclick="confirmarEditarAnotacion('${id}','${tok}')"
+                            style="padding:6px 14px;border:none;border-radius:6px;background:var(--gold);
+                                   color:#000;cursor:pointer;font-weight:700;font-size:0.8rem;">Guardar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        async function confirmarEditarAnotacion(id, tok) {
+            const texto = document.getElementById('modal-ant-texto')?.value?.trim();
+            const cb = document.getElementById('modal-ant-vis');
+            const visibilidad = cb?.checked ? 'Público' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.EDIT_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Anotación actualizada.', 'ok');
+                    document.getElementById('modal-editar-ant')?.remove();
+                    delete _anotacionesCache[tok];
+                    cargarAnotaciones(tok);
+                } else { showToast(`Error al editar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+
+        async function eliminarAnotacion(id, tok) {
+            if (!confirm('¿Eliminar esta anotación? Esta acción no se puede deshacer.')) return;
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.DELETE_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Anotación eliminada.', 'ok');
+                    delete _anotacionesCache[tok];
+                    cargarAnotaciones(tok);
+                } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         async function guardarSeguimiento(tok) {
             const input = document.getElementById(`seg-input-${tok}`);
             const texto = input?.value?.trim();
+            const cb = document.getElementById(`seg-vis-${tok}`);
+            const visibilidad = cb?.checked ? 'Público' : 'Interno';
             if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
@@ -3482,12 +3581,14 @@ async function loadRealData() {
                         token: tok,
                         tipo: 'SEGUIMIENTO',
                         texto: texto,
+                        visibilidad: visibilidad,
                         operador: currentUser?.name || 'Operador'
                     })
                 });
                 if (res.ok) {
                     showToast('Anotación guardada.', 'ok');
                     input.value = '';
+                    if (cb) cb.checked = false;
                     delete _anotacionesCache[tok];
                     cargarAnotaciones(tok);
                 } else {
@@ -3592,6 +3693,13 @@ async function loadRealData() {
                                          color:var(--white);font-size:0.82rem;resize:vertical;
                                          font-family:inherit;width:100%;"></textarea>
                     </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="checkbox" id="${panelId}-vis"
+                               style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
+                        <label for="${panelId}-vis" style="font-size:0.75rem;color:var(--silver);cursor:pointer;">
+                            👁️ Portal &nbsp;<span style="color:rgba(255,255,255,0.3);">/ 🔒 Interno por defecto</span>
+                        </label>
+                    </div>
                     <button class="btn-premium" style="align-self:flex-end;height:32px;font-size:0.78rem;padding:0 20px;"
                             onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
                         💾 Guardar
@@ -3608,24 +3716,7 @@ async function loadRealData() {
                     const data = txt ? JSON.parse(txt) : {};
                     const todas = Array.isArray(data.anotaciones) ? data.anotaciones : [];
                     const relacionadas = todas.filter(a => tokens.includes(a.Token || a.token));
-                    if (!relacionadas.length) {
-                        listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
-                    } else {
-                        listEl.innerHTML = relacionadas.map(a => `
-                            <div style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
-                                         margin-bottom:6px;border-left:2px solid rgba(201,168,76,0.3);">
-                                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-                                    <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
-                                        ${esc(a.Autor || a.autor || 'Operador')}
-                                        <span style="opacity:0.55;font-weight:400;"> • ${esc(a.Token || a.token || '')}</span>
-                                    </span>
-                                    <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
-                                </div>
-                                <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);line-height:1.5;">
-                                    ${esc(a.Texto || a.texto || '')}
-                                </p>
-                            </div>`).join('');
-                    }
+                    renderGroupAnotaciones(listEl, relacionadas, panelId, grupoId);
                 } else {
                     listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
                 }
@@ -3636,10 +3727,132 @@ async function loadRealData() {
             }
         }
 
+        function renderGroupAnotaciones(listEl, list, panelId, grupoId) {
+            if (!list || !list.length) {
+                listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
+                return;
+            }
+            listEl.innerHTML = list.map(a => {
+                const id = a.ID || a.id || '';
+                const vis = a.Visibilidad || a.visibilidad || 'Interno';
+                const isPublic = vis === 'Público' || vis === 'Publico';
+                const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
+                const visLabel = isPublic
+                    ? `<span style="font-size:0.62rem;font-weight:700;color:#22c55e;">👁️ Portal</span>`
+                    : `<span style="font-size:0.62rem;font-weight:700;color:var(--silver);">🔒 Interno</span>`;
+                return `
+                <div id="gant-${esc(id)}" style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
+                             margin-bottom:6px;border-left:2px solid ${borderColor};">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
+                                ${esc(a.Autor || a.autor || a.Operador || a.operador || 'Operador')}
+                                <span style="opacity:0.55;font-weight:400;"> • ${esc(a.Token || a.token || '')}</span>
+                            </span>
+                            ${visLabel}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
+                            ${id ? `
+                            <button onclick="abrirEditarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Editar"
+                                style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
+                            <button onclick="eliminarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Eliminar"
+                                style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <p style="margin:0;font-size:0.8rem;color:var(--silver-lt);line-height:1.5;">
+                        ${esc(a.Texto || a.texto || '')}
+                    </p>
+                </div>`;
+            }).join('');
+        }
+
+        function abrirEditarGroupAnotacion(id, panelId, grupoId) {
+            // Reconstruir lista desde el DOM para obtener datos actuales
+            const allDivs = document.querySelectorAll(`#${panelId}-list [id^="gant-"]`);
+            const div = document.getElementById(`gant-${id}`);
+            if (!div) return;
+            const textoActual = div.querySelector('p')?.textContent?.trim() || '';
+            const isPublic = div.style.borderLeftColor.includes('34,197,94');
+            const modal = document.createElement('div');
+            modal.id = 'modal-editar-gant';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px;width:90%;max-width:480px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Anotación</span>
+                        <button onclick="document.getElementById('modal-editar-gant').remove()"
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">✕</button>
+                    </div>
+                    <textarea id="modal-gant-texto" rows="4"
+                        style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
+                               border-radius:6px;color:var(--white);padding:8px;font-size:0.85rem;resize:vertical;box-sizing:border-box;"
+                    >${textoActual}</textarea>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                        <input type="checkbox" id="modal-gant-vis" ${isPublic ? 'checked' : ''}
+                               style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
+                        <label for="modal-gant-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
+                            👁️ Visible en Portal del Cliente
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+                        <button onclick="document.getElementById('modal-editar-gant').remove()"
+                            style="padding:6px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;
+                                   background:none;color:var(--silver);cursor:pointer;font-size:0.8rem;">Cancelar</button>
+                        <button onclick="confirmarEditarGroupAnotacion('${id}','${panelId}','${grupoId}')"
+                            style="padding:6px 14px;border:none;border-radius:6px;background:var(--gold);
+                                   color:#000;cursor:pointer;font-weight:700;font-size:0.8rem;">Guardar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        async function confirmarEditarGroupAnotacion(id, panelId, grupoId) {
+            const texto = document.getElementById('modal-gant-texto')?.value?.trim();
+            const cb = document.getElementById('modal-gant-vis');
+            const visibilidad = cb?.checked ? 'Público' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const meta = (window._grupoMeta || {})[grupoId] || {};
+                const tok = meta.tokens?.[0] || '';
+                const res = await authFetch(WH.EDIT_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Anotación actualizada.', 'ok');
+                    document.getElementById('modal-editar-gant')?.remove();
+                    loadGroupSeguimiento(panelId, grupoId);
+                } else { showToast(`Error al editar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+
+        async function eliminarGroupAnotacion(id, panelId, grupoId) {
+            if (!confirm('¿Eliminar esta anotación? Esta acción no se puede deshacer.')) return;
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const meta = (window._grupoMeta || {})[grupoId] || {};
+                const tok = meta.tokens?.[0] || '';
+                const res = await authFetch(WH.DELETE_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Anotación eliminada.', 'ok');
+                    loadGroupSeguimiento(panelId, grupoId);
+                } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+
         async function guardarGroupSeguimiento(panelId, grupoId) {
             const tok = document.getElementById(`${panelId}-token`)?.value;
             const input = document.getElementById(`${panelId}-input`);
             const texto = input?.value?.trim();
+            const cb = document.getElementById(`${panelId}-vis`);
+            const visibilidad = cb?.checked ? 'Público' : 'Interno';
             if (!tok) { showToast('Sin caso seleccionado', 'error'); return; }
             if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
             try {
@@ -3647,13 +3860,14 @@ async function loadRealData() {
                 const res = await authFetch(WH.SAVE_OBS, {
                     method: 'POST',
                     body: JSON.stringify({
-                        token: tok, tipo: 'SEGUIMIENTO', texto,
+                        token: tok, tipo: 'SEGUIMIENTO', texto, visibilidad,
                         operador: currentUser?.name || 'Operador'
                     })
                 });
                 if (res.ok) {
                     showToast('Anotación guardada.', 'ok');
                     if (input) input.value = '';
+                    if (cb) cb.checked = false;
                     loadGroupSeguimiento(panelId, grupoId);
                 } else {
                     showToast(`Error al guardar: ${res.status}`, 'error');
