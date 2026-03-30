@@ -3862,6 +3862,7 @@ async function loadRealData() {
                     loadGroupSeguimiento(panelId, grupoId);
                 } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
 
         async function guardarGroupSeguimiento(panelId, grupoId) {
             const tok = document.getElementById(`${panelId}-token`)?.value;
@@ -4131,4 +4132,6 @@ ${casosHTML}
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
 
+}
+}
 }
