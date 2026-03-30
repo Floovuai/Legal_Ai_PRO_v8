@@ -3700,7 +3700,7 @@ async function loadRealData() {
                             👁️ Portal &nbsp;<span style="color:rgba(255,255,255,0.3);">/ 🔒 Interno por defecto</span>
                         </label>
                     </div>
-                    <button class="btn-premium" style="align-self:flex-end;height:32px;font-size:0.78rem;padding:0 20px;"
+                    <button class="btn-premium" style="align-self:flex-start;height:32px;font-size:0.78rem;padding:0 20px;"
                             onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
                         💾 Guardar
                     </button>
@@ -4060,7 +4060,8 @@ ${casosHTML}
             _healthInterval = setInterval(() => {
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
-        
+        }
+
         // ── Expose functions to global scope ──
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
