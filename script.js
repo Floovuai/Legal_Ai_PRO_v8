@@ -3456,7 +3456,7 @@ async function loadRealData() {
                 return;
             }
             el.innerHTML = list.map(a => {
-                const id = a.ID || a.id || '';
+                const id = a.ID || a.id || a._id || a.key || a.Key || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
                 const isPublic = vis === 'Público' || vis === 'Publico';
                 const visLabel = isPublic
@@ -3700,7 +3700,7 @@ async function loadRealData() {
                             👁️ Portal &nbsp;<span style="color:rgba(255,255,255,0.3);">/ 🔒 Interno por defecto</span>
                         </label>
                     </div>
-                    <button class="btn-premium" style="align-self:flex-end;height:32px;font-size:0.78rem;padding:0 20px;"
+                    <button class="btn-premium" style="align-self:flex-start;height:32px;font-size:0.78rem;padding:0 20px;"
                             onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
                         💾 Guardar
                     </button>
@@ -3733,7 +3733,7 @@ async function loadRealData() {
                 return;
             }
             listEl.innerHTML = list.map(a => {
-                const id = a.ID || a.id || '';
+                const id = a.ID || a.id || a._id || a.key || a.Key || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
                 const isPublic = vis === 'Público' || vis === 'Publico';
                 const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
@@ -4059,4 +4059,57 @@ ${casosHTML}
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
         }
+        // ── Expose functions to global scope ──
+        window.abrirEditarAnotacion = abrirEditarAnotacion;
+        window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
+        window.addClient = addClient;
+        window.addLawyer = addLawyer;
+        window.applyRoleUI = applyRoleUI;
+        window.cargarAnotaciones = cargarAnotaciones;
+        window.closeClientModal = closeClientModal;
+        window.closePdfModal = closePdfModal;
+        window.confirmarEditarAnotacion = confirmarEditarAnotacion;
+        window.confirmarEditarGroupAnotacion = confirmarEditarGroupAnotacion;
+        window.crearUsuario = crearUsuario;
+        window.deleteClient = deleteClient;
+        window.deleteLawyer = deleteLawyer;
+        window.doLogin = doLogin;
+        window.doLogout = doLogout;
+        window.eliminarAnotacion = eliminarAnotacion;
+        window.eliminarGroupAnotacion = eliminarGroupAnotacion;
+        window.eliminarUsuario = eliminarUsuario;
+        window.exportClientsExcel = exportClientsExcel;
+        window.exportClientsPDF = exportClientsPDF;
+        window.exportarClientePDF = exportarClientePDF;
+        window.fetchClientMails = fetchClientMails;
+        window.finish = finish;
+        window.forceGmailSync = forceGmailSync;
+        window.forceLogoutSession = forceLogoutSession;
+        window.guardarGroupSeguimiento = guardarGroupSeguimiento;
+        window.guardarObservacion = guardarObservacion;
+        window.guardarSeguimiento = guardarSeguimiento;
+        window.init = init;
+        window.loadBandejaGmail = loadBandejaGmail;
+        window.loadClients = loadClients;
+        window.loadDebugLog = loadDebugLog;
+        window.loadGroupHistorial = loadGroupHistorial;
+        window.loadGroupSeguimiento = loadGroupSeguimiento;
+        window.loadObservaciones = loadObservaciones;
+        window.loadRealData = loadRealData;
+        window.loadUsuariosAdmin = loadUsuariosAdmin;
+        window.openClientModal = openClientModal;
+        window.openPdfModal = openPdfModal;
+        window.pingEngineAdmin = pingEngineAdmin;
+        window.renderActiveSessions = renderActiveSessions;
+        window.renderAnotaciones = renderAnotaciones;
+        window.renderGroupAnotaciones = renderGroupAnotaciones;
+        window.saveClientEdit = saveClientEdit;
+        window.startHealthAutoRefresh = startHealthAutoRefresh;
+        window.switchDebugTab = switchDebugTab;
+        window.toggleDesc = toggleDesc;
+        window.toggleExpPanel = toggleExpPanel;
+        window.toggleGroupPanel = toggleGroupPanel;
+        window.toggleGrupo = toggleGrupo;
+        window.togglePassVisibility = togglePassVisibility;
+
 }
