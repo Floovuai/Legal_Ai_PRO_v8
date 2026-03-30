@@ -274,10 +274,10 @@
         const ADMIN_TABS    = ['dashboard','usuarios','version'];
 
         function applyRoleUI(user) {
-            // Mostrar nombre y rol en sidebar
-            const emailEl = document.getElementById('sidebar-account-email');
+            // Mostrar nombre y rol en topnav
+            const emailEl = document.getElementById('top-account-email');
             if (emailEl) emailEl.textContent = user.email;
-            const badgeEl = document.getElementById('user-role-badge');
+            const badgeEl = document.getElementById('top-role-badge');
             if (badgeEl) {
                 badgeEl.textContent = user.role === 'admin' ? 'Agencia' : 'Operador';
                 badgeEl.className = `role-badge ${user.role}`;
@@ -3546,7 +3546,9 @@ async function loadRealData() {
                 <div id="${panelId}-list" style="margin-bottom:12px;max-height:260px;overflow-y:auto;">
                     <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
                 </div>
-                <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem;align-items:stretch;
+                            background:rgba(255,255,255,0.02);padding:1rem;border-radius:10px;
+                            border:1px solid rgba(255,255,255,0.04);">
                     ${tokens.length > 1 ? `
                     <div style="display:flex;flex-direction:column;gap:4px;">
                         <label style="font-size:0.7rem;color:var(--silver);">Caso</label>
@@ -3557,7 +3559,7 @@ async function loadRealData() {
                             ${tokens.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}
                         </select>
                     </div>` : `<input type="hidden" id="${panelId}-token" value="${esc(tokens[0] || '')}">`}
-                    <div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px;">
+                    <div style="display:flex;flex-direction:column;gap:4px;">
                         <label style="font-size:0.7rem;color:var(--silver);">Nueva anotación</label>
                         <textarea id="${panelId}-input" rows="2" placeholder="Escribí una anotación..."
                                   style="padding:8px 12px;background:rgba(255,255,255,0.04);
@@ -3565,7 +3567,7 @@ async function loadRealData() {
                                          color:var(--white);font-size:0.82rem;resize:vertical;
                                          font-family:inherit;width:100%;"></textarea>
                     </div>
-                    <button class="btn-premium" style="height:32px;font-size:0.78rem;padding:0 16px;"
+                    <button class="btn-premium" style="align-self:flex-end;height:32px;font-size:0.78rem;padding:0 20px;"
                             onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
                         💾 Guardar
                     </button>
