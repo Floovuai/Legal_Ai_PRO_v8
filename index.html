@@ -5563,7 +5563,7 @@ async function loadRealData() {
                 const abogado = casos[0]?.lawyer || 'Sin abogado';
 
                 // Cards de casos del cliente
-                const casosHTML = casos.map(c => renderCasoCard(c, clienteNombre)).join('');
+                const casosHTML = casos.map((c, idx) => renderCasoCard(c, clienteNombre, idx)).join('');
 
                 const grupoId = `grupo-${clienteNombre.replace(/[^a-z0-9]/gi, '_')}`;
 
@@ -5697,10 +5697,10 @@ async function loadRealData() {
             }
         }
 
-        function marcarComoVisto(tok) {
+        function marcarComoVisto(tok, cardId) {
             _casosVistos.add(tok);
-            // Quitar badge ⚡ NUEVO de la tarjeta
-            const badge = document.getElementById(`nuevo-badge-${tok}`);
+            // Quitar badge de la tarjeta específica (usando cardId único)
+            const badge = document.getElementById(`nuevo-badge-${cardId || tok}`);
             if (badge) badge.style.display = 'none';
             // Recalcular badge global
             const nuevosRestantes = _expAllData.filter(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
@@ -5713,13 +5713,12 @@ async function loadRealData() {
                     globalBadge.style.display = 'none';
                 }
             }
-            // Quitar badge del header del grupo
-            const grupoHeaders = document.querySelectorAll('.cliente-grupo-header span[style*="f97316"]');
-            // Re-render del grupo específico no es necesario — la tarjeta ya muestra sin badge
         }
 
-        function renderCasoCard(c, clienteNombre) {
+        function renderCasoCard(c, clienteNombre, idx) {
             const tok = esc(c.token);
+            // ID único por tarjeta (evita colisiones si dos casos tienen el mismo token)
+            const cardId = `${tok}_${idx}`;
             const esNuevo = c.es_nuevo_caso && !_casosVistos.has(c.token);
 
             const vencColor = (() => {
@@ -5730,64 +5729,84 @@ async function loadRealData() {
                 return diff <= 3 ? '#ef4444' : diff <= 10 ? '#f97316' : '#22c55e';
             })();
 
-            const badgeNuevoCard = esNuevo
-                ? `<span id="nuevo-badge-${tok}"
-                          style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;
-                                 padding:2px 8px;border-radius:20px;letter-spacing:1px;">⚡ NUEVO</span>`
-                : `<span id="nuevo-badge-${tok}" style="display:none;"></span>`;
+            const vencLabel = (() => {
+                if (!c.venc || c.venc === 'S/D' || c.venc === 'N/A') return 'Sin vencimiento';
+                const m = c.venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (!m) return esc(c.venc);
+                const diff = Math.ceil((new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])) - new Date()) / 86400000);
+                const suffix = diff < 0 ? `⚠ vencido` : diff === 0 ? `¡hoy!` : `en ${diff}d`;
+                return `${esc(c.venc)} <span style="font-size:0.7rem;opacity:0.8;">(${suffix})</span>`;
+            })();
+
+            const prioColor = c.priority === 'ALTA' ? '#ef4444' : c.priority === 'MEDIA' ? '#f97316' : '#22c55e';
+
+            const badgeNuevo = esNuevo
+                ? `<span id="nuevo-badge-${cardId}" style="background:#f97316;color:#fff;font-size:0.6rem;
+                            font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;">⚡ NUEVO</span>`
+                : `<span id="nuevo-badge-${cardId}" style="display:none;"></span>`;
 
             return `
-            <div class="exp-card" id="exp-card-${tok}" style="margin-bottom:10px;">
-                <div class="exp-card-header">
+            <div class="exp-card" id="exp-card-${cardId}" style="margin-bottom:10px;">
+
+                <!-- Franja superior: Tipo + fecha -->
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
                     <div style="min-width:0;flex:1;">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-                            <span style="font-family:monospace;font-size:0.75rem;color:var(--gold);
-                                         background:rgba(201,168,76,0.1);padding:2px 8px;
-                                         border-radius:4px;flex-shrink:0;">${tok}</span>
-                            <span style="font-size:0.68rem;text-transform:uppercase;color:rgba(201,168,76,0.6);
-                                         font-weight:700;letter-spacing:1px;">${esc(c.rama)}</span>
-                            ${badgeNuevoCard}
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                            <!-- Tipo de documento (principal diferenciador) -->
+                            <span style="font-size:1rem;font-weight:800;color:var(--white);
+                                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                            </span>
+                            ${badgeNuevo}
                         </div>
-                        <h3 style="font-size:0.95rem;color:var(--white);font-weight:700;margin:0 0 2px;
-                                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">
-                            📄 ${esc(c.tipo || c.rama || 'Documento legal')}
-                        </h3>
-                        <p style="margin:0;font-size:0.78rem;color:var(--silver);">
-                            Partes: ${esc(c.partes)}
+                        <!-- Categoría y prioridad como chips secundarios -->
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+                            <span style="font-size:0.7rem;text-transform:uppercase;font-weight:700;
+                                         letter-spacing:0.8px;color:rgba(201,168,76,0.7);
+                                         background:rgba(201,168,76,0.08);padding:2px 8px;
+                                         border-radius:20px;">${esc(c.rama || 'General')}</span>
+                            <span style="font-size:0.7rem;font-weight:700;color:${prioColor};
+                                         background:${prioColor}18;padding:2px 8px;border-radius:20px;">
+                                ⚡ ${esc(c.priority || 'MEDIA')}
+                            </span>
+                        </div>
+                        <!-- Partes -->
+                        <p style="margin:0;font-size:0.78rem;color:var(--silver);line-height:1.4;">
+                            ${esc(c.partes || '—')}
                         </p>
                     </div>
-                    <div style="text-align:right;flex-shrink:0;">
-                        <div style="font-size:0.72rem;color:var(--silver);margin-bottom:2px;">
-                            Recibido: ${esc(c.date)}
+                    <!-- Fechas (columna derecha) -->
+                    <div style="text-align:right;flex-shrink:0;min-width:110px;">
+                        <div style="font-size:0.7rem;color:var(--silver);margin-bottom:4px;">
+                            🗓 ${esc(c.date || '—')}
                         </div>
-                        <div style="font-size:0.78rem;font-weight:700;color:${vencColor};">
-                            📅 ${c.venc && c.venc !== 'S/D' ? esc(c.venc) : 'Sin vencimiento'}
+                        <div style="font-size:0.76rem;font-weight:700;color:${vencColor};">
+                            📅 ${vencLabel}
                         </div>
                     </div>
                 </div>
-                <div class="exp-card-meta">
+
+                <!-- Meta chips inferiores -->
+                <div class="exp-card-meta" style="margin-top:8px;">
                     <span class="exp-meta-chip">👨‍⚖️ ${esc(c.lawyer || 'Sin abogado')}</span>
                     ${c.nit ? `<span class="exp-meta-chip">🪪 ${esc(c.nit)}</span>` : ''}
-                    <span class="exp-meta-chip">${esc(c.tipo || c.rama || 'General')}</span>
-                    <span class="exp-meta-chip"
-                          style="color:${c.priority === 'ALTA' ? '#ef4444' : c.priority === 'MEDIA' ? '#f97316' : '#22c55e'};">
-                        ⚡ ${esc(c.priority || 'MEDIA')}
-                    </span>
                 </div>
+
+                <!-- Botones de acción -->
                 <div class="exp-panel-btns">
                     <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;"
-                            onclick="toggleExpPanel('res-${tok}'); marcarComoVisto('${tok}')">
-                        📄 Resumen
+                            onclick="toggleExpPanel('res-${cardId}', '${cardId}'); marcarComoVisto('${tok}','${cardId}')">
+                        📊 Resumen IA
                     </button>
                     ${c.archivo_url ? `
                     <button class="btn-premium" style="font-size:0.76rem;height:32px;padding:0 12px;"
-                            onclick="openPdfModal('${esc(c.archivo_url)}'); marcarComoVisto('${tok}')">
+                            onclick="openPdfModal('${esc(c.archivo_url)}'); marcarComoVisto('${tok}','${cardId}')">
                         📄 Ver Documento
                     </button>` : ''}
                 </div>
 
-                <!-- Panel Resumen -->
-                <div id="res-${tok}" class="exp-panel">
+                <!-- Panel Resumen IA -->
+                <div id="res-${cardId}" class="exp-panel">
                     <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
                                letter-spacing:1px;margin:0 0 12px;">📊 Resumen Detallado (Dictamen IA)</p>
                     <div style="line-height:1.6;">
@@ -5795,23 +5814,20 @@ async function loadRealData() {
                     </div>
                 </div>
 
-                </div>
             </div>`;
         }
 
-        function toggleExpPanel(panelId) {
+        function toggleExpPanel(panelId, cardId) {
             const panel = document.getElementById(panelId);
             if (!panel) return;
             const isOpen = panel.classList.contains('open');
-            const tok = panelId.split('-').slice(1).join('-');
-            ['seg','hist','res','doc'].forEach(prefix => {
-                const p = document.getElementById(`${prefix}-${tok}`);
+            // Cerrar todos los paneles de la misma tarjeta
+            const id = cardId || panelId.split('-').slice(1).join('-');
+            ['res','doc'].forEach(prefix => {
+                const p = document.getElementById(`${prefix}-${id}`);
                 if (p) p.classList.remove('open');
             });
-            if (!isOpen) {
-                panel.classList.add('open');
-                if (panelId.startsWith('seg-')) cargarAnotaciones(tok);
-            }
+            if (!isOpen) panel.classList.add('open');
         }
 
         async function cargarAnotaciones(tok) {
