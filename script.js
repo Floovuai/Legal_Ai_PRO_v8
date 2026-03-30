@@ -4059,5 +4059,4 @@ ${casosHTML}
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
         }
-    } catch(e) { console.error('Init error:', e); }
 });
