@@ -1,4 +1,4 @@
-﻿// ============================================
+// ============================================
 // FLOOVU Legal AI PRO V8 - Application Script
 // ============================================
 
@@ -3673,10 +3673,10 @@ async function loadRealData() {
                     try {
                         const d = typeof c.dictamen === 'string' ? JSON.parse(c.dictamen) : c.dictamen;
                         if (d && d.analisis_documento) {
-                            resumenHTML = Object.entries(d.analisis_documento)
-                                .filter(([k, v]) => v && v !== 'N/A' && v !== 'null')
-                                .map(([k, v]) => `<p style="margin:3px 0;"><strong>${k.replace(/_/g,' ')}:</strong> ${v}</p>`)
-                                .join('');
+                                resumenHTML = Object.entries(d.analisis_documento)
+                                    .filter(([k, v]) => v && v !== 'N/A' && v !== 'null')
+                                    .map(([k, v]) => `<p style="margin:3px 0;"><strong style="text-transform: capitalize;">${k.replace(/_/g,' ')}:</strong> ${v}</p>`)
+                                    .join('');
                         }
                     } catch(e) {}
                 }
