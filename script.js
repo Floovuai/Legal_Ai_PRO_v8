@@ -4060,8 +4060,7 @@ ${casosHTML}
             _healthInterval = setInterval(() => {
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
-        }
-
+        
         // ── Expose functions to global scope ──
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
