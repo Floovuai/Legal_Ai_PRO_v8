@@ -516,15 +516,6 @@
 
                     renderLawyers();
                     updateUI(); // refrescar dropdowns de asignación con los nuevos abogados
-
-                    // Race condition fix: parchear dropdowns ya renderizados antes de que lawyers cargara
-                    const _lawOpts = lawyers.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
-                    document.querySelectorAll('select[id^="law-sel-"]').forEach(sel => {
-                        if (sel.options.length <= 1 && (sel.options[0] ? sel.options[0].text : '').includes('Cargando')) {
-                            sel.innerHTML = _lawOpts;
-                        }
-                    });
-
                     logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
                 } else {
                     logError(`Error al cargar abogados: HTTP ${res.status}`);
@@ -4038,25 +4029,27 @@ ${casosHTML}
 
 
         function init() {
-            // Fase 1: cargar datos base en paralelo (abogados + casos)
-            Promise.allSettled([
-                loadLawyers(),
-                loadRealData(),
-                loadBandejaGmail(),
-                loadObservaciones()
-            ]).then(results => {
-                results.forEach((r, i) => {
-                    if (r.status === 'rejected') {
-                        logError(`Error en carga inicial [${['abogados','casos','bandeja','observaciones'][i]}]: ${r.reason}`);
+            // Fase 1: abogados primero — los casos necesitan el array lawyers listo
+            loadLawyers().catch(e => logError('Error cargando abogados: ' + e)).finally(() => {
+                // Fase 2: cargar casos, bandeja y observaciones en paralelo
+                Promise.allSettled([
+                    loadRealData(),
+                    loadBandejaGmail(),
+                    loadObservaciones()
+                ]).then(results => {
+                    results.forEach((r, i) => {
+                        if (r.status === 'rejected') {
+                            logError(`Error en carga inicial [${ ['casos','bandeja','observaciones'][i]}]: ${r.reason}`);
+                        }
+                    });
+                    // Fase 3: clientes después de que db esté lleno
+                    loadClients().catch(e => logError('Error cargando clientes: ' + e));
+                    // Dashboard admin
+                    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) {
+                        renderAdminDashboard();
+                        pingEngineAdmin();
                     }
                 });
-                // Fase 2: cargar clientes DESPUES de que db esté lleno
-                loadClients().catch(e => logError(`Error cargando clientes: ${e}`));
-                // Actualizar dashboard admin si aplica
-                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) {
-                    renderAdminDashboard();
-                    pingEngineAdmin();
-                }
             });
         }
 
