@@ -261,7 +261,7 @@
             }
 
             currentUser = user;
-            sessionStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
+            localStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
 
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app-shell').style.display = 'grid';
@@ -353,7 +353,7 @@
             if (typeof window.firebaseCloseSession === 'function') {
                 window.firebaseCloseSession();
             }
-            sessionStorage.removeItem('floovu_user');
+            localStorage.removeItem('floovu_user');
             currentUser = null;
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('app-shell').style.display = 'none';
@@ -370,7 +370,7 @@
 
         // Verificar sesión guardada al cargar
         window.addEventListener('load', () => {
-            const saved = sessionStorage.getItem('floovu_user');
+            const saved = localStorage.getItem('floovu_user');
             if (saved) {
                 try {
                     const user = JSON.parse(saved);
