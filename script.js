@@ -261,7 +261,7 @@
             }
 
             currentUser = user;
-            localStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
+            sessionStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
 
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app-shell').style.display = 'grid';
@@ -353,7 +353,7 @@
             if (typeof window.firebaseCloseSession === 'function') {
                 window.firebaseCloseSession();
             }
-            localStorage.removeItem('floovu_user');
+            sessionStorage.removeItem('floovu_user');
             currentUser = null;
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('app-shell').style.display = 'none';
@@ -370,15 +370,16 @@
 
         // Verificar sesión guardada al cargar
         window.addEventListener('load', () => {
-            const saved = localStorage.getItem('floovu_user');
+            const saved = sessionStorage.getItem('floovu_user');
             if (saved) {
                 try {
                     const user = JSON.parse(saved);
-                    if (user && user.username && user.role) {
-                        currentUser = user;
+                    const found = FLOOVU_USERS.find(u => u.username === user.username && u.role === user.role);
+                    if (found) {
+                        currentUser = found;
                         document.getElementById('login-overlay').classList.add('hidden');
                         document.getElementById('app-shell').style.display = 'grid';
-                        applyRoleUI(user);
+                        applyRoleUI(found);
                         return;
                     }
                 } catch(e) {}
@@ -515,6 +516,15 @@
 
                     renderLawyers();
                     updateUI(); // refrescar dropdowns de asignación con los nuevos abogados
+
+                    // Race condition fix: parchear dropdowns ya renderizados antes de que lawyers cargara
+                    const _lawOpts = lawyers.map(l => `<option value="${l.name}">${l.name}</option>`).join('');
+                    document.querySelectorAll('select[id^="law-sel-"]').forEach(sel => {
+                        if (sel.options.length <= 1 && (sel.options[0] ? sel.options[0].text : '').includes('Cargando')) {
+                            sel.innerHTML = _lawOpts;
+                        }
+                    });
+
                     logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
                 } else {
                     logError(`Error al cargar abogados: HTTP ${res.status}`);
@@ -4110,5 +4120,6 @@ ${casosHTML}
         window.toggleGroupPanel = toggleGroupPanel;
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
+
 }
 }
