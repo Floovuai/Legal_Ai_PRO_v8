@@ -2939,13 +2939,26 @@ async function loadRealData() {
                 tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No hay observaciones registradas</td></tr>';
                 return;
             }
-            tbody.innerHTML = list.map(o => `<tr>
-                <td>${esc(o.Fecha || o.fecha || '')}</td>
-                <td><span style="color:var(--gold);font-weight:600;">${esc(o.token || o.Token || o.Session || '')}</span></td>
-                <td><span style="background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px;font-size:0.78rem;">${esc(o.Tipo || o.tipo || 'NOTA')}</span></td>
-                <td>${esc(o.Descripcion || o.descripcion || o.Observacion || '')}</td>
-                <td>${esc(o.Autor || o.autor || currentUser?.name || 'Sistema')}</td>
-            </tr>`).join('');
+            tbody.innerHTML = list.map(o => {
+                const vis = o.Visibilidad || o.visibilidad || 'Interno';
+                const isPublic = vis === 'Público' || vis === 'Publico';
+                const eyeIcon = isPublic ? '<span title="Visible por el cliente">👁️</span>' : '<span title="Nota Interna Privada">🔒</span>';
+                return `<tr>
+                <td style="font-size:0.75rem;">${esc(o.Fecha || o.fecha || '')}</td>
+                <td><span style="color:var(--gold);font-weight:600;font-size:0.8rem;">${esc(o.token || o.Token || o.Session || '')}</span></td>
+                <td><span style="background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px;font-size:0.75rem;">${esc(o.Tipo || o.tipo || 'NOTA')}</span></td>
+                <td>
+                    <div style="display:flex;align-items:flex-start;gap:8px;">
+                        <div style="font-size:1.1rem;margin-top:2px;opacity:0.9;">${eyeIcon}</div>
+                        <div>
+                            <div style="font-size:0.65rem;color:${isPublic ? '#22c55e' : 'var(--silver)'};font-weight:700;letter-spacing:1px;margin-bottom:2px;">${isPublic ? 'PÚBLICO' : 'INTERNO'}</div>
+                            <span style="font-size:0.85rem;color:var(--white);">${esc(o.Descripcion || o.descripcion || o.Observacion || '')}</span>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size:0.8rem;color:var(--silver);">${esc(o.Autor || o.autor || currentUser?.name || 'Sistema')}</td>
+            </tr>`;
+            }).join('');
         }
 
         function filtrarObservaciones() {
@@ -2958,13 +2971,22 @@ async function loadRealData() {
             renderObservaciones(filtered);
         }
 
-        async function guardarObservacion() {
+        async function guardarObservacion(event) {
             const token = document.getElementById('obs-token')?.value;
             const tipo = document.getElementById('obs-tipo')?.value || 'NOTA';
             const texto = document.getElementById('obs-texto')?.value?.trim();
+            const cb = document.getElementById('obs-visibilidad');
+            const visibilidad = (cb && cb.checked) ? 'Público' : 'Interno';
             if (!token) { showToast('Seleccione un caso', 'error'); return; }
             if (!texto) { showToast('Escriba una observacion', 'error'); return; }
             try {
+                let btn = null;
+                let oldText = '';
+                if(event && event.target) {
+                    btn = event.target;
+                    oldText = btn.innerHTML;
+                    btn.innerHTML = '⏳ Guardando...';
+                }
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.SAVE_OBS || WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA, {
                     method: 'POST',
@@ -2972,15 +2994,18 @@ async function loadRealData() {
                         token, tipo,
                         texto: texto,
                         anotacion: texto,
+                        visibilidad: visibilidad,
                         operador: currentUser?.name || 'Operador',
                         fecha: new Date().toLocaleString('es-CO')
                     })
                 });
                 if (res.ok) {
-                    showToast('Observacion guardada', 'success');
+                    showToast('Observacion guardada correctamente', 'success');
                     document.getElementById('obs-texto').value = '';
+                    if (cb) cb.checked = false;
                     loadObservaciones();
                 }
+                if(btn) btn.innerHTML = oldText;
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
