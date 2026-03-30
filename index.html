@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#040810">
+    <title>Floovu Legal AI PRO | Enterprise Case Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="description" content="Floovu Legal AI PRO V8 — Sistema de gestion juridica con IA para recepcion, analisis y asignacion de casos legales.">
+    <meta name="robots" content="noindex, nofollow">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+</head>
+<body>
+    <div class="noise-overlay"></div>
+
+    <!-- ══ LOGIN OVERLAY ══ -->
+    <div class="login-overlay" id="login-overlay">
+        <canvas id="login-bg-canvas"></canvas>
+        <div class="login-card">
+            <div class="login-brand">
+                <div style="text-align:center;margin-bottom:0.25rem;"><img src="LEGAL AI ICONO.png" alt="FV" style="width:140px;height:140px;object-fit:contain;image-rendering:auto;-webkit-image-smoothing:high;"></div>
+                <div class="login-luxury-title" data-text="Legal AI PRO V8">Legal AI PRO V8</div>
+                <p style="color:var(--gold);opacity:0.8;font-weight:700;letter-spacing:4px;margin-top:2px;font-size:0.6rem;">MÓDULO ADMINISTRATIVO</p>
+            </div>
+            <div class="login-error" id="login-error"></div>
+            <div class="form-group">
+                <label for="login-user">Usuario</label>
+                <input type="text" id="login-user" placeholder="Tu usuario" autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="login-pass">Contraseña</label>
+                <div style="position:relative;">
+                    <input type="password" id="login-pass" placeholder="••••••••••" autocomplete="current-password" style="padding-right:40px;">
+                    <button type="button" onclick="togglePassVisibility('login-pass', this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);font-size:1rem;padding:0;line-height:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
+            </div>
+            <button class="login-btn" id="login-btn" onclick="doLogin()">Acceder al Sistema →</button>
+            <div style="text-align:center;margin-top:1.5rem;">
+                <a href="portal.html" style="color:var(--gold);text-decoration:none;font-size:0.82rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:0.2s;opacity:0.9;padding:6px 16px;border:1px solid rgba(201,168,76,0.2);border-radius:20px;background:rgba(201,168,76,0.05);" onmouseover="this.style.opacity='1';this.style.background='rgba(201,168,76,0.1)';this.style.boxShadow='0 0 12px rgba(201,168,76,0.2)'" onmouseout="this.style.opacity='0.9';this.style.background='rgba(201,168,76,0.05)';this.style.boxShadow='none'">
+                    👁️ Portal de Clientes
+                </a>
+            </div>
+            <p style="text-align:center;font-size:0.58rem;color:var(--silver);margin-top:1.25rem;opacity:0.35;letter-spacing:2px;text-transform:uppercase;">Acceso Restringido</p>
+            <div style="text-align:center;margin-top:1.25rem;"><img src="floovu_logo.png" alt="Floovu Automation AI" style="max-height:32px;width:auto;object-fit:contain;opacity:0.7;"></div>
+            
+        </div>
+    </div>
+
+    <div class="app-shell" id="app-shell" style="display:none;">
+        <aside class="sidebar">
+            <h2 class="brand" style="display:flex;align-items:center;gap:10px;"><img src="LEGAL AI ICONO.png" alt="FV" style="width:72px;height:72px;object-fit:contain;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.15rem;color:var(--white);font-weight:800;letter-spacing:1px;line-height:1;">FLOOVU</span><span style="font-size:0.65rem;color:var(--gold);font-weight:700;letter-spacing:2px;text-transform:uppercase;line-height:1;">Legal AI PRO</span></div></h2>
+            <nav>
+                <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:10px 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Panel Principal</p>
+<div class="nav-item active" data-tab="dashboard">📊 Dashboard Jurídico</div>
+                <div class="nav-item" data-tab="asignaciones">⚖️ Asignaciones <span id="asig-badge" class="badge">0</span></div>
+
+                <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                <!-- Sección condicional en JS para ocultar en rol AGENCIA -->
+                <div id="nav-section-core">
+                    <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Registros & Core</p>
+                    <div class="nav-item" data-tab="expedientes">📁 Registro Legal</div>
+                    <div class="nav-item" data-tab="abogados">👨‍⚖️ Abogados</div>
+                    <div class="nav-item" data-tab="clientes">👥 Clientes</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                </div>
+                
+                <div id="nav-section-tools">
+                    <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Herramientas</p>
+                    <div class="nav-item" data-tab="observaciones">📝 Observaciones</div>
+                    <div class="nav-item" data-tab="bandeja">📧 Bandeja Gmail</div>
+                    <div class="nav-item" data-tab="calendario">📅 Agenda Judicial</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                </div>
+
+                <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Sistema</p>
+                <div class="nav-item" data-tab="usuarios">👥 Gestión de Usuarios</div>
+                <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
+            </nav>
+            <div style="text-align:center;padding:10px 0 4px;margin-top:auto;"><img src="floovu_logo.png" alt="Floovu Automation AI" style="max-height:24px;width:auto;opacity:0.5;"></div>
+        </aside>
+
+        <main class="main-view">
+            <!-- BANNER GMAIL TRIGGER & TOPNAV -->
+            <div id="mail-notification" style="position:absolute;top:1.2rem;right:2rem;display:flex;align-items:center;gap:10px;background:rgba(12,15,22,0.85);border:1px solid var(--border);border-radius:10px;padding:8px 14px;backdrop-filter:blur(4px);z-index:99;">
+                <span style="font-size:0.75rem;color:var(--silver);">● <span style="color:#22c55e;">Operativo</span></span>
+                <button class="btn-premium" onclick="forceGmailSync()" style="font-size:0.78rem;padding:7px 16px;border-radius:7px;">Procesar Gmail</button>
+                <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2;margin-right:4px;">
+                    <span id="top-account-email" style="color:var(--white);font-size:0.7rem;font-weight:600;">—</span>
+                    <span id="top-role-badge" style="color:var(--gold);font-size:0.55rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;">—</span>
+                </div>
+                <button onclick="doLogout()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);color:#ef4444;border-radius:6px;padding:6px;cursor:pointer;display:flex;transition:0.2s;" title="Cerrar Sesión" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"></path></svg>
+                </button>
+            </div>
+
+
+            <section id="dashboard" class="content-section active">
+                <!-- Título dinámico según rol -->
+                <div class="header">
+                    <h1 id="dashboard-title">Visión General</h1>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <div class="header-last-access" style="display:none;align-items:center;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);padding:6px 12px;border-radius:20px;gap:8px;">
+                            <span style="font-size:0.6rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;opacity:0.8;">Último acceso:</span>
+                            <span id="header-last-login-time" style="font-size:0.7rem;color:var(--gold);font-family: 'Plus Jakarta Sans', sans-serif;font-weight:700;">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ DASHBOARD OPERATOR ══ -->
+                <div id="dashboard-operator">
+
+                    <!-- 4 KPIs -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+
+                        <div class="kpi-card-v2" id="kpi-card-cases">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">CASOS PROCESADOS</p>
+                            <div class="kpi-v2-value" id="kpi-total">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Total en el sistema</p>
+                                <span class="kpi-v2-delta" id="trend-cases">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-total" style="width:100%"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2" id="kpi-card-pending">
+                            <div class="kpi-card-v2-accent" style="background:var(--kpi-alert)"></div>
+                            <p class="kpi-v2-label">PENDIENTES ASIGNACIÓN</p>
+                            <div class="kpi-v2-value" id="kpi-pending" style="color:var(--kpi-alert)">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Requieren acción</p>
+                                <span class="kpi-v2-delta" id="trend-pending">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-pending" style="width:0%;background:var(--kpi-alert)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:var(--kpi-ok)"></div>
+                            <p class="kpi-v2-label">HORAS AHORRADAS</p>
+                            <div class="kpi-v2-value" id="kpi-hours" style="color:var(--kpi-ok)">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Productividad IA</p>
+                                <span class="kpi-v2-delta" id="trend-hours">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-hours" style="width:80%;background:var(--kpi-ok)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">IA SCORE PROMEDIO</p>
+                            <div class="kpi-v2-value" id="kpi-score">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Precisión de análisis</p>
+                                <span class="kpi-v2-delta" id="trend-score">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="kpi-bar-score" style="width:80%"></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Fila central -->
+                    <div class="dashboard-grid two-cols" style="margin-bottom:1.5rem;">
+
+                        <div class="card" style="padding:0.6rem 0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.15rem;font-size:0.7rem;">Distribución por Rama Jurídica</p>
+                            <div id="chart-area" style="display:flex;justify-content:center;align-items:center;min-height:120px;max-height:190px;overflow:hidden;">
+                                <span class="empty-state" style="padding:0.5rem;">Iniciando Gráficos...</span>
+                            </div>
+                        </div>
+
+                        <div class="card" style="padding:0.6rem 0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.15rem;font-size:0.7rem;">⚠️ Próximos Vencimientos</p>
+                            <div id="dash-deadlines" class="empty-state-svg" style="min-height:auto;padding:1rem 0.75rem;margin:0.25rem 0;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24" style="width:28px;height:28px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span style="font-size:0.72rem;">Sin actividad</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla recientes -->
+                    <div class="card">
+                        <p class="card-title">📡 Entradas Recientes — Procesamiento IA</p>
+                        <table>
+                            <thead><tr><th>FECHA</th><th>PRIORIDAD</th><th>PARTES</th><th>TIPO</th><th>VENCIMIENTO</th><th>ABOGADO</th></tr></thead>
+                            <tbody id="dash-rows"><tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr></tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- ══ DASHBOARD ADMIN (AGENCIA) ══ -->
+                <div id="dashboard-admin" style="display:none;">
+
+                    <!-- KPIs -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent"></div>
+                            <p class="kpi-v2-label">CASOS PROCESADOS</p>
+                            <div class="kpi-v2-value" id="admin-kpi-casos">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Total en el sistema</p>
+                                <span class="kpi-v2-delta" id="admin-trend-cases">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:100%"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#7c5cbf,transparent)"></div>
+                            <p class="kpi-v2-label">SCORE IA GLOBAL</p>
+                            <div class="kpi-v2-value" id="admin-kpi-score" style="color:#b39ddb;text-shadow:0 0 24px rgba(124,92,191,0.4);">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Promedio de análisis</p>
+                                <span class="kpi-v2-delta" id="admin-trend-score">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-score" style="width:0%;background:linear-gradient(90deg,#7c5cbf,#b39ddb)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-ok),transparent)"></div>
+                            <p class="kpi-v2-label">HORAS AHORRADAS</p>
+                            <div class="kpi-v2-value" id="admin-kpi-hours" style="color:var(--kpi-ok);text-shadow:0 0 24px rgba(34,197,94,0.3);">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Productividad generada</p>
+                                <span class="kpi-v2-delta" id="admin-trend-hours">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" style="width:70%;background:linear-gradient(90deg,var(--kpi-ok),#86efac)"></div></div>
+                        </div>
+
+                        <div class="kpi-card-v2">
+                            <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--kpi-alert),transparent)"></div>
+                            <p class="kpi-v2-label">CASOS ASIGNADOS</p>
+                            <div class="kpi-v2-value" id="admin-kpi-asignados" style="color:var(--kpi-alert);text-shadow:0 0 24px rgba(249,115,22,0.3);">--</div>
+                            <div class="kpi-v2-footer">
+                                <p class="kpi-v2-sub">Del total procesados</p>
+                                <span class="kpi-v2-delta" id="admin-trend-asig">--</span>
+                            </div>
+                            <div class="kpi-v2-bar"><div class="kpi-v2-bar-fill" id="admin-bar-asig" style="width:0%;background:linear-gradient(90deg,var(--kpi-alert),#fdba74)"></div></div>
+                        </div>
+
+                    </div>
+
+                    <div class="dashboard-grid two-cols">
+                        <!-- Estado de servicios -->
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.5rem;">🔌 Estado de Servicios</p>
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">🌍 Webhook n8n</span>
+                                    <span id="admin-h-web" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">📧 Gmail</span>
+                                    <span id="admin-h-gmail" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">📊 Google Sheets</span>
+                                    <span id="admin-h-sheet" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;background:rgba(201,168,76,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                    <span style="font-size:0.78rem;color:var(--silver-lt);">🤖 Motor IA</span>
+                                    <span id="admin-h-ai" style="font-size:0.72rem;font-weight:700;color:var(--silver);">—</span>
+                                </div>
+                            </div>
+                            <button class="btn-premium" style="width:100%;margin-top:0.5rem;padding:7px;font-size:0.75rem;" onclick="pingEngineAdmin()">🚀 Verificar Servicios</button>
+                        </div>
+
+                        <!-- Distribución de casos -->
+                        <div class="card" style="padding:0.75rem;">
+                            <p class="card-title" style="margin-bottom:0.25rem;">📊 Distribución por Rama</p>
+                            <div id="admin-chart-area" style="display:flex;justify-content:center;align-items:center;min-height:160px;max-height:200px;">
+                                <span class="empty-state" style="padding:1rem;">Sin datos aún</span>
+                            </div>
+                        </div>
+
+                    <div class="admin-debug-grid">
+                        <!-- Debug: Reporte de Errores -->
+                        <div class="card">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                                <p class="card-title" style="margin:0;">📟 Reporte de Telemetría</p>
+                                <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="loadDebugLog()" id="btn-refresh-debug">⟳ Actualizar</button>
+                            </div>
+                            <div style="display:flex;gap:4px;margin-bottom:0.75rem;">
+                                <button id="dtab-frontend" onclick="switchDebugTab('frontend')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(197,160,89,0.5);background:rgba(197,160,89,0.15);color:var(--gold);cursor:pointer;">Frontend</button>
+                                <button id="dtab-n8n" onclick="switchDebugTab('n8n')" style="flex:1;padding:6px;font-size:0.72rem;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--silver);cursor:pointer;">Backoffice</button>
+                            </div>
+                            <div id="debug-panel-frontend" class="dash-card-content">
+                                <div class="error-log" id="error-console" style="height: 220px;">
+                                    [System] Iniciando telemetría...
+                                </div>
+                                <button class="btn-outline" style="margin-top:0.75rem; width:100%" onclick="document.getElementById('error-console').innerHTML='[System] Consola limpia.'">Limpiar Consola</button>
+                            </div>
+                            <div id="debug-panel-n8n" class="dash-card-content" style="display:none;">
+                                <div class="error-log" id="n8n-log-console" style="height:220px;font-size:0.72rem;">
+                                    [System] Esperando logs...
+                                </div>
+                                <div style="display:flex;gap:8px;margin-top:0.75rem;">
+                                    <button class="btn-outline" style="flex:1;" onclick="loadDebugLog()">⟳ Actualizar</button>
+                                    <button class="btn-outline" style="flex:1;" onclick="document.getElementById('n8n-log-console').innerHTML='[System] Consola limpia.'">Limpiar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado de Conexión & Motor -->
+                        <div class="card">
+                            <p class="card-title">⚙️ Parámetros del Motor</p>
+                            <div class="dash-card-content">
+                                <div style="display:flex;flex-direction:column;gap:12px;">
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Estado del Cluster</p>
+                                        <p style="font-size:0.85rem;color:#22c55e;font-weight:600;">● OPERATIVO (v12.0.4)</p>
+                                    </div>
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Instancia Base de Datos</p>
+                                        <p style="font-size:0.85rem;color:var(--white);font-weight:600;">Google Cloud / Sheet-IA</p>
+                                    </div>
+                                    <div style="padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                                        <p style="font-size:0.65rem;color:var(--silver);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Protocolo</p>
+                                        <p style="font-size:0.85rem;color:var(--gold);font-weight:600;">HTTPS / Secure-Node</p>
+                                    </div>
+                                    <button class="btn-premium" style="width:100%;margin-top:5px;" onclick="pingEngineAdmin()">🚀 Re-Vincular Motor</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sesiones activas -->
+                        <div class="card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                                <p class="card-title" style="margin:0;">🔐 Sesiones Activas</p>
+                                <button class="btn-outline" style="font-size:0.7rem;padding:4px 10px;" onclick="renderActiveSessions()">↻ Actualizar</button>
+                            </div>
+                            <div id="active-sessions-list" style="display:flex;flex-direction:column;gap:6px;">
+                                <p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1rem;">Cargando sesiones...</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div><!-- /dashboard-admin -->
+            </section>
+
+            <section id="usuarios" class="content-section">
+                <div class="header"><h1>Gestión de Usuarios</h1></div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+                    <!-- Panel izquierdo: crear usuario -->
+                    <div class="card">
+                        <p class="card-title">➕ Agregar Operador</p>
+
+                        <div class="form-group">
+                            <label for="nu-nombre">Nombre completo</label>
+                            <input type="text" id="nu-nombre" placeholder="Ej: María González">
+                        </div>
+                        <div class="form-group">
+                            <label for="nu-username">Nombre de usuario</label>
+                            <input type="text" id="nu-username" placeholder="Ej: maria_gonzalez" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+                        </div>
+                        <div class="form-group">
+                            <label for="nu-email">Email</label>
+                            <input type="email" id="nu-email" placeholder="maria@estudio.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="nu-rol">Rol</label>
+                            <select id="nu-rol" style="height:40px;background:rgba(255,255,255,0.04);border:1px solid var(--border-gold);border-radius:8px;color:var(--white);padding:0 12px;font-family:inherit;font-size:0.85rem;width:100%;">
+                                <option value="operator">Operador</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nu-pass">Contraseña</label>
+                            <div style="position:relative;">
+                                <input type="password" id="nu-pass" placeholder="Mínimo 8 caracteres" style="padding-right:40px;" oninput="checkNuStrength(this.value)">
+                                <button type="button" onclick="togglePassVisibility('nu-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                            <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.05);margin-top:5px;overflow:hidden;">
+                                <div id="nu-strength-bar" style="height:100%;border-radius:2px;width:0%;transition:width 0.3s,background 0.3s;"></div>
+                            </div>
+                            <p id="nu-strength-label" style="font-size:0.65rem;margin-top:3px;color:var(--silver);">—</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="nu-pass2">Confirmar contraseña</label>
+                            <div style="position:relative;">
+                                <input type="password" id="nu-pass2" placeholder="Repite la contraseña" style="padding-right:40px;">
+                                <button type="button" onclick="togglePassVisibility('nu-pass2',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--silver);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                        </div>
+
+                        <button class="btn-premium" style="width:100%;margin-top:4px;" onclick="crearUsuario()">👤 Crear Usuario</button>
+                        <div id="nu-msg" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:0.8rem;"></div>
+                    </div>
+
+                    <!-- Panel derecho: lista de usuarios -->
+                    <div class="card">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                            <p class="card-title" style="margin:0;">👥 Usuarios Activos</p>
+                            <button class="btn-outline" onclick="loadUsuariosAdmin()" style="font-size:0.75rem;padding:6px 12px;">🔄 Recargar</button>
+                        </div>
+                        <div id="usuarios-list-container">
+                            <p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">Cargando usuarios...</p>
+                        </div>
+                        <div style="margin-top:1rem;padding:10px 14px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);border-radius:8px;">
+                            <p style="font-size:0.7rem;color:var(--silver);line-height:1.6;">
+                                <strong style="color:var(--gold);">ℹ️ Fuente:</strong> Hoja <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px;">Usuarios</code> del Google Sheet.<br>
+                                Los usuarios del bloque <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px;">USERS</code> en el HTML siguen funcionando como respaldo si el Sheet no está disponible.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section id="asignaciones" class="content-section">
+                <div class="header"><h1>Despacho de Casos</h1></div>
+                <div style="background:rgba(197,160,89,0.08);border:1px solid rgba(197,160,89,0.3);border-radius:10px;padding:10px 16px;margin-bottom:1.5rem;display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:1rem;">⚠️</span>
+                    <p style="margin:0;font-size:0.78rem;color:var(--gold);line-height:1.5;">Para que el sistema identifique automáticamente al cliente a defender, el nombre registrado en el <strong>Directorio de Clientes</strong> debe coincidir exactamente con como aparece en los documentos que esa persona envía.</p>
+                </div>
+                <div id="asig-content" class="empty-state">
+                    <span class="empty-icon">⚖️</span>
+                    Sin casos pendientes de despacho
+                </div>
+            </section>
+
+            <section id="expedientes" class="content-section">
+                <div class="header">
+                    <h1>Registro Legal</h1>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span id="exp-new-badge" style="display:none;background:#f97316;color:#fff;font-size:0.65rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:1px;">🔔 NUEVOS REGISTROS</span>
+                        <button class="btn-outline" onclick="loadRealData()">🔄 Actualizar</button>
+                    </div>
+                </div>
+                <div class="notification-banner" style="border-color:rgba(34,197,94,0.25);background:linear-gradient(90deg,rgba(34,197,94,0.06),rgba(34,197,94,0.02));margin-bottom:1rem;">
+                    <span style="font-size:0.82rem;">📁 Solo muestra casos ya asignados a un abogado. Cada tarjeta incluye seguimiento y historial de emails.</span>
+                </div>
+
+                <!-- Buscador de Expedientes Destacado -->
+                <div style="margin-bottom:1.5rem; position:relative; max-width:100%;">
+                    <input type="text" id="exp-search" placeholder="Buscar Caso por Token, Nombre de Cliente o NIT..." oninput="filtrarExpedientes(this.value)" 
+                           style="width:100%; height:50px; border-radius:12px; border: 2px solid var(--gold); background:rgba(201,168,76,0.08); color:var(--white); padding:0 15px 0 45px; font-size:1rem; box-shadow:0 0 15px rgba(201,168,76,0.15); transition:all 0.3s ease; box-sizing:border-box;">
+                    <span style="position:absolute; left:15px; top:50%; transform:translateY(-50%); font-size:1.2rem; filter:grayscale(0.2);">🔍</span>
+                </div>
+
+                <div id="exp-cards-container">
+                    <div class="empty-state"><span class="empty-icon">📁</span>Cargando registro legal...</div>
+                </div>
+            </section>
+
+            <section id="clientes" class="content-section">
+                <div class="header"><h1>Directorio de Clientes</h1></div>
+
+                <!-- Formulario nuevo cliente -->
+                <div class="card" style="margin-bottom:2rem;">
+                    <p class="card-title">Nuevo Cliente</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="new-cli-nombre">Nombre Completo</label>
+                            <input type="text" id="new-cli-nombre" placeholder="Ej: Carlos Restrepo Muñoz">
+                            <p style="margin:5px 0 0;font-size:0.72rem;color:var(--gold);line-height:1.4;">⚠️ Debe coincidir con como aparece en los documentos que envía.</p>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="new-cli-nit">NIT / RUT / Cédula</label>
+                            <input type="text" id="new-cli-nit" placeholder="Ej: 900.123.456-7">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="new-cli-email">Email</label>
+                            <input type="email" id="new-cli-email" placeholder="cliente@empresa.com">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="new-cli-telefono">Teléfono</label>
+                            <input type="text" id="new-cli-telefono" placeholder="+57 300 000 0000">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="new-cli-notas">Notas</label>
+                            <input type="text" id="new-cli-notas" placeholder="Observaciones adicionales">
+                        </div>
+                        <div style="display:flex;align-items:flex-end;">
+                            <button class="btn-premium" style="width:100%;height:38px;" onclick="addClient()">➕ Guardar Cliente</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla unificada -->
+                <!-- ALERTA REGISTROS PARCIALES — B5 -->
+                <div id="partial-alerts-container"></div>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                        <p class="card-title" style="margin-bottom:0;">Directorio Activo</p>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="cli-search" placeholder="Buscar cliente..." style="width:200px;height:34px;font-size:0.8rem;" oninput="filterClients(this.value)">
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;" onclick="loadClients()">↻ Recargar</button>
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;color:#22c55e;border-color:rgba(34,197,94,0.4);" onclick="exportClientsExcel()" title="Exportar Excel">📊 Excel</button>
+                            <button class="btn-outline" style="height:34px;font-size:0.75rem;padding:0 12px;color:#e8cc7a;border-color:rgba(232,204,122,0.4);" onclick="exportClientsPDF()" title="Exportar PDF">📄 PDF</button>
+                        </div>
+                    </div>
+                    <div id="client-list-container">
+                        <p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando...</p>
+                    </div>
+                </div>
+
+                <!-- Modal edición cliente -->
+                <div class="overlay" id="client-edit-modal">
+                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:520px;width:90%;">
+                        <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">✏️ Editar Cliente</p>
+                        <input type="hidden" id="edit-client-idx">
+                        <input type="hidden" id="edit-client-source">
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                            <div class="form-group">
+                                <label for="edit-cli-nombre">Nombre Completo</label>
+                                <input type="text" id="edit-cli-nombre">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-nit">NIT / RUT / Cédula</label>
+                                <input type="text" id="edit-cli-nit">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-email">Email</label>
+                                <input type="email" id="edit-cli-email">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-telefono">Teléfono</label>
+                                <input type="text" id="edit-cli-telefono">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-abogado">Abogado Asignado</label>
+                                <select id="edit-cli-abogado"
+                                    style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);
+                                           border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                    <option value="">— Sin asignar —</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="edit-cli-notas">Notas</label>
+                                <input type="text" id="edit-cli-notas">
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                            <button class="btn-outline" style="flex:1" onclick="closeClientModal()">Cancelar</button>
+                            <button class="btn-premium" style="flex:1" onclick="saveClientEdit()">💾 Guardar Cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ OBSERVACIONES V9 ═══ -->
+            <section id="observaciones" class="content-section">
+                <div class="header">
+                    <h1>Observaciones y Anotaciones</h1>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-outline" onclick="loadObservaciones()">🔄 Actualizar</button>
+                    </div>
+                </div>
+                <div class="notification-banner" style="border-color:rgba(201,168,76,0.2);">
+                    <span style="font-size:0.85rem;">📝 Registra observaciones sobre casos y clientes. Las notas quedan asociadas al token del caso.</span>
+                </div>
+
+                <!-- Formulario nueva observacion -->
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <p class="card-title">Nueva Observacion</p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div class="form-group">
+                            <label>Token del Caso</label>
+                            <select id="obs-token" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                                <option value="">— Seleccionar caso —</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="obs-tipo" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                                <option value="NOTA">Nota General</option>
+                                <option value="ALERTA">Alerta</option>
+                                <option value="SEGUIMIENTO">Seguimiento</option>
+                                <option value="CLIENTE">Nota de Cliente</option>
+                                <option value="RESOLUCION">Resolucion</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:1rem;">
+                        <label>Observacion</label>
+                        <textarea id="obs-texto" rows="3" placeholder="Escriba su observacion aqui..." style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;resize:vertical;font-family:inherit;"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;cursor:pointer;background:rgba(201,168,76,0.05);padding:10px 14px;border-radius:8px;border:1px solid rgba(201,168,76,0.2);" onclick="const cb=document.getElementById('obs-visibilidad');cb.checked=!cb.checked;">
+                        <input type="checkbox" id="obs-visibilidad" style="width:18px;height:18px;cursor:pointer;accent-color:var(--gold);">
+                        <div style="display:flex;flex-direction:column;pointer-events:none;">
+                            <span style="color:var(--white);font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;">👁️ Visible para el Cliente</span>
+                            <span style="color:var(--silver);font-size:0.7rem;line-height:1.2;margin-top:2px;">Si está marcado, esta nota aparecerá en el portal público de seguimiento de tu cliente.</span>
+                        </div>
+                    </div>
+                    <button class="btn-premium" onclick="guardarObservacion(event)">📝 Guardar Observacion</button>
+                </div>
+
+                <!-- Lista de observaciones -->
+                <div class="card">
+                    <p class="card-title">Historial de Observaciones</p>
+                    <div id="obs-filtro" style="display:flex;gap:8px;margin-bottom:1rem;">
+                        <input type="text" id="obs-buscar" placeholder="Buscar por token, texto o tipo..." oninput="filtrarObservaciones()" style="flex:1;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>FECHA</th>
+                                <th>TOKEN</th>
+                                <th>TIPO</th>
+                                <th>OBSERVACION</th>
+                                <th>AUTOR</th>
+                            </tr></thead>
+                            <tbody id="obs-rows"><tr><td colspan="5" class="empty-state">Cargando observaciones...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ═══ BANDEJA GMAIL V9 ═══ -->
+            <section id="bandeja" class="content-section">
+                <div class="header">
+                    <h1>Bandeja de Gmail</h1>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-premium" onclick="forceGmailSync()">🔄 Sincronizar</button>
+                        <button class="btn-outline" onclick="loadBandejaGmail()">📥 Recargar</button>
+                    </div>
+                </div>
+                <div class="notification-banner" style="border-color:rgba(34,197,94,0.3);background:linear-gradient(90deg,rgba(34,197,94,0.07),rgba(34,197,94,0.02));">
+                    <span style="font-size:0.85rem;">📧 Vista de los casos procesados desde Gmail. El sistema revisa emails cada minuto automaticamente.</span>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card" style="margin-bottom:1.5rem;">
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:end;">
+                        <div class="form-group" style="flex:2;min-width:200px;">
+                            <label>Buscar</label>
+                            <input type="text" id="bandeja-buscar" placeholder="Buscar por remitente, asunto, token..." oninput="filtrarBandeja()" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:150px;">
+                            <label>Rama</label>
+                            <select id="bandeja-rama" onchange="filtrarBandeja()" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                                <option value="">Todas</option>
+                                <option value="CIVIL">Civil</option>
+                                <option value="LABORAL">Laboral</option>
+                                <option value="PENAL">Penal</option>
+                                <option value="ADMINISTRATIVO">Administrativo</option>
+                                <option value="FAMILIA">Familia</option>
+                                <option value="COMERCIAL">Comercial</option>
+                                <option value="CONSTITUCIONAL">Constitucional</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:150px;">
+                            <label>Prioridad</label>
+                            <select id="bandeja-prioridad" onchange="filtrarBandeja()" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                                <option value="">Todas</option>
+                                <option value="ALTA">Alta</option>
+                                <option value="MEDIA">Media</option>
+                                <option value="BAJA">Baja</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;min-width:150px;">
+                            <label>Estado</label>
+                            <select id="bandeja-estado" onchange="filtrarBandeja()" style="width:100%;padding:10px 12px;background:var(--navy-card);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:0.85rem;">
+                                <option value="">Todos</option>
+                                <option value="ASIGNADO">Asignado</option>
+                                <option value="PENDIENTE_ASIGNACION">Pendiente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs rapidos -->
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+                    <div class="kpi-card-v2"><div class="kpi-card-v2-accent"></div><div class="kpi-v2-label">Procesados</div><div class="kpi-v2-value" id="bandeja-total">0</div></div>
+                    <div class="kpi-card-v2"><div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#ef4444,transparent);"></div><div class="kpi-v2-label">Alta Prioridad</div><div class="kpi-v2-value" id="bandeja-alta" style="color:#ef4444;">0</div></div>
+                    <div class="kpi-card-v2"><div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#22c55e,transparent);"></div><div class="kpi-v2-label">Asignados</div><div class="kpi-v2-value" id="bandeja-asignados" style="color:#22c55e;">0</div></div>
+                    <div class="kpi-card-v2"><div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#f97316,transparent);"></div><div class="kpi-v2-label">Pendientes</div><div class="kpi-v2-value" id="bandeja-pendientes" style="color:#f97316;">0</div></div>
+                </div>
+
+                <!-- Tabla de emails procesados -->
+                <div class="card">
+                    <p class="card-title">Emails Procesados</p>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>TOKEN</th>
+                                <th>FECHA</th>
+                                <th>REMITENTE</th>
+                                <th>ASUNTO</th>
+                                <th>RAMA</th>
+                                <th>PARTES</th>
+                                <th>QUIEN DEFENDER</th>
+                                <th>ABOGADO</th>
+                                <th>PRIORIDAD</th>
+                                <th>VENCIMIENTO</th>
+                                <th>ESTADO</th>
+                            </tr></thead>
+                            <tbody id="bandeja-rows"><tr><td colspan="11" class="empty-state">Cargando datos de Gmail...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="calendario" class="content-section">
+                <div class="header"><h1>Agenda Judicial</h1></div>
+                <div class="card">
+                    <p class="card-title">Términos Procesales</p>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>VENCIMIENTO</th>
+                                <th>PARTES</th>
+                                <th>RAMA</th>
+                                <th>TIPO</th>
+                                <th>ABOGADO</th>
+                                <th>CALENDARIO</th>
+                            </tr></thead>
+                            <tbody id="cal-content"><tr><td colspan="6" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="abogados" class="content-section">
+                <div class="header"><h1>Gestión de Abogados</h1></div>
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <p class="card-title">Nuevo Abogado</p>
+                        <div class="form-group">
+                            <label for="new-law-name">Nombre Completo</label>
+                            <input type="text" id="new-law-name" placeholder="Ej: Dr. Julian Casablancas">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-law-email">Email Corporativo</label>
+                            <input type="email" id="new-law-email" placeholder="julian@floovu.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="new-law-spec">Especialidad</label>
+                            <select id="new-law-spec">
+                                <option value="CIVIL">CIVIL</option>
+                                <option value="FAMILIA">FAMILIA</option>
+                                <option value="PENAL">PENAL</option>
+                                <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                            </select>
+                        </div>
+                        <button class="btn-premium" style="width:100%" onclick="addLawyer()">➕ Guardar en Google Sheets</button>
+                    </div>
+                    <div class="card">
+                        <p class="card-title">Directorio Activo</p>
+                        <div id="lawyer-list-full">
+                            <!-- JS Render -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Config section ELIMINADA — contenido movido a Dashboard (debug, BD) y Gestión de Usuarios (nueva pestaña) -->
+
+            <section id="version" class="content-section">
+                <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
+
+                <!-- Resumen arquitectura -->
+                <div class="card" style="margin-bottom:2rem;">
+                    <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
+                    <p style="color:var(--silver);line-height:1.6;font-size:0.9rem;margin-top:10px;">
+                        El sistema <b>FLOOVU Legal AI PRO V8</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
+                        Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
+                    </p>
+                </div>
+
+                <!-- Diagrama de flujo SVG -->
+                <div class="card" style="margin-bottom:2rem;overflow-x:auto;">
+                    <p class="card-title">🔄 Flujo del Sistema</p>
+                    <svg viewBox="0 0 900 160" style="width:100%;min-width:0;margin-top:1rem;" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                                <path d="M2 1L8 5L2 9" fill="none" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/>
+                            </marker>
+                        </defs>
+                        <!-- Step boxes -->
+                        <!-- 1 Gmail -->
+                        <rect x="10" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="75" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📨</text>
+                        <text x="75" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">GMAIL</text>
+                        <text x="75" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Recepción PDF</text>
+                        <!-- arrow -->
+                        <line x1="140" y1="82" x2="168" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 2 IA -->
+                        <rect x="170" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="235" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">🧠</text>
+                        <text x="235" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">ANÁLISIS IA</text>
+                        <text x="235" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Score + Estrategia</text>
+                        <!-- arrow -->
+                        <line x1="300" y1="82" x2="328" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 3 Clientes -->
+                        <rect x="330" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="395" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">🛡️</text>
+                        <text x="395" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">IDENTIFICACIÓN</text>
+                        <text x="395" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Cliente a defender</text>
+                        <!-- arrow -->
+                        <line x1="460" y1="82" x2="488" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 4 Asignación -->
+                        <rect x="490" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="555" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">⚖️</text>
+                        <text x="555" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">ASIGNACIÓN</text>
+                        <text x="555" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Abogado + Informe</text>
+                        <!-- arrow -->
+                        <line x1="620" y1="82" x2="648" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 5 Calendar + Sheets -->
+                        <rect x="650" y="50" width="130" height="64" rx="10" fill="rgba(197,160,89,0.08)" stroke="#C9A84C" stroke-width="1"/>
+                        <text x="715" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📅</text>
+                        <text x="715" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">SEGUIMIENTO</text>
+                        <text x="715" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">Calendar + Sheets</text>
+                        <!-- arrow -->
+                        <line x1="780" y1="82" x2="808" y2="82" stroke="#C9A84C" stroke-width="1.5" marker-end="url(#arr)"/>
+                        <!-- 6 Dashboard -->
+                        <rect x="810" y="50" width="80" height="64" rx="10" fill="rgba(197,160,89,0.15)" stroke="#C9A84C" stroke-width="1.5"/>
+                        <text x="850" y="74" text-anchor="middle" fill="#C9A84C" font-size="20">📊</text>
+                        <text x="850" y="94" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">DASHBOARD</text>
+                        <text x="850" y="107" text-anchor="middle" fill="#94a3b8" font-size="9">KPIs</text>
+                        <!-- Step numbers -->
+                        <circle cx="10" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="10" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">1</text>
+                        <circle cx="170" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="170" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">2</text>
+                        <circle cx="330" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="330" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">3</text>
+                        <circle cx="490" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="490" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">4</text>
+                        <circle cx="650" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="650" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">5</text>
+                        <circle cx="810" cy="50" r="9" fill="#C9A84C"/>
+                        <text x="810" y="54" text-anchor="middle" fill="#0c0f16" font-size="9" font-weight="800">6</text>
+                    </svg>
+                </div>
+
+                <!-- GRUPO 1: Automatización e IA -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">⚡ Automatización e Inteligencia Artificial</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📨</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Extracción Automatizada de Correos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Lee bandejas Gmail, extrae PDFs adjuntos, analiza con IA y marca el correo como leído automáticamente para evitar duplicados.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🧠</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Análisis A.I. y Estrategia Legal</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Genera resúmenes con score de calidad 1-10, patrones jurídicos identificados, horas de trabajo ahorradas y pasos estratégicos por rama.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🔍</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Vigilancia Legal Diaria</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Monitoreo automático a las 7AM de fuentes RSS jurídicas colombianas — Ámbito Jurídico y Datos Abiertos Colombia — para alimentar el contexto de la IA.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 2: Gestión de Casos y Clientes -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">⚖️ Gestión de Casos y Clientes</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🛡️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Identificación Automática del Cliente</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Cruza el texto del documento contra el directorio de clientes por nombre, NIT o email. Todo el análisis IA se orienta automáticamente a defender a esa persona.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">👥</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Directorio de Abogados y Clientes</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Gestión independiente con hojas dedicadas en Google Sheets. Asignación de abogados directa desde el directorio de clientes sin ir al despacho.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📄</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Informes Corporativos Dinámicos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Envía informes HTML al abogado asignado con: rama jurídica, fecha de vencimiento, estado del calendario, cliente a defender y token único del caso.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 3: Agenda y Seguimiento -->
+                <div style="margin-bottom:2rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">📅 Agenda y Seguimiento Procesal</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📅</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Agendamiento Dinámico Inteligente</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Crea citas en Google Calendar con fecha calculada según plazos procesales colombianos. Fallback automático a T+20 días hábiles si no se detecta fecha explícita.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🗄️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Bóveda Centralizada (Registro Legal)</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Registro único en Google Sheets con tokens por caso, matching robusto por token y número de fila. Historial completo de asignaciones y estados.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">✉️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Emails Marcados como Leídos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Al confirmar la asignación, el sistema marca automáticamente el email original como leído usando el messageId guardado, evitando reprocesamiento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 4: Dashboard y Control -->
+                <div style="margin-bottom:1rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">📊 Dashboard y Control Operativo</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📊</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Dashboard con KPIs Reales</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Score IA promedio, horas de trabajo ahorradas acumuladas, distribución de casos por rama jurídica y agenda completa de vencimientos procesales.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📱</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Diseño Responsivo Multi-dispositivo</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Interfaz adaptada para notebook, tablet y teléfono. Sidebar colapsable, tablas con scroll horizontal y navegación optimizada para pantallas pequeñas.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🔐</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Seguridad y Autenticación</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Todos los webhooks protegidos con token secreto <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:0.75rem;">x-floovu-secret</code>. Sanitización XSS en todos los inputs del frontend.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <div class="overlay" id="loader"><div class="terminal" id="term"></div></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal de confirmación — reemplaza confirm() nativo (F4-05) -->
+    <div class="overlay" id="confirm-modal">
+        <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:400px;width:90%;text-align:center;">
+            <p id="confirm-msg" style="font-size:0.95rem;margin-bottom:1.5rem;color:var(--white);line-height:1.5;"></p>
+            <div style="display:flex;gap:1rem;justify-content:center;">
+                <button id="confirm-cancel" style="background:transparent;border:1px solid var(--border);color:var(--silver);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.85rem;">Cancelar</button>
+                <button id="confirm-ok" style="background:#ef4444;border:none;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.85rem;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Visor PDF -->
+    <div class="overlay" id="pdf-modal">
+        <div style="background:var(--navy-card);border:1px solid rgba(201,168,76,0.3);border-radius:12px;width:90%;max-width:1000px;height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.6);">
+            <div style="padding:15px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;background:rgba(201,168,76,0.05);">
+                <h3 style="margin:0;color:var(--gold);font-size:1.1rem;font-weight:700;">📄 Visor de Archivo</h3>
+                <button onclick="closePdfModal()" style="background:none;border:none;color:var(--silver);font-size:1.5rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <div style="flex:1;width:100%;height:100%;background:#efefef;" id="pdf-modal-content">
+                <p style="padding:20px;color:#333;text-align:center;">Cargando documento...</p>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="script.js"></script>
+</body>
+</html>
