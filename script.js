@@ -2952,11 +2952,11 @@ async function loadRealData() {
                         <div style="font-size:1.1rem;margin-top:2px;opacity:0.9;">${eyeIcon}</div>
                         <div>
                             <div style="font-size:0.65rem;color:${isPublic ? '#22c55e' : 'var(--silver)'};font-weight:700;letter-spacing:1px;margin-bottom:2px;">${isPublic ? 'PÚBLICO' : 'INTERNO'}</div>
-                            <span style="font-size:0.85rem;color:var(--white);">${esc(o.Descripcion || o.descripcion || o.Observacion || '')}</span>
+                            <span style="font-size:0.85rem;color:var(--white);">${esc(o.Texto || o.texto || o.Descripcion || o.descripcion || o.Observacion || '')}</span>
                         </div>
                     </div>
                 </td>
-                <td style="font-size:0.8rem;color:var(--silver);">${esc(o.Autor || o.autor || currentUser?.name || 'Sistema')}</td>
+                <td style="font-size:0.8rem;color:var(--silver);">${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser?.name || 'Sistema')}</td>
             </tr>`;
             }).join('');
         }
