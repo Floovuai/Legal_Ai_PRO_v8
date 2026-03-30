@@ -261,7 +261,7 @@
             }
 
             currentUser = user;
-            sessionStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
+            localStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
 
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app-shell').style.display = 'grid';
@@ -353,7 +353,7 @@
             if (typeof window.firebaseCloseSession === 'function') {
                 window.firebaseCloseSession();
             }
-            sessionStorage.removeItem('floovu_user');
+            localStorage.removeItem('floovu_user');
             currentUser = null;
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('app-shell').style.display = 'none';
@@ -370,16 +370,15 @@
 
         // Verificar sesión guardada al cargar
         window.addEventListener('load', () => {
-            const saved = sessionStorage.getItem('floovu_user');
+            const saved = localStorage.getItem('floovu_user');
             if (saved) {
                 try {
                     const user = JSON.parse(saved);
-                    const found = FLOOVU_USERS.find(u => u.username === user.username && u.role === user.role);
-                    if (found) {
-                        currentUser = found;
+                    if (user && user.username && user.role) {
+                        currentUser = user;
                         document.getElementById('login-overlay').classList.add('hidden');
                         document.getElementById('app-shell').style.display = 'grid';
-                        applyRoleUI(found);
+                        applyRoleUI(user);
                         return;
                     }
                 } catch(e) {}
@@ -3456,7 +3455,7 @@ async function loadRealData() {
                 return;
             }
             el.innerHTML = list.map(a => {
-                const id = a.ID || a.id || a._id || a.key || a.Key || '';
+                const id = a.ID || a.id || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
                 const isPublic = vis === 'Público' || vis === 'Publico';
                 const visLabel = isPublic
@@ -3700,7 +3699,7 @@ async function loadRealData() {
                             👁️ Portal &nbsp;<span style="color:rgba(255,255,255,0.3);">/ 🔒 Interno por defecto</span>
                         </label>
                     </div>
-                    <button class="btn-premium" style="align-self:flex-start;height:32px;font-size:0.78rem;padding:0 20px;"
+                    <button class="btn-premium" style="align-self:flex-end;height:32px;font-size:0.78rem;padding:0 20px;"
                             onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
                         💾 Guardar
                     </button>
@@ -3733,7 +3732,7 @@ async function loadRealData() {
                 return;
             }
             listEl.innerHTML = list.map(a => {
-                const id = a.ID || a.id || a._id || a.key || a.Key || '';
+                const id = a.ID || a.id || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
                 const isPublic = vis === 'Público' || vis === 'Publico';
                 const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
@@ -4058,7 +4057,7 @@ ${casosHTML}
             _healthInterval = setInterval(() => {
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
-        }
+        
         // ── Expose functions to global scope ──
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
@@ -4111,5 +4110,5 @@ ${casosHTML}
         window.toggleGroupPanel = toggleGroupPanel;
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
-
+}
 }
