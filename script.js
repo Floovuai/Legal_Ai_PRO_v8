@@ -1540,15 +1540,31 @@ async function loadRealData() {
                     let raw = [];
                     try { const txt = await res.text(); raw = txt ? JSON.parse(txt) : []; } catch(e) {}
                     manualClients = (Array.isArray(raw) ? raw : (raw ? [raw] : []))
-                        .map(c => ({ ...c, _source: 'directorio' }));
+                        .map(c => ({
+                            nombre:   c.nombre   || c.Nombre   || c.NOMBRE   || '',
+                            nit:      c.nit      || c.NIT      || c.nit_cedula || c.NIT_Cedula || c.nit_cliente || '',
+                            email:    c.email    || c.Email    || c.EMAIL    || '',
+                            telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || '',
+                            notas:    c.notas    || c.Notas    || c.NOTAS    || '',
+                            abogado:  c.abogado  || c.Abogado  || c.abogado_asignado || '',
+                            estado:   c.estado   || c.Estado   || 'DIRECTORIO',
+                            _source:  'directorio'
+                        }))
+                        .filter(c => c.nombre && c.nombre.trim() !== '');
                 }
             } catch(e) { logError(`Error cargando clientes: ${e.message}`); }
 
             // Combinar con casos del Registro Legal
-            const casesAsClients = db.map(c => {
+            const casesAsClients = db
+                .filter(c => {
+                    const n = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '';
+                    return n && n.trim() !== '' && n !== '—';
+                })
+                .map(c => {
                 // Usar cliente_a_defender si existe, sino primera parte de "partes"
                 const clienteName = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '—';
                 const datosIncompletos = !c.nit || c.nit === 'DESCONOCIDO';
+                const abogadoAsignado = c.lawyer && c.lawyer !== 'PENDIENTE' && c.lawyer !== 'Pendiente' ? c.lawyer : '';
                 return {
                     nombre:   clienteName,
                     nit:      (c.nit && c.nit !== 'DESCONOCIDO') ? c.nit : '',
@@ -1556,9 +1572,9 @@ async function loadRealData() {
                     telefono: '',
                     notas:    `Caso: ${c.rama || ''} | Token: ${c.token || ''}`,
                     token:    c.token,
-                    abogado:  c.lawyer   || 'Pendiente',
+                    abogado:  abogadoAsignado,
                     venc:     c.venc     || 'S/D',
-                    estado:   c.status   || '—',
+                    estado:   abogadoAsignado ? 'ASIGNADO' : (c.status || '—'),
                     _source:  'registro',
                     _incompleto: datosIncompletos
                 };
@@ -1618,13 +1634,13 @@ async function loadRealData() {
                             <td style="color:${!c.email || c.email === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || '—')}</td>
                             <td style="color:${!c.telefono || c.telefono === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || '—')}</td>
                             <td>
-                                ${c._source === 'registro'
+                                ${c._source === 'registro' && !c.abogado
                                     ? `<select id="cli-law-${allClientRows.indexOf(c)}" onchange="assignLawyerFromClients(${allClientRows.indexOf(c)}, this.value)"
                                         style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.78rem;width:100%;">
                                         <option value="">— Asignar —</option>
                                         ${lawyers.map(l => `<option value="${esc(l.name)}" ${c.abogado === l.name ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
                                       </select>`
-                                    : `<span style="color:${c.abogado && c.abogado !== 'Pendiente' ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado && c.abogado !== 'Pendiente' ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</span>`
+                                    : `<span style="color:${c.abogado ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</span>`
                                 }
                             </td>
                             <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
@@ -4060,7 +4076,8 @@ ${casosHTML}
             _healthInterval = setInterval(() => {
                 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) pingEngineAdmin();
             }, 60000);
-        
+        }
+
         // ── Expose functions to global scope ──
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
@@ -4114,5 +4131,4 @@ ${casosHTML}
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
 
-}
 }
