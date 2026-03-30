@@ -1368,6 +1368,25 @@ async function loadRealData() {
                     if (resData?.debug) log(`📡 ${resData.debug}`);
                     log(`✓ Informe enviado a ${lawyerObj.email}.`);
 
+                    // AUTOMATIC CLIENT SAVE TO DIRECTORY
+                    try {
+                        log(`Guardando cliente en el directorio...`);
+                        await authFetch(N8N_CLIENT_SAVE, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                nombre: clienteADefender,
+                                nit: clientNit,
+                                email: clientEmail,
+                                telefono: clientTel,
+                                notas: clientNotas,
+                                abogado: lawyerName
+                            })
+                        });
+                        log(`✓ Cliente guardado en directorio exitosamente.`);
+                    } catch(e) {
+                        log(`⚠️ Aviso: No se pudo guardar cliente en directorio.`);
+                    }
+
                     log(`✓ Operación finalizada.`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
