@@ -2547,6 +2547,19 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
         </div>
     </div>
 
+    <!-- Modal Visor PDF -->
+    <div class="overlay" id="pdf-modal">
+        <div style="background:var(--navy-card);border:1px solid rgba(201,168,76,0.3);border-radius:12px;width:90%;max-width:1000px;height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.6);">
+            <div style="padding:15px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;background:rgba(201,168,76,0.05);">
+                <h3 style="margin:0;color:var(--gold);font-size:1.1rem;font-weight:700;">📄 Visor de Archivo</h3>
+                <button onclick="closePdfModal()" style="background:none;border:none;color:var(--silver);font-size:1.5rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <div style="flex:1;width:100%;height:100%;background:#efefef;" id="pdf-modal-content">
+                <p style="padding:20px;color:#333;text-align:center;">Cargando documento...</p>
+            </div>
+        </div>
+    </div>
+
     <script>
     // ══════════════════════════════════════════════════════════
     // FLOOVU Legal AI PRO V8 — Configuración integrada
@@ -3085,6 +3098,7 @@ async function loadRealData() {
                                 return html;
                             })(),
                             messageId:            row['Email ID'] || row.messageId || row['messageId'] || '',
+                            archivo_url:          row['Archivo URL'] || row.archivo_url || '',
                             nit:                  row['NIT_Cedula'] || row['NIT'] || row['nit'] || row['nit_cedula'] || row['nit_cliente'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
                             partes_array:         (() => {
@@ -4088,7 +4102,7 @@ async function loadRealData() {
                 db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
 
                 // KPIs
-                csv += '=== PANEL DE AGENCIA — FLOOVU LEGAL AI PRO V9 ===' + NL;
+                csv += '=== PANEL DE AGENCIA — FLOOVU Legal AI PRO V8 ===' + NL;
                 csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
                 csv += '=== KPIs ===' + NL;
                 csv += [q('Métrica'), q('Valor')].join(sep) + NL;
@@ -4140,7 +4154,7 @@ async function loadRealData() {
                 var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
                 var misExpedientes = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
 
-                csv += '=== REPORTE DE OPERADOR — FLOOVU LEGAL AI PRO V9 ===' + NL;
+                csv += '=== REPORTE DE OPERADOR — FLOOVU Legal AI PRO V8 ===' + NL;
                 csv += 'Operador: ' + (opName||'—') + ' | Email: ' + (opEmail||'—') + NL;
                 csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
 
@@ -4419,6 +4433,22 @@ async function loadRealData() {
 
         function closeClientModal() {
             document.getElementById('client-edit-modal').classList.remove('visible');
+        }
+
+        function openPdfModal(url) {
+            const modal = document.getElementById('pdf-modal');
+            const content = document.getElementById('pdf-modal-content');
+            if(url && url !== 'undefined') {
+                content.innerHTML = `<iframe src="${url.replace('/view', '/preview')}" width="100%" height="100%" frameborder="0"></iframe>`;
+            } else {
+                content.innerHTML = `<p style="padding:20px;color:#333;text-align:center;">No hay documento adjunto válido.</p>`;
+            }
+            modal.classList.add('visible');
+        }
+
+        function closePdfModal() {
+            document.getElementById('pdf-modal').classList.remove('visible');
+            document.getElementById('pdf-modal-content').innerHTML = '';
         }
 
         async function saveClientEdit() {
@@ -5722,6 +5752,11 @@ async function loadRealData() {
                             onclick="toggleExpPanel('res-${tok}'); marcarComoVisto('${tok}')">
                         📄 Resumen
                     </button>
+                    ${c.archivo_url ? `
+                    <button class="btn-premium" style="font-size:0.76rem;height:32px;padding:0 12px;"
+                            onclick="openPdfModal('${esc(c.archivo_url)}'); marcarComoVisto('${tok}')">
+                        📄 Ver Documento
+                    </button>` : ''}
                     ${c.messageId ? `
                     <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;border-color:rgba(201,168,76,0.2);color:rgba(255,255,255,0.7);"
                             onclick="window.open('https://mail.google.com/mail/u/0/#inbox/${esc(c.messageId)}', '_blank')">
@@ -5763,6 +5798,8 @@ async function loadRealData() {
                         ${getDictamenHTML(c)}
                     </div>
                 </div>
+
+                </div>
             </div>`;
         }
 
@@ -5771,7 +5808,7 @@ async function loadRealData() {
             if (!panel) return;
             const isOpen = panel.classList.contains('open');
             const tok = panelId.split('-').slice(1).join('-');
-            ['seg','hist','res'].forEach(prefix => {
+            ['seg','hist','res','doc'].forEach(prefix => {
                 const p = document.getElementById(`${prefix}-${tok}`);
                 if (p) p.classList.remove('open');
             });
