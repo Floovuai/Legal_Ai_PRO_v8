@@ -535,8 +535,8 @@
             </div>
 
             <div class="form-group">
-                <label for="input-dni">Número de Cédula / NIT</label>
-                <input type="text" id="input-dni" placeholder="Ej. 1234567890" autocomplete="off" inputmode="numeric">
+                <label for="input-nit">NIT / Cédula</label>
+                <input type="text" id="input-nit" placeholder="Ej. 1234567890" autocomplete="off" inputmode="numeric">
             </div>
 
             <button class="login-btn" id="portal-login-btn" onclick="doPortalLogin()">
@@ -586,7 +586,7 @@
 
     <script>
     // ══ CONFIG ══
-    const WEBHOOK_URL = 'https://TU-N8N.com/webhook/floovu-get-portal-cliente'; // ← reemplazar
+    const WEBHOOK_URL = 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-portal-cliente'; // ← reemplazar
 
     // ══ CANVAS BACKGROUND (igual al login del admin) ══
     (function initCanvas() {
@@ -646,7 +646,7 @@
     // ══ LOGIN ══
     async function doPortalLogin() {
         const token = document.getElementById('input-token').value.trim().toUpperCase();
-        const dni   = document.getElementById('input-dni').value.trim();
+        const nit_cedula = document.getElementById("input-nit").value.trim();
         const errEl = document.getElementById('login-error');
         const btn   = document.getElementById('portal-login-btn');
 
@@ -656,7 +656,7 @@
             errEl.textContent = 'Ingresa un token válido (ej. FLV-1234)';
             errEl.style.display = 'block'; return;
         }
-        if (!dni || dni.length < 5) {
+        if (!nit_cedula || nit_cedula.length < 4) {
             errEl.textContent = 'Ingresa tu número de cédula o NIT';
             errEl.style.display = 'block'; return;
         }
@@ -668,7 +668,7 @@
             const res = await fetch(WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, dni })
+                body: JSON.stringify({ token, nit_cedula })
             });
 
             const data = await res.json();
@@ -694,11 +694,11 @@
     }
 
     // ── Enter key ──
-    document.getElementById('input-dni').addEventListener('keydown', e => {
+    document.getElementById('input-nit').addEventListener('keydown', e => {
         if (e.key === 'Enter') doPortalLogin();
     });
     document.getElementById('input-token').addEventListener('keydown', e => {
-        if (e.key === 'Enter') document.getElementById('input-dni').focus();
+        if (e.key === 'Enter') document.getElementById('input-nit').focus();
     });
 
     // ══ SHOW PORTAL ══
@@ -825,7 +825,7 @@
         document.getElementById('portal-shell').classList.remove('visible');
         document.getElementById('login-overlay').classList.remove('hidden');
         document.getElementById('input-token').value = '';
-        document.getElementById('input-dni').value = '';
+        document.getElementById('input-nit').value = '';
         document.getElementById('portal-login-btn').disabled = false;
         document.getElementById('portal-login-btn').textContent = 'Consultar Expediente →';
         document.getElementById('login-error').style.display = 'none';
