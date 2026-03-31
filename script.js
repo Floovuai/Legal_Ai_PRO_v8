@@ -4131,7 +4131,3 @@ ${casosHTML}
         window.toggleGroupPanel = toggleGroupPanel;
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
-
-}
-}
-}
