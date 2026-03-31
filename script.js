@@ -332,7 +332,7 @@
 
             // Título de versión
             const headerH1 = versionSection.querySelector('h1');
-            if (headerH1) headerH1.textContent = `Capacidades del Sistema (${role === 'admin' ? 'v9 Full' : 'v9 Pro'})`;
+            if (headerH1) headerH1.textContent = `Capacidades del Sistema (${role === 'admin' ? 'v8 Full' : 'v8 Pro'})`;
 
             if (role === 'operator') {
                 // Ocultar todas las tarjetas técnicas marcadas
@@ -344,7 +344,7 @@
                 if (archCard) {
                     const archText = archCard.querySelector('p:not(.card-title)');
                     if (archText) {
-                        archText.innerHTML = '<b>FLOOVU Legal AI Pro V9</b> es tu asistente inteligente de alto rendimiento. El sistema centraliza la recepción de correos, analiza tus documentos con IA para extraer estrategias clave y gestiona tu agenda judicial automáticamente, permitiéndote enfocarte 100% en la labor jurídica estratégica.';
+                        archText.innerHTML = '<b>FLOOVU Legal AI Pro V8</b> es tu asistente inteligente de alto rendimiento. El sistema centraliza la recepción de correos, analiza tus documentos con IA para extraer estrategias clave y gestiona tu agenda judicial automáticamente, permitiéndote enfocarte 100% en la labor jurídica estratégica.';
                     }
                 }
             } else {
@@ -3080,7 +3080,7 @@ async function loadRealData() {
         }
 
         // ══════════════════════════════════════════
-        // V9: OBSERVACIONES
+        // V8: OBSERVACIONES
         // ══════════════════════════════════════════
 
         async function loadObservaciones() {
@@ -3192,7 +3192,7 @@ async function loadRealData() {
         }
 
         // ══════════════════════════════════════════
-        // V9: BANDEJA GMAIL
+        // V8: BANDEJA GMAIL
         // ══════════════════════════════════════════
 
         async function loadBandejaGmail() {
