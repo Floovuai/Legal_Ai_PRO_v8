@@ -1389,7 +1389,7 @@ async function loadRealData() {
                     // AUTOMATIC CLIENT SAVE TO DIRECTORY
                     try {
                         log(`Guardando cliente en el directorio...`);
-                        await authFetch(N8N_CLIENT_SAVE, {
+                        const clientRes = await authFetch(N8N_CLIENT_SAVE, {
                             method: 'POST',
                             body: JSON.stringify({
                                 nombre: clienteADefender,
@@ -1397,10 +1397,15 @@ async function loadRealData() {
                                 email: clientEmail,
                                 telefono: clientTel,
                                 notas: clientNotas,
-                                abogado: lawyerName
+                                abogado: lawyerName,
+                                token: caseItem.token
                             })
                         });
-                        log(`✓ Cliente guardado en directorio exitosamente.`);
+                        if (clientRes.ok) {
+                            log(`✓ Cliente guardado en directorio exitosamente.`);
+                        } else {
+                            log(`⚠️ Aviso: Respuesta inesperada al guardar cliente (${clientRes.status}).`);
+                        }
                     } catch(e) {
                         log(`⚠️ Aviso: No se pudo guardar cliente en directorio.`);
                     }
@@ -1428,18 +1433,18 @@ async function loadRealData() {
                         }
                     }
 
-                    log(`✓ Operación finalizada.`);
+                    log(`✓ Operación finalizada. Sincronizando datos...`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
                         // FIX: Hacer refresh REAL de los datos desde GS para sincronizar con W1B
-                        // En lugar de solo actualizar en memoria, recargar desde la fuente
+                        // Timeout aumentado a 10s para dar tiempo al pipeline completo de n8n
                         loadRealData().then(() => {
                             loadClients();
                             showToast('Caso asignado y sincronizado correctamente.', 'success');
                         }).catch(err => {
                             logError(`Error al recargar datos: ${err.message}`);
                         });
-                    }, 4000);
+                    }, 10000);
                 } else {
                     throw new Error(`Error en n8n: ${response.status} ${response.statusText}`);
                 }
@@ -1585,7 +1590,7 @@ async function loadRealData() {
                             email:    c.email    || c.Email    || c.EMAIL    || '',
                             telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || '',
                             notas:    c.notas    || c.Notas    || c.NOTAS    || '',
-                            abogado:  c.abogado  || c.Abogado  || c.abogado_asignado || '',
+                            abogado:  c.abogado  || c.Abogado  || c['Abogado Asignado'] || c.abogado_asignado || '',
                             estado:   c.estado   || c.Estado   || 'DIRECTORIO',
                             _source:  'directorio'
                         }))
