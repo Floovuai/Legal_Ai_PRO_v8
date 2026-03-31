@@ -1395,6 +1395,29 @@ async function loadRealData() {
                         log(`⚠️ Aviso: No se pudo guardar cliente en directorio.`);
                     }
 
+                    // AUTOMATIC OBSERVATION SAVE TO ANOTACIONES SHEET
+                    if (clientNotas && clientNotas.trim() !== '') {
+                        try {
+                            log(`Guardando nota en Anotaciones...`);
+                            const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                            await authFetch(WH.SAVE_OBS || WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion'), {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    token: caseItem.token,
+                                    tipo: 'NOTA',
+                                    texto: clientNotas,
+                                    anotacion: clientNotas,
+                                    visibilidad: 'Interno',
+                                    operador: window.currentUser?.name || lawyerName || 'Asignador',
+                                    fecha: new Date().toLocaleString('es-CO')
+                                })
+                            });
+                            log(`✓ Nota guardada en hoja de Anotaciones.`);
+                        } catch(e) {
+                            log(`⚠️ Aviso: No se pudo registrar la nota de asignación.`);
+                        }
+                    }
+
                     log(`✓ Operación finalizada.`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
