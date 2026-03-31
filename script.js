@@ -329,22 +329,28 @@
         function renderCapacidadesForRole(role) {
             const versionSection = document.getElementById('version');
             if (!versionSection) return;
+
+            // Título de versión
+            const headerH1 = versionSection.querySelector('h1');
+            if (headerH1) headerH1.textContent = `Capacidades del Sistema (${role === 'admin' ? 'v9 Full' : 'v9 Pro'})`;
+
             if (role === 'operator') {
-                // Ocultar el diagrama de flujo técnico y el grupo de debug/config
-                const svgCard = versionSection.querySelector('svg');
-                if (svgCard) {
-                    const svgParent = svgCard.closest('.card');
-                    if (svgParent) svgParent.style.display = 'none';
-                }
-                // Ocultar la arquitectura técnica del resumen
-                const archCard = versionSection.querySelector('.card-title');
+                // Ocultar todas las tarjetas técnicas marcadas
+                const techCards = versionSection.querySelectorAll('.version-tech-card');
+                techCards.forEach(c => c.style.display = 'none');
+
+                // Personalizar el resumen de arquitectura para que sea menos técnico y más enfocado en beneficios
+                const archCard = versionSection.querySelector('.card:not(.version-tech-card)');
                 if (archCard) {
-                    const archParent = archCard.closest('.card');
-                    if (archParent) {
-                        const archText = archParent.querySelector('p:not(.card-title)');
-                        if (archText) archText.innerHTML = 'FLOOVU Legal AI PRO V8 automatiza la recepción, análisis y seguimiento de tus casos legales. El sistema hace el trabajo pesado para que tu equipo se enfoque en lo que importa: la defensa de tus clientes.';
+                    const archText = archCard.querySelector('p:not(.card-title)');
+                    if (archText) {
+                        archText.innerHTML = '<b>FLOOVU Legal AI Pro V9</b> es tu asistente inteligente de alto rendimiento. El sistema centraliza la recepción de correos, analiza tus documentos con IA para extraer estrategias clave y gestiona tu agenda judicial automáticamente, permitiéndote enfocarte 100% en la labor jurídica estratégica.';
                     }
                 }
+            } else {
+                // Asegurar que admin vea todo
+                const techCards = versionSection.querySelectorAll('.version-tech-card');
+                techCards.forEach(c => c.style.display = 'block');
             }
         }
 

@@ -770,20 +770,20 @@
             <!-- Config section ELIMINADA — contenido movido a Dashboard (debug, BD) y Gestión de Usuarios (nueva pestaña) -->
 
             <section id="version" class="content-section">
-                <div class="header"><h1>Capacidades del Sistema (v8)</h1></div>
+                <div class="header"><h1>Capacidades del Sistema (v9)</h1></div>
 
                 <!-- Resumen arquitectura -->
                 <div class="card" style="margin-bottom:2rem;">
                     <p class="card-title">✨ Resumen de Arquitectura y Beneficios</p>
                     <p style="color:var(--silver);line-height:1.6;font-size:0.9rem;margin-top:10px;">
-                        El sistema <b>FLOOVU Legal AI PRO V8</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
-                        Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos.
+                        El sistema <b>FLOOVU Legal AI PRO V9</b> centraliza la recepción, análisis predictivo, asignación y seguimiento de requerimientos legales.
+                        Todo fluye de manera inteligente utilizando IA para el desglose de expedientes y Google Workspace como motor seguro de bases de datos. En esta versión V9, incorporamos un ecosistema PWA móvil, portal de clientes integrado, visualización directa de adjuntos y flujos interactivos de comprobación para los abogados corporativos.
                     </p>
                 </div>
 
                 <!-- Diagrama de flujo SVG -->
-                <div class="card" style="margin-bottom:2rem;overflow-x:auto;">
-                    <p class="card-title">🔄 Flujo del Sistema</p>
+                <div class="card version-tech-card" style="margin-bottom:2rem;overflow-x:auto;">
+                    <p class="card-title">🔄 Flujo Técnico del Sistema</p>
                     <svg viewBox="0 0 900 160" style="width:100%;min-width:0;margin-top:1rem;" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -932,7 +932,7 @@
                 </div>
 
                 <!-- GRUPO 4: Dashboard y Control -->
-                <div style="margin-bottom:1rem;">
+                <div style="margin-bottom:2rem;">
                     <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">📊 Dashboard y Control Operativo</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
                         <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
@@ -949,11 +949,60 @@
                                 <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Interfaz adaptada para notebook, tablet y teléfono. Sidebar colapsable, tablas con scroll horizontal y navegación optimizada para pantallas pequeñas.</p>
                             </div>
                         </div>
-                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                        <div class="card version-tech-card" style="display:flex;gap:14px;align-items:flex-start;">
                             <span style="font-size:1.6rem;flex-shrink:0;">🔐</span>
                             <div>
                                 <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--white);text-transform:uppercase;letter-spacing:0.5px;">Seguridad y Autenticación</p>
                                 <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Todos los webhooks protegidos con token secreto <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;font-size:0.75rem;">x-floovu-secret</code>. Sanitización XSS en todos los inputs del frontend.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRUPO 5: Novedades V9 -->
+                <div style="margin-bottom:1rem;">
+                    <p style="font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--gold);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(197,160,89,0.3);">🚀 Novedades y Herramientas (V9)</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">👀</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">Visor PDF Integrado</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Carga de documentos PDFs adjuntos provenientes de la bandeja sin abandonar la aplicación, con un modal integrado responsivo.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🔗</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">Botones Mágicos Interactivos</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Los abogados pueden marcar una tarea como "Completada" dando clic al botón integrado en sus correos que se comunica automáticamente con la Agenda y la Bóveda.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">✍️</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">Observaciones Públicas o Internas</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Sistema de anotaciones con permisos de visibilidad, para filtrar qué información consume un cliente a través de su portal dedicado.</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">🌐</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">Portal Autónomo de Clientes</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Interfaz "Solo Lectura" (PWA) de lujo separada del panel base para clientes externos mediante autenticación token y documento de identidad.</p>
+                            </div>
+                        </div>
+                        <div class="card version-tech-card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📟</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">Telemetría y Depuración en Vivo</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Panel de reporte de errores en tiempo real y verificador de ping para el status de todos los nodos de la infraestructura (BD, Webhooks, Correos).</p>
+                            </div>
+                        </div>
+                        <div class="card" style="display:flex;gap:14px;align-items:flex-start;">
+                            <span style="font-size:1.6rem;flex-shrink:0;">📲</span>
+                            <div>
+                                <p style="margin:0 0 4px;font-size:0.8rem;font-weight:700;color:var(--gold-bright);text-transform:uppercase;letter-spacing:0.5px;">App Instalable (PWA)</p>
+                                <p style="margin:0;font-size:0.8rem;color:var(--silver);line-height:1.5;">Soporte de instalación en dispositivos móviles y de escritorio para accesos nativos rápidos y sin depender de ventanas del explorador.</p>
                             </div>
                         </div>
                     </div>

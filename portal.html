@@ -294,7 +294,6 @@
             display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 1rem;
         }
-        .case-meta-item {}
         .case-meta-label {
             font-size: 0.58rem; text-transform: uppercase; letter-spacing: 2px;
             color: rgba(201,168,76,0.5); font-weight: 700; margin-bottom: 3px;
@@ -815,7 +814,42 @@
             <a href="index.html">← Acceso del equipo</a>
         </div>`;
 
-        content.innerHTML = headerHTML + timelineHTML + docsHTML + footerHTML;
+        const versionHTML = `
+        <div class="docs-container" style="margin-top:2rem;">
+            <div class="section-title">✨ Beneficios y Funciones del Portal</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:0.5rem;">
+                <div class="doc-btn" style="cursor:default;">
+                    <div class="doc-icon">🔒</div>
+                    <div class="doc-info">
+                        <div class="doc-name">Privacidad Total</div>
+                        <div class="doc-meta">Acceso cifrado y protegido por token único</div>
+                    </div>
+                </div>
+                <div class="doc-btn" style="cursor:default;">
+                    <div class="doc-icon">⏱️</div>
+                    <div class="doc-info">
+                        <div class="doc-name">Seguimiento Dinámico</div>
+                        <div class="doc-meta">Historial de actuaciones en tiempo real</div>
+                    </div>
+                </div>
+                <div class="doc-btn" style="cursor:default;">
+                    <div class="doc-icon">📄</div>
+                    <div class="doc-info">
+                        <div class="doc-name">Bóveda de Documentos</div>
+                        <div class="doc-meta">Visualiza tu expediente desde cualquier dispositivo</div>
+                    </div>
+                </div>
+                <div class="doc-btn" style="cursor:default;">
+                    <div class="doc-icon">📲</div>
+                    <div class="doc-info">
+                        <div class="doc-name">App Nativa (PWA)</div>
+                        <div class="doc-meta">Agrega el portal a tu pantalla de inicio fácilmente</div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        content.innerHTML = headerHTML + timelineHTML + docsHTML + versionHTML + footerHTML;
     }
 
     // ══ LOGOUT ══
