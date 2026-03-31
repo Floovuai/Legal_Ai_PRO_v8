@@ -507,7 +507,7 @@
 
                 <!-- Modal edición cliente -->
                 <div class="overlay" id="client-edit-modal">
-                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:520px;width:90%;">
+                    <div style="background:#0c0f16;border:1px solid var(--border);border-radius:16px;padding:2rem;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;">
                         <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">✏️ Editar Cliente</p>
                         <input type="hidden" id="edit-client-idx">
                         <input type="hidden" id="edit-client-source">
@@ -541,6 +541,18 @@
                                 <input type="text" id="edit-cli-notas">
                             </div>
                         </div>
+
+                        <!-- Panel de observaciones del cliente -->
+                        <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.06);">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <p style="margin:0;font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">📝 Observaciones Registradas</p>
+                                <button onclick="loadClientModalObservaciones(window._currentClientModalName)" style="background:none;border:1px solid rgba(201,168,76,0.25);border-radius:6px;padding:3px 10px;color:var(--silver);font-size:0.68rem;cursor:pointer;transition:0.2s;" onmouseover="this.style.borderColor='rgba(201,168,76,0.6)'" onmouseout="this.style.borderColor='rgba(201,168,76,0.25)'">↻ Recargar</button>
+                            </div>
+                            <div id="client-modal-obs-list" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;padding-right:2px;">
+                                <p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">Cargando observaciones...</p>
+                            </div>
+                        </div>
+
                         <div style="display:flex;gap:1rem;margin-top:1.5rem;">
                             <button class="btn-outline" style="flex:1" onclick="closeClientModal()">Cancelar</button>
                             <button class="btn-premium" style="flex:1" onclick="saveClientEdit()">💾 Guardar Cambios</button>

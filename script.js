@@ -2012,10 +2012,168 @@ async function loadRealData() {
                 sel.value = c.abogado || '';
             }
             document.getElementById('client-edit-modal').classList.add('visible');
+            // Guardar nombre globalmente y cargar observaciones relacionadas
+            window._currentClientModalName = c.nombre || '';
+            loadClientModalObservaciones(c.nombre || '');
         }
 
         function closeClientModal() {
             document.getElementById('client-edit-modal').classList.remove('visible');
+        }
+
+        // ══════════════════════════════════════════
+        // OBSERVACIONES EN PERFIL DEL CLIENTE
+        // ══════════════════════════════════════════
+
+        async function loadClientModalObservaciones(clienteNombre) {
+            const listEl = document.getElementById('client-modal-obs-list');
+            if (!listEl) return;
+            listEl.innerHTML = '<p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">⏳ Cargando observaciones...</p>';
+
+            // Buscar todos los tokens de casos asociados a este cliente
+            const clientTokens = (db || [])
+                .filter(c => (c.cliente_a_defender || c.partes || '').toLowerCase().trim() === (clienteNombre || '').toLowerCase().trim())
+                .map(c => c.token)
+                .filter(Boolean);
+
+            if (!clientTokens.length) {
+                listEl.innerHTML = '<p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">Sin casos en el Registro Legal asociados a este cliente.</p>';
+                return;
+            }
+
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.GET_OBS, { method: 'POST', body: '{}' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const txt = await res.text();
+                const data = txt ? JSON.parse(txt) : {};
+                const todas = Array.isArray(data.anotaciones) ? data.anotaciones : [];
+                const relacionadas = todas.filter(a => clientTokens.includes(a.Token || a.token));
+                renderClientModalObservaciones(listEl, relacionadas);
+            } catch(e) {
+                listEl.innerHTML = `<p style="font-size:0.78rem;color:#ef4444;text-align:center;padding:12px;">Error cargando observaciones: ${esc(e.message)}</p>`;
+            }
+        }
+
+        function renderClientModalObservaciones(listEl, list) {
+            if (!list || !list.length) {
+                listEl.innerHTML = '<p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">Sin observaciones registradas para este cliente.</p>';
+                return;
+            }
+            listEl.innerHTML = list.map(a => {
+                const id  = a.ID  || a.id  || '';
+                const tok = a.Token || a.token || '';
+                const vis = a.Visibilidad || a.visibilidad || 'Interno';
+                const isPublic = vis === 'Público' || vis === 'Publico';
+                const borderColor = isPublic ? 'rgba(34,197,94,0.45)' : 'rgba(201,168,76,0.3)';
+                const safeId  = esc(id);
+                const safeTok = esc(tok);
+                return `
+                <div id="cliobs-${safeId}" style="padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:8px;
+                             border-left:3px solid ${borderColor};">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <span style="font-size:0.68rem;color:var(--gold);font-weight:700;font-family:monospace;">${safeTok}</span>
+                            <span style="font-size:0.62rem;font-weight:700;padding:1px 6px;border-radius:4px;
+                                         background:rgba(201,168,76,0.08);color:rgba(201,168,76,0.7);">${esc(a.Tipo || a.tipo || 'NOTA')}</span>
+                            <span style="font-size:0.62rem;font-weight:700;color:${isPublic ? '#22c55e' : 'var(--silver)'};"
+                                  title="${isPublic ? 'Visible en portal' : 'Solo interno'}">${isPublic ? '👁️ Portal' : '🔒 Interno'}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                            <span style="font-size:0.6rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
+                            ${id ? `
+                            <button onclick="abrirEditarObsClienteModal('${safeId}','${safeTok}')" title="Editar"
+                                style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;
+                                       transition:0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'"
+                                       onmouseout="this.style.background='none'">✏️</button>
+                            <button onclick="eliminarObsClienteModal('${safeId}','${safeTok}')" title="Eliminar"
+                                style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;
+                                       transition:0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'"
+                                       onmouseout="this.style.background='none'">🗑️</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <p style="margin:0 0 4px;font-size:0.82rem;color:var(--silver-lt);line-height:1.5;">${esc(a.Texto || a.texto || '')}</p>
+                    <p style="margin:0;font-size:0.62rem;color:var(--silver);opacity:0.5;">${esc(a.Operador || a.operador || a.Autor || a.autor || '')}</p>
+                </div>`;
+            }).join('');
+        }
+
+        function abrirEditarObsClienteModal(id, tok) {
+            const div = document.getElementById(`cliobs-${id}`);
+            const textoEl = div ? div.querySelector('p') : null;
+            const textoActual = textoEl ? textoEl.textContent.trim() : '';
+            const isPublic = div ? div.style.borderLeftColor.includes('34,197,94') : false;
+
+            const modal = document.createElement('div');
+            modal.id = 'modal-editar-cliobs';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10000;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:#0c0f16;border:1px solid rgba(201,168,76,0.3);border-radius:12px;
+                            padding:22px;width:90%;max-width:480px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Observación</span>
+                        <button onclick="document.getElementById('modal-editar-cliobs').remove()"
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+                    </div>
+                    <textarea id="modal-cliobs-texto" rows="4"
+                        style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
+                               border-radius:8px;color:var(--white);padding:10px 12px;font-size:0.85rem;
+                               resize:vertical;font-family:inherit;box-sizing:border-box;"
+                    >${textoActual}</textarea>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+                        <input type="checkbox" id="modal-cliobs-vis" ${isPublic ? 'checked' : ''}
+                            style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
+                        <label for="modal-cliobs-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
+                            👁️ Visible en Portal del Cliente
+                        </label>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+                        <button onclick="document.getElementById('modal-editar-cliobs').remove()"
+                            style="padding:7px 16px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;
+                                   background:none;color:var(--silver);cursor:pointer;font-size:0.82rem;">Cancelar</button>
+                        <button onclick="confirmarEditarObsClienteModal('${id}','${tok}')"
+                            style="padding:7px 18px;border:none;border-radius:8px;background:var(--gold);
+                                   color:#000;cursor:pointer;font-weight:700;font-size:0.82rem;">💾 Guardar</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        async function confirmarEditarObsClienteModal(id, tok) {
+            const texto = document.getElementById('modal-cliobs-texto')?.value?.trim();
+            const cb    = document.getElementById('modal-cliobs-vis');
+            const visibilidad = cb?.checked ? 'Público' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            try {
+                const WH  = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.EDIT_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Observación actualizada.', 'ok');
+                    document.getElementById('modal-editar-cliobs')?.remove();
+                    loadClientModalObservaciones(window._currentClientModalName);
+                } else { showToast(`Error al editar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+
+        async function eliminarObsClienteModal(id, tok) {
+            if (!confirm('¿Eliminar esta observación? Esta acción no se puede deshacer.')) return;
+            try {
+                const WH  = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.DELETE_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Observación eliminada.', 'ok');
+                    loadClientModalObservaciones(window._currentClientModalName);
+                } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
         function openPdfModal(url) {
@@ -4131,3 +4289,8 @@ ${casosHTML}
         window.toggleGroupPanel = toggleGroupPanel;
         window.toggleGrupo = toggleGrupo;
         window.togglePassVisibility = togglePassVisibility;
+        window.loadClientModalObservaciones  = loadClientModalObservaciones;
+        window.renderClientModalObservaciones = renderClientModalObservaciones;
+        window.abrirEditarObsClienteModal    = abrirEditarObsClienteModal;
+        window.confirmarEditarObsClienteModal = confirmarEditarObsClienteModal;
+        window.eliminarObsClienteModal       = eliminarObsClienteModal;
