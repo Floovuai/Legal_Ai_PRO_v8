@@ -3755,8 +3755,10 @@ async function loadRealData() {
                         token: tok,
                         tipo: 'SEGUIMIENTO',
                         texto: texto,
+                        anotacion: texto,
                         visibilidad: visibilidad,
-                        operador: currentUser?.name || 'Operador'
+                        operador: currentUser?.name || 'Operador',
+                        fecha: new Date().toLocaleString('es-CO')
                     })
                 });
                 if (res.ok) {
@@ -4035,8 +4037,13 @@ async function loadRealData() {
                 const res = await authFetch(WH.SAVE_OBS, {
                     method: 'POST',
                     body: JSON.stringify({
-                        token: tok, tipo: 'SEGUIMIENTO', texto, visibilidad,
-                        operador: currentUser?.name || 'Operador'
+                        token: tok,
+                        tipo: 'SEGUIMIENTO',
+                        texto,
+                        anotacion: texto,
+                        visibilidad,
+                        operador: currentUser?.name || 'Operador',
+                        fecha: new Date().toLocaleString('es-CO')
                     })
                 });
                 if (res.ok) {
