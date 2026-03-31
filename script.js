@@ -1312,8 +1312,18 @@ async function loadRealData() {
             const clientNotas = document.getElementById(`asig-notas-${caseToken}`)?.value || '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
             // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
-            const _cadRadioOuter = document.querySelector(`input[name="cad-${caseToken}"]:checked`);
-            const clienteADefender = _cadRadioOuter ? _cadRadioOuter.value : (caseItem.cliente_a_defender || caseItem.partes || '');
+            // FIX V9: buscar radio en todo el documento, no solo en el scope del bloque
+            const _cadRadioOuter = document.querySelector(`input[name="cad-${caseToken}"]:checked`)
+                                || document.querySelector(`input[name="cad-${caseToken}"]`); // fallback al primero si ninguno checked
+            let clienteADefender = '';
+            if (_cadRadioOuter && _cadRadioOuter.value && _cadRadioOuter.value.trim()) {
+                clienteADefender = _cadRadioOuter.value.trim();
+            } else if (caseItem.cliente_a_defender && caseItem.cliente_a_defender.trim()) {
+                clienteADefender = caseItem.cliente_a_defender.trim();
+            } else {
+                // último recurso: primera parte del campo Partes
+                clienteADefender = (caseItem.partes || '').split(/[,;·\/]|vs\.?|contra/i)[0].trim() || caseItem.partes || '';
+            }
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
             // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
@@ -3148,9 +3158,11 @@ async function loadRealData() {
                 const vis = o.Visibilidad || o.visibilidad || 'Interno';
                 const isPublic = vis === 'Público' || vis === 'Publico';
                 const eyeIcon = isPublic ? '<span title="Visible por el cliente">👁️</span>' : '<span title="Nota Interna Privada">🔒</span>';
+                const obsId = o.ID || o.id || '';
+                const obsTok = o.Token || o.token || '';
                 return `<tr>
                 <td style="font-size:0.75rem;">${esc(o.Fecha || o.fecha || '')}</td>
-                <td><span style="color:var(--gold);font-weight:600;font-size:0.8rem;">${esc(o.token || o.Token || o.Session || '')}</span></td>
+                <td><span style="color:var(--gold);font-weight:600;font-size:0.8rem;">${esc(obsTok)}</span></td>
                 <td><span style="background:rgba(201,168,76,0.1);padding:2px 8px;border-radius:4px;font-size:0.75rem;">${esc(o.Tipo || o.tipo || 'NOTA')}</span></td>
                 <td>
                     <div style="display:flex;align-items:flex-start;gap:8px;">
@@ -3161,7 +3173,14 @@ async function loadRealData() {
                         </div>
                     </div>
                 </td>
-                <td style="font-size:0.8rem;color:var(--silver);">${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser?.name || 'Sistema')}</td>
+                <td style="font-size:0.8rem;color:var(--silver);">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <span>${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser?.name || 'Sistema')}</span>
+                        ${obsId ? `<button onclick="eliminarObsGlobal('${obsId}','${obsTok}')" title="Eliminar"
+                            style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
+                                   padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>` : ''}
+                    </div>
+                </td>
             </tr>`;
             }).join('');
         }
@@ -3751,6 +3770,23 @@ async function loadRealData() {
                     delete _anotacionesCache[tok];
                     cargarAnotaciones(tok);
                 } else { showToast(`Error al editar: ${res.status}`, 'error'); }
+            } catch(e) { showToast('Error: ' + e.message, 'error'); }
+        }
+
+        async function eliminarObsGlobal(id, tok) {
+            if (!confirm('¿Eliminar esta observación? Esta acción no se puede deshacer.')) return;
+            try {
+                const WH = window.FLOOVU_CONFIG.WEBHOOKS;
+                const res = await authFetch(WH.DELETE_OBS, {
+                    method: 'POST',
+                    body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
+                });
+                if (res.ok) {
+                    showToast('Observación eliminada.', 'ok');
+                    // Recargar lista global
+                    observacionesData = observacionesData.filter(o => (o.ID || o.id) !== id);
+                    renderObservaciones(observacionesData);
+                } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
