@@ -983,7 +983,6 @@ async function loadRealData() {
                         </div>
                         <div class="asig-actions">
                             <button class="btn-outline" onclick="toggleDesc('${tok}')">📂 Ver Resumen</button>
-                            <button class="btn-outline" style="color:var(--gold);border-color:var(--gold);" onclick="fetchClientMails('${tok}', '${esc(c.partes)}')">📧 Correos del Cliente</button>
                             <div style="flex-grow:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                                 <select id="law-sel-${tok}" style="max-width:200px;">${lawyerOptions}</select>
                                 <button class="btn-asig-main" onclick="finish('${tok}')">⚖️ Confirmar Asignación</button>
