@@ -3910,92 +3910,111 @@ async function loadRealData() {
             const meta = (window._grupoMeta || {})[grupoId] || {};
             const tokens = meta.tokens || [];
             const clienteNombre = meta.clienteNombre || '';
+            const tokenSelect = tokens.length > 1
+                ? `<div style="margin-bottom:8px;">
+                       <label style="font-size:0.7rem;color:var(--silver);">Caso</label>
+                       <select id="${panelId}-token"
+                               style="height:32px;padding:0 8px;background:rgba(255,255,255,0.04);
+                                      border:1px solid rgba(255,255,255,0.08);border-radius:6px;
+                                      color:var(--white);font-size:0.78rem;width:100%;margin-top:4px;">
+                           ${tokens.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}
+                       </select>
+                   </div>`
+                : `<input type="hidden" id="${panelId}-token" value="${esc(tokens[0] || '')}">`;
+
+            const colStyle = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;' +
+                             'background:rgba(255,255,255,0.02);padding:12px;border-radius:10px;' +
+                             'border:1px solid rgba(255,255,255,0.06);';
 
             panel.innerHTML = `
                 <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
                            letter-spacing:1px;margin:0 0 10px;">📝 Seguimiento — ${esc(clienteNombre)}</p>
-                <div id="${panelId}-list" style="margin-bottom:12px;max-height:260px;overflow-y:auto;">
-                    <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem;align-items:stretch;
-                            background:rgba(255,255,255,0.02);padding:1rem;border-radius:10px;
-                            border:1px solid rgba(255,255,255,0.04);">
-                    ${tokens.length > 1 ? `
-                    <div style="display:flex;flex-direction:column;gap:4px;">
-                        <label style="font-size:0.7rem;color:var(--silver);">Caso</label>
-                        <select id="${panelId}-token"
-                                style="height:32px;padding:0 8px;background:rgba(255,255,255,0.04);
-                                       border:1px solid rgba(255,255,255,0.08);border-radius:6px;
-                                       color:var(--white);font-size:0.78rem;">
-                            ${tokens.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}
-                        </select>
-                    </div>` : `<input type="hidden" id="${panelId}-token" value="${esc(tokens[0] || '')}">`}
-                    <div style="display:flex;flex-direction:column;gap:4px;">
-                        <label style="font-size:0.7rem;color:var(--silver);">Nueva anotación</label>
-                        <textarea id="${panelId}-input" rows="2" placeholder="Escribí una anotación..."
-                                  style="padding:8px 12px;background:rgba(255,255,255,0.04);
+                ${tokenSelect}
+                <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+
+                    <!-- COLUMNA INTERNO -->
+                    <div style="${colStyle}border-left:3px solid rgba(201,168,76,0.4);">
+                        <p style="margin:0;font-size:0.7rem;font-weight:700;color:var(--gold);
+                                   text-transform:uppercase;letter-spacing:0.8px;">🔒 Notas Internas</p>
+                        <div id="${panelId}-list-interno" style="max-height:220px;overflow-y:auto;">
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
+                        </div>
+                        <textarea id="${panelId}-input-interno" rows="2" placeholder="Nueva nota interna..."
+                                  style="padding:8px 10px;background:rgba(255,255,255,0.04);
                                          border:1px solid rgba(255,255,255,0.08);border-radius:8px;
-                                         color:var(--white);font-size:0.82rem;resize:vertical;
-                                         font-family:inherit;width:100%;"></textarea>
+                                         color:var(--white);font-size:0.8rem;resize:vertical;
+                                         font-family:inherit;width:100%;box-sizing:border-box;"></textarea>
+                        <button class="btn-premium" style="height:30px;font-size:0.75rem;padding:0 16px;align-self:flex-start;"
+                                onclick="guardarGroupSeguimiento('${panelId}','${grupoId}','Interno')">
+                            💾 Guardar interna
+                        </button>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <input type="checkbox" id="${panelId}-vis"
-                               style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
-                        <label for="${panelId}-vis" style="font-size:0.75rem;color:var(--silver);cursor:pointer;">
-                            👁️ Portal &nbsp;<span style="color:rgba(255,255,255,0.3);">/ 🔒 Interno por defecto</span>
-                        </label>
+
+                    <!-- COLUMNA PORTAL -->
+                    <div style="${colStyle}border-left:3px solid rgba(34,197,94,0.4);">
+                        <p style="margin:0;font-size:0.7rem;font-weight:700;color:#22c55e;
+                                   text-transform:uppercase;letter-spacing:0.8px;">👁️ Notas del Portal</p>
+                        <div id="${panelId}-list-portal" style="max-height:220px;overflow-y:auto;">
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
+                        </div>
+                        <textarea id="${panelId}-input-portal" rows="2" placeholder="Nueva nota visible al cliente..."
+                                  style="padding:8px 10px;background:rgba(255,255,255,0.04);
+                                         border:1px solid rgba(34,197,94,0.15);border-radius:8px;
+                                         color:var(--white);font-size:0.8rem;resize:vertical;
+                                         font-family:inherit;width:100%;box-sizing:border-box;"></textarea>
+                        <button class="btn-premium" style="height:30px;font-size:0.75rem;padding:0 16px;align-self:flex-start;
+                                                           background:#22c55e;color:#000;"
+                                onclick="guardarGroupSeguimiento('${panelId}','${grupoId}','Público')">
+                            💾 Guardar en portal
+                        </button>
                     </div>
-                    <button class="btn-premium" style="align-self:flex-start;height:32px;font-size:0.78rem;padding:0 20px;"
-                            onclick="guardarGroupSeguimiento('${panelId}','${grupoId}')">
-                        💾 Guardar
-                    </button>
                 </div>`;
 
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.GET_OBS, { method: 'POST', body: '{}' });
-                const listEl = document.getElementById(`${panelId}-list`);
-                if (!listEl) return;
                 if (res.ok) {
                     const txt = await res.text();
                     const data = txt ? JSON.parse(txt) : {};
                     const todas = Array.isArray(data.anotaciones) ? data.anotaciones : [];
                     const relacionadas = todas.filter(a => tokens.includes(a.Token || a.token));
-                    renderGroupAnotaciones(listEl, relacionadas, panelId, grupoId);
-                } else {
-                    listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
+                    const internas = relacionadas.filter(a => {
+                        const v = a.Visibilidad || a.visibilidad || 'Interno';
+                        return v !== 'Público' && v !== 'Publico';
+                    });
+                    const portal = relacionadas.filter(a => {
+                        const v = a.Visibilidad || a.visibilidad || 'Interno';
+                        return v === 'Público' || v === 'Publico';
+                    });
+                    const listInterno = document.getElementById(`${panelId}-list-interno`);
+                    const listPortal  = document.getElementById(`${panelId}-list-portal`);
+                    if (listInterno) renderGroupAnotaciones(listInterno, internas, panelId, grupoId, 'Interno');
+                    if (listPortal)  renderGroupAnotaciones(listPortal,  portal,   panelId, grupoId, 'Público');
                 }
             } catch(e) {
-                const listEl = document.getElementById(`${panelId}-list`);
-                if (listEl) listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Error al cargar.</p>`;
                 logError('Error cargando seguimiento grupo: ' + e.message);
             }
         }
 
-        function renderGroupAnotaciones(listEl, list, panelId, grupoId) {
+        function renderGroupAnotaciones(listEl, list, panelId, grupoId, tipo) {
             if (!list || !list.length) {
-                listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
+                const emptyMsg = tipo === 'Público'
+                    ? 'Sin notas de portal aún.'
+                    : 'Sin notas internas aún.';
+                listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">${emptyMsg}</p>`;
                 return;
             }
+            const borderColor = tipo === 'Público' ? 'rgba(34,197,94,0.3)' : 'rgba(201,168,76,0.3)';
             listEl.innerHTML = list.map(a => {
                 const id = a.ID || a.id || '';
-                const vis = a.Visibilidad || a.visibilidad || 'Interno';
-                const isPublic = vis === 'Público' || vis === 'Publico';
-                const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
-                const visLabel = isPublic
-                    ? `<span style="font-size:0.62rem;font-weight:700;color:#22c55e;">👁️ Portal</span>`
-                    : `<span style="font-size:0.62rem;font-weight:700;color:var(--silver);">🔒 Interno</span>`;
                 return `
                 <div id="gant-${esc(id)}" style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
                              margin-bottom:6px;border-left:2px solid ${borderColor};">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
-                                ${esc(a.Autor || a.autor || a.Operador || a.operador || 'Operador')}
-                                <span style="opacity:0.55;font-weight:400;"> • ${esc(a.Token || a.token || '')}</span>
-                            </span>
-                            ${visLabel}
-                        </div>
+                        <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
+                            ${esc(a.Autor || a.autor || a.Operador || a.operador || 'Operador')}
+                            <span style="opacity:0.55;font-weight:400;"> • ${esc(a.Token || a.token || '')}</span>
+                        </span>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
                             ${id ? `
@@ -4093,12 +4112,11 @@ async function loadRealData() {
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
-        async function guardarGroupSeguimiento(panelId, grupoId) {
+        async function guardarGroupSeguimiento(panelId, grupoId, visibilidad) {
             const tok = document.getElementById(`${panelId}-token`)?.value;
-            const input = document.getElementById(`${panelId}-input`);
+            const inputId = visibilidad === 'Público' ? `${panelId}-input-portal` : `${panelId}-input-interno`;
+            const input = document.getElementById(inputId);
             const texto = input?.value?.trim();
-            const cb = document.getElementById(`${panelId}-vis`);
-            const visibilidad = cb?.checked ? 'Público' : 'Interno';
             if (!tok) { showToast('Sin caso seleccionado', 'error'); return; }
             if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
             try {
@@ -4118,7 +4136,6 @@ async function loadRealData() {
                 if (res.ok) {
                     showToast('Anotación guardada.', 'ok');
                     if (input) input.value = '';
-                    if (cb) cb.checked = false;
                     loadGroupSeguimiento(panelId, grupoId);
                 } else {
                     showToast(`Error al guardar: ${res.status}`, 'error');
