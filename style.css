@@ -1473,3 +1473,163 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
     .split-panel { grid-template-columns: 1fr !important; }
     #dash-kpis.dash-grid { grid-template-columns: 1fr !important; }
 }
+/* ══ AGENDA JUDICIAL — GRID SIN SCROLL HORIZONTAL ══ */
+.cal-grid-header,
+.cal-grid-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 100px 110px 120px 80px 140px 1fr;
+    gap: 0 12px;
+    align-items: center;
+    padding: 8px 12px;
+}
+
+.cal-grid-header {
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    margin-bottom: 4px;
+    padding-bottom: 10px;
+}
+
+.cal-grid-header span {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(201,168,76,0.55);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.cal-grid-row {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.18s;
+    border-radius: 6px;
+    min-height: 52px;
+}
+
+.cal-grid-row:hover {
+    background: rgba(201,168,76,0.04);
+}
+
+.cal-grid-row:last-child {
+    border-bottom: none;
+}
+
+.cal-cell {
+    font-size: 0.78rem;
+    color: var(--silver-lt);
+    line-height: 1.35;
+    overflow: hidden;
+}
+
+.cal-cell-token {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold);
+    font-weight: 700;
+}
+
+.cal-cell-partes {
+    font-size: 0.75rem;
+    color: var(--white);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.cal-cell-partes .cal-cliente {
+    font-size: 0.68rem;
+    color: var(--silver);
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.cal-cell-venc {
+    font-size: 0.75rem;
+    color: var(--white);
+    font-weight: 600;
+}
+
+.cal-cell-venc.deadline-near {
+    color: #f97316;
+    text-shadow: 0 0 12px rgba(249,115,22,0.3);
+}
+
+.cal-cell-rama {
+    font-size: 0.72rem;
+    color: var(--silver-lt);
+}
+.cal-cell-rama .cal-tipo {
+    font-size: 0.68rem;
+    color: var(--silver);
+    margin-top: 2px;
+}
+
+.cal-cell-abogado {
+    font-size: 0.75rem;
+    color: var(--white);
+}
+
+.cal-prioridad {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+.cal-prioridad.alta  { color: #ef4444; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); }
+.cal-prioridad.media { color: #f97316; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.25); }
+.cal-prioridad.baja  { color: #22c55e; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25); }
+
+.cal-estado-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cal-estado {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    color: var(--silver-lt);
+    background: rgba(255,255,255,0.06);
+}
+.cal-calendar-badge {
+    font-size: 0.65rem;
+    color: #22c55e;
+}
+.cal-calendar-badge.pending { color: var(--silver); }
+
+.cal-action-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.cal-action-text {
+    font-size: 0.7rem;
+    color: var(--silver-lt);
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.cal-file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    color: var(--gold);
+    text-decoration: none;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+    transition: 0.2s;
+    width: fit-content;
+}
+.cal-file-btn:hover {
+    background: rgba(201,168,76,0.18);
+    color: var(--gold-bright);
+}

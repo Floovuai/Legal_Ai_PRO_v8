@@ -791,7 +791,7 @@ async function loadRealData() {
                 el('asig-content').innerHTML    = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Sin casos pendientes de despacho</span></div>`;
                 const _expEmpty = document.getElementById('exp-cards-container');
                 if (_expEmpty) _expEmpty.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>La base de datos se encuentra vacía</div>`;
-                el('cal-content').innerHTML     = `<tr><td colspan="6" style="padding:0;border:none;"><div class="empty-state-svg no-bg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>No hay vencimientos agendados</span></div></td></tr>`;
+                el('cal-content').innerHTML     = `<div class="empty-state-svg no-bg" style="padding:2rem 0;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>No hay vencimientos agendados</span></div>`;
                 el('kpi-hours').innerText       = '0h';
                 el('kpi-score').innerText       = '—';
                 el('kpi-total').innerText       = '0';
@@ -909,31 +909,42 @@ async function loadRealData() {
             const conVencAsig = conVenc.filter(c => c.lawyer && c.status === 'ASIGNADO');
             if (conVencAsig.length) {
                 el('cal-content').innerHTML = conVencAsig.map(c => {
-                    const calEstado = (c.venc && c.venc !== 'S/D' && c.venc !== 'N/A')
-                        ? `<span style="color:#22c55e;font-weight:700;font-size:0.78rem;">● Programado</span>`
-                        : `<span style="color:#f97316;font-weight:700;font-size:0.78rem;">○ Sin programar</span>`;
-                    const prioColor = (c.priority||'').toUpperCase().includes('ALTA') || (c.priority||'').includes('🔴') ? '#ef4444'
-                        : (c.priority||'').toUpperCase().includes('MEDIA') || (c.priority||'').includes('🟡') ? '#f59e0b' : '#22c55e';
+                    const programado = (c.venc && c.venc !== 'S/D' && c.venc !== 'N/A');
+                    const calBadge = programado
+                        ? `<span class="cal-calendar-badge">● Programado</span>`
+                        : `<span class="cal-calendar-badge pending">○ Sin programar</span>`;
+                    const prioKey = (c.priority||'').toUpperCase().includes('ALTA') || (c.priority||'').includes('🔴') ? 'alta'
+                        : (c.priority||'').toUpperCase().includes('MEDIA') || (c.priority||'').includes('🟡') ? 'media' : 'baja';
+                    const prioLabel = (c.priority||'—').replace(/🔴|🟡|🟢/g,'').trim();
                     const archivoLink = c.archivo_url
-                        ? `<a href="${esc(c.archivo_url)}" target="_blank" style="color:var(--gold);font-size:0.75rem;text-decoration:underline;">Ver archivo</a>`
-                        : '<span style="color:#475569;font-size:0.75rem;">—</span>';
-                    return `<tr>
-                        <td style="color:var(--gold);font-family:monospace;font-size:0.78rem;font-weight:700;">${esc(c.token || '—')}</td>
-                        <td style="color:var(--gold);font-family:monospace;font-size:0.82rem;font-weight:700;">${esc(c.venc)}</td>
-                        <td style="font-weight:600;color:var(--white);font-size:0.82rem;">${esc(c.partes)}</td>
-                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.cliente_a_defender || '—')}</td>
-                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.rama)}</td>
-                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.tipo || '—')}</td>
-                        <td style="color:var(--white);font-size:0.8rem;">${esc(c.lawyer || '—')}</td>
-                        <td style="font-size:0.78rem;font-weight:700;color:${prioColor};">${esc(c.priority || '—')}</td>
-                        <td style="font-size:0.78rem;color:var(--silver);">${esc(c.status || '—')}</td>
-                        <td>${calEstado}</td>
-                        <td style="font-size:0.78rem;color:var(--silver);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.accion_requerida || '—')}</td>
-                        <td>${archivoLink}</td>
-                    </tr>`;
+                        ? `<a href="${esc(c.archivo_url)}" target="_blank" class="cal-file-btn">📎 Archivo</a>`
+                        : '';
+                    const diff = c.venc ? (new Date(c.venc) - new Date()) / (1000*60*60*24) : 999;
+                    return `<div class="cal-grid-row">
+                        <div class="cal-cell cal-cell-token">${esc(c.token || '—')}</div>
+                        <div class="cal-cell">
+                            <div class="cal-cell-partes">${esc(c.partes || '—')}</div>
+                            <div class="cal-cell-partes cal-cliente">${esc(c.cliente_a_defender || '—')}</div>
+                        </div>
+                        <div class="cal-cell cal-cell-venc ${diff < 15 ? 'deadline-near' : ''}">${esc(c.venc || '—')}</div>
+                        <div class="cal-cell cal-cell-rama">
+                            ${esc(c.rama || '—')}
+                            <div class="cal-tipo">${esc(c.tipo || '—')}</div>
+                        </div>
+                        <div class="cal-cell cal-cell-abogado">${esc(c.lawyer || '—')}</div>
+                        <div class="cal-cell"><span class="cal-prioridad ${prioKey}">${prioLabel}</span></div>
+                        <div class="cal-cell cal-estado-wrap">
+                            <span class="cal-estado">${esc(c.status || '—')}</span>
+                            ${calBadge}
+                        </div>
+                        <div class="cal-cell cal-action-wrap">
+                            <span class="cal-action-text">${esc(c.accion_requerida || '—')}</span>
+                            ${archivoLink}
+                        </div>
+                    </div>`;
                 }).join('');
             } else {
-                el('cal-content').innerHTML = `<tr><td colspan="12" style="padding:0;border:none;"><div class="empty-state-svg no-bg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>No hay vencimientos con casos asignados</span></div></td></tr>`;
+                el('cal-content').innerHTML = `<div class="empty-state-svg no-bg" style="padding:2rem 0;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>No hay vencimientos con casos asignados</span></div>`;
             }
 
             // Asignaciones

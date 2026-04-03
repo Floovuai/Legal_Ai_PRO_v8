@@ -718,24 +718,19 @@
                 <div class="header"><h1>Agenda Judicial</h1></div>
                 <div class="card">
                     <p class="card-title">Términos Procesales</p>
-                    <div class="table-scroll">
-                        <table>
-                            <thead><tr>
-                                <th>TOKEN</th>
-                                <th>VENCIMIENTO</th>
-                                <th>PARTES</th>
-                                <th>CLIENTE</th>
-                                <th>RAMA</th>
-                                <th>TIPO</th>
-                                <th>ABOGADO</th>
-                                <th>PRIORIDAD</th>
-                                <th>ESTADO</th>
-                                <th>CALENDARIO</th>
-                                <th>ACCIÓN REQUERIDA</th>
-                                <th>ARCHIVO</th>
-                            </tr></thead>
-                            <tbody id="cal-content"><tr><td colspan="12" class="empty-state">No hay vencimientos agendados</td></tr></tbody>
-                        </table>
+                    <!-- Header de columnas -->
+                    <div class="cal-grid-header">
+                        <span>TOKEN</span>
+                        <span>PARTES · CLIENTE</span>
+                        <span>VENCIMIENTO</span>
+                        <span>RAMA · TIPO</span>
+                        <span>ABOGADO</span>
+                        <span>PRIORIDAD</span>
+                        <span>ESTADO · CALENDARIO</span>
+                        <span>ACCIÓN / ARCHIVO</span>
+                    </div>
+                    <div id="cal-content">
+                        <div class="empty-state" style="padding:2rem 0;">No hay vencimientos agendados</div>
                     </div>
                 </div>
             </section>
