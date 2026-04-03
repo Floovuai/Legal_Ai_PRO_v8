@@ -1535,8 +1535,8 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 
 .cal-cell-partes .cal-cliente {
     font-size: 0.68rem;
-    color: var(--silver);
-    font-weight: 400;
+    color: var(--gold);
+    font-weight: 600;
     margin-top: 2px;
 }
 
@@ -1609,11 +1609,7 @@ a, button, .nav-item, .btn-premium, .btn-primary, .btn-outline, input[type='chec
 .cal-action-text {
     font-size: 0.7rem;
     color: var(--silver-lt);
-    line-height: 1.3;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    line-height: 1.4;
 }
 .cal-file-btn {
     display: inline-flex;
