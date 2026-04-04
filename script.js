@@ -117,25 +117,8 @@
 
         API_SECRET: 'sFD:qws/r>%:?v_HaQ14_hUGc*X0n*',
 
-        // ── Usuarios del sistema ──────────────────────────────
-        // Genera los hash con hash-generator.html
-        // Para agregar un cliente: duplica el bloque y pega el hash
-        USERS: [
-            {
-                username: 'floovu_admin',
-                hash: '0afe54449556726c7eaddb40475f6fd6941f4e85416cdc4a2ccf228254cea26c',
-                role: 'admin',
-                name: 'Floovu Automation',
-                email: 'floovuai@gmail.com'
-            },
-            {
-                username: 'usuario_test',
-                hash: 'd11263c74b1fb6bcd55659d6aafb347ea0dd0605d809594717f1d54efac2fd99',
-                role: 'operator',
-                name: 'Usuario test',
-                email: 'floovutest@gmail.com'
-            }
-        ],
+        // ── Usuarios: autenticación 100% via W2C (Sheet) ──────
+        USERS: [],
 
         // ── Webhooks de n8n ───────────────────────────────────
         WEBHOOKS: {
@@ -150,7 +133,7 @@
             CLIENT_SAVE:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
             CLIENT_DELETE:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente',
             GET_CLIENT_MAILS:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails',
-            GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log',
+            GET_DEBUG_LOG:      'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log-v2',
             SAVE_OBS:           'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-observacion',
             GET_OBS:            'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-observaciones',
             EDIT_OBS:           'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-editar-anotacion',
@@ -169,11 +152,7 @@
         // Usuarios cargados desde config.js — nunca hardcodeados en el HTML
         const FLOOVU_USERS = (window.FLOOVU_CONFIG && window.FLOOVU_CONFIG.USERS) || [];
 
-        // Pestañas visibles por rol
-        const ROLE_TABS = {
-            admin:    ['usuarios', 'version'],          // SOLO ve estas
-            operator: ['dashboard','asignaciones','expedientes','abogados','clientes','observaciones','bandeja','calendario','version']
-        };
+        // Pestañas visibles por rol (ADMIN_TABS y OPERATOR_TABS definidos abajo)
 
         // Pestañas que NADIE ve excepto admin
         const ADMIN_ONLY_TABS = ['usuarios'];
@@ -220,13 +199,7 @@
                         user = { username: data.username, name: data.nombre, email: data.email, role: data.rol, hash, _fromSheet: true };
                     }
                 }
-            } catch(e) { /* red caída — fallback local */ }
-
-            // Fallback: usuarios hardcodeados en config
-            if (!user) {
-                const localUser = FLOOVU_USERS.find(u => u.username === username && u.hash === hash);
-                if (localUser) user = localUser;
-            }
+            } catch(e) { /* red caída — login no disponible */ }
 
             if (!user) {
                 errEl.textContent = 'Usuario o contraseña incorrectos.';
@@ -380,12 +353,11 @@
             if (saved) {
                 try {
                     const user = JSON.parse(saved);
-                    const found = FLOOVU_USERS.find(u => u.username === user.username && u.role === user.role);
-                    if (found) {
-                        currentUser = found;
+                    if (user && user.username && user.role) {
+                        currentUser = user;
                         document.getElementById('login-overlay').classList.add('hidden');
                         document.getElementById('app-shell').style.display = 'grid';
-                        applyRoleUI(found);
+                        applyRoleUI(user);
                         return;
                     }
                 } catch(e) {}
@@ -434,7 +406,7 @@
         }
 
         // Helper centralizado para todos los fetch — añade el token de autenticación
-        // FIX-TIMEOUT: AbortController con 15s para evitar requests colgados
+        // FIX-TIMEOUT: AbortController con 60s para evitar requests colgados
         async function authFetch(url, options = {}) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 60000);
@@ -449,7 +421,7 @@
                 return res;
             } catch(e) {
                 clearTimeout(timer);
-                if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (15s). Verifica que n8n esté activo.');
+                if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (60s). Verifica que n8n esté activo.');
                 throw e;
             }
         }
@@ -630,7 +602,13 @@ async function loadRealData() {
                             date:         dateStr,
                             dateOnly:     dateStr.split(' ')[0] || new Date().toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'}),
                             rama:         row.Rama  || row.rama  || 'General',
-                            partes:       row.Partes || row.partes || row.nombre_cliente || row['Cliente a defender'] || row.asunto || row.subject || 'Caso sin clasificar',
+                            partes:       (() => {
+                                const p = row.Partes || row.partes || '';
+                                if (typeof p === 'string' && p.startsWith('[')) {
+                                    try { const arr = JSON.parse(p); if (Array.isArray(arr)) return arr.map(x => x.nombre || x).join(' vs '); } catch(e) {}
+                                }
+                                return p || row.nombre_cliente || row['Cliente a defender'] || row.asunto || row.subject || 'Caso sin clasificar';
+                            })(),
                             venc,
                             status:       (row['Estado Alerta'] || '').trim().toUpperCase() === 'PENDIENTE_ASIGNACION' ? 'PENDIENTE' : 'ASIGNADO',
                             es_nuevo_caso: (row['Es_Nuevo_Caso'] || row['es_nuevo_caso'] || '').toString().toUpperCase() === 'TRUE',
@@ -658,11 +636,20 @@ async function loadRealData() {
                             accion_requerida:     row['Acción Requerida'] || row['Accion Requerida'] || row['accion_requerida'] || '',
                             partes_array:         (() => {
                                 const p = row.Partes || row.partes || '';
-                                // Detectar separadores comunes en documentos legales
-                                const sep = p.match(/\s+(?:vs?\.?|contra|c\/)\s+/i);
-                                if (sep) return p.split(sep[0]).map(x => x.trim()).filter(Boolean);
-                                const byComma = p.split(/\s*,\s*/);
-                                return byComma.length >= 2 ? byComma.slice(0,2) : [p, ''];
+                                // Intentar parsear JSON (nuevo formato con identificación)
+                                if (typeof p === 'string' && p.startsWith('[')) {
+                                    try {
+                                        const parsed = JSON.parse(p);
+                                        if (Array.isArray(parsed)) return parsed;
+                                    } catch(e) {}
+                                }
+                                // Formato legacy: texto plano "Parte A vs Parte B"
+                                if (typeof p === 'object' && Array.isArray(p)) return p;
+                                const pStr = String(p);
+                                const sep = pStr.match(/\s+(?:vs?\.?|contra|c\/)\s+/i);
+                                if (sep) return pStr.split(sep[0]).map(x => ({ nombre: x.trim(), tipo_id: 'DESCONOCIDO', numero_id: 'DESCONOCIDO' })).filter(x => x.nombre);
+                                const byComma = pStr.split(/\s*,\s*/);
+                                return byComma.length >= 2 ? byComma.slice(0,2).map(x => ({ nombre: x, tipo_id: 'DESCONOCIDO', numero_id: 'DESCONOCIDO' })) : [{ nombre: pStr, tipo_id: 'DESCONOCIDO', numero_id: 'DESCONOCIDO' }];
                             })()
                         };
                     });
@@ -1015,15 +1002,25 @@ async function loadRealData() {
                             <p style="margin:0 0 10px;font-size:0.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;">🛡 Cliente a Defender</p>
                             ${(() => {
                                 const parts = c.partes_array || [];
-                                const p0 = parts[0] || c.partes || '';
-                                const p1 = parts[1] || '';
-                                // V2: Extraer NITs de cada parte si existen
-                                const nitsArray = c.nits_array || [];
-                                const nit0 = nitsArray[0] || c.nit || c.nit_cedula || '';
-                                const nit1 = nitsArray[1] || '';
-                                const mkNitBadge = (nit) => nit && nit !== 'DESCONOCIDO'
-                                    ? `<span style="font-size:0.65rem;color:rgba(212,175,55,0.7);font-weight:600;margin-left:8px;padding:2px 7px;background:rgba(212,175,55,0.1);border-radius:4px;border:1px solid rgba(212,175,55,0.2);">NIT: ${esc(nit)}</span>`
-                                    : `<span style="font-size:0.62rem;color:rgba(148,163,184,0.5);margin-left:8px;padding:2px 7px;background:rgba(255,255,255,0.03);border-radius:4px;font-style:italic;">Sin NIT</span>`;
+                                // V3: Partes como objetos con identificación integrada
+                                const getPartName = (part) => typeof part === 'object' ? (part.nombre || '') : String(part || '');
+                                const getPartId = (part) => {
+                                    if (typeof part !== 'object') return c.nit || c.nit_cedula || '';
+                                    return part.numero_id && part.numero_id !== 'DESCONOCIDO' ? part.numero_id : '';
+                                };
+                                const getPartIdType = (part) => {
+                                    if (typeof part !== 'object') return 'NIT';
+                                    return part.tipo_id || 'NIT';
+                                };
+                                const p0 = getPartName(parts[0]) || c.partes || '';
+                                const p1 = getPartName(parts[1]) || '';
+                                const nit0 = getPartId(parts[0]) || c.nit || c.nit_cedula || '';
+                                const nit1 = getPartId(parts[1]) || '';
+                                const type0 = getPartIdType(parts[0]);
+                                const type1 = getPartIdType(parts[1]);
+                                const mkNitBadge = (nit, tipo) => nit && nit !== 'DESCONOCIDO'
+                                    ? `<span style="font-size:0.65rem;color:rgba(212,175,55,0.7);font-weight:600;margin-left:8px;padding:2px 7px;background:rgba(212,175,55,0.1);border-radius:4px;border:1px solid rgba(212,175,55,0.2);">${esc(tipo)}: ${esc(nit)}</span>`
+                                    : `<span style="font-size:0.62rem;color:rgba(148,163,184,0.5);margin-left:8px;padding:2px 7px;background:rgba(255,255,255,0.03);border-radius:4px;font-style:italic;">Sin ID</span>`;
                                 const presel = c.cliente_a_defender || '';
                                 const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
                                 const sel1 = presel === p1 ? 'checked' : '';
@@ -1033,8 +1030,16 @@ async function loadRealData() {
                                         <span style="font-size:0.85rem;font-weight:600;color:#fff;line-height:1.3;word-break:break-word;overflow-wrap:anywhere;">${esc(val)}</span>${nitBadge}
                                     </label>`;
                                 let html = `<div style="display:flex;flex-direction:column;gap:8px;">`;
-                                if (p0) html += mkLabel(p0, sel0, mkNitBadge(nit0));
-                                if (p1) html += mkLabel(p1, sel1, mkNitBadge(nit1));
+                                if (p0) html += mkLabel(p0, sel0, mkNitBadge(nit0, type0));
+                                if (p1) html += mkLabel(p1, sel1, mkNitBadge(nit1, type1));
+                                // Partes adicionales (3+)
+                                for (let pi = 2; pi < parts.length; pi++) {
+                                    const pn = getPartName(parts[pi]);
+                                    const nitn = getPartId(parts[pi]);
+                                    const typen = getPartIdType(parts[pi]);
+                                    const seln = presel === pn ? 'checked' : '';
+                                    if (pn) html += mkLabel(pn, seln, mkNitBadge(nitn, typen));
+                                }
                                 html += `</div>`;
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
                                 return html;
@@ -1525,7 +1530,8 @@ async function loadRealData() {
         }
 
         async function eliminarUsuario(username) {
-            if (!confirm(`¿Eliminar al usuario @${username}? Esta acción no se puede deshacer.`)) return;
+            const ok = await floovuConfirm(`¿Eliminar al usuario @${username}? Esta acción no se puede deshacer.`);
+            if (!ok) return;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.DEL_USUARIO, {
@@ -2682,7 +2688,8 @@ async function loadRealData() {
 
         async function forceLogoutSession(username) {
             if (!window.firebaseForceLogout) return;
-            if (!confirm(`¿Cerrar sesión de @${username}?`)) return;
+            const ok = await floovuConfirm(`¿Cerrar sesión de @${username}?`);
+            if (!ok) return;
             try {
                 await window.firebaseForceLogout(username);
                 showToast(`✓ Sesión de @${username} cerrada`, 'ok');
@@ -3367,7 +3374,7 @@ async function loadRealData() {
             const prioridad = document.getElementById('bandeja-prioridad')?.value || '';
             const estado = document.getElementById('bandeja-estado')?.value || '';
             let filtered = bandejaData;
-            if (q) filtered = filtered.filter(r => JSON.stringify(r).toLowerCase().includes(q));
+            if (q) filtered = filtered.filter(r => [r.Token, r.token, r.Partes, r.partes, r.Rama, r.rama, r['Abogado asignado'], r['abogado_asignado'], r['Tipo de Documento'], r.tipo_documento, r.asunto, r['Cliente a defender']].some(v => v && String(v).toLowerCase().includes(q)));
             if (rama) filtered = filtered.filter(r => (r.Rama || r.rama || '') === rama);
             if (prioridad) filtered = filtered.filter(r => (r.Prioridad || r.prioridad || '') === prioridad);
             if (estado) filtered = filtered.filter(r => (r['Estado Alerta'] || r.estado_alerta || '').includes(estado));
