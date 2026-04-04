@@ -1017,18 +1017,24 @@ async function loadRealData() {
                                 const parts = c.partes_array || [];
                                 const p0 = parts[0] || c.partes || '';
                                 const p1 = parts[1] || '';
-                                const nit = c.nit ? `<span style="font-size:0.65rem;color:rgba(212,175,55,0.7);font-weight:600;margin-left:8px;padding:2px 7px;background:rgba(212,175,55,0.1);border-radius:4px;border:1px solid rgba(212,175,55,0.2);">${esc(c.nit)}</span>` : '';
+                                // V2: Extraer NITs de cada parte si existen
+                                const nitsArray = c.nits_array || [];
+                                const nit0 = nitsArray[0] || c.nit || c.nit_cedula || '';
+                                const nit1 = nitsArray[1] || '';
+                                const mkNitBadge = (nit) => nit && nit !== 'DESCONOCIDO'
+                                    ? `<span style="font-size:0.65rem;color:rgba(212,175,55,0.7);font-weight:600;margin-left:8px;padding:2px 7px;background:rgba(212,175,55,0.1);border-radius:4px;border:1px solid rgba(212,175,55,0.2);">NIT: ${esc(nit)}</span>`
+                                    : `<span style="font-size:0.62rem;color:rgba(148,163,184,0.5);margin-left:8px;padding:2px 7px;background:rgba(255,255,255,0.03);border-radius:4px;font-style:italic;">Sin NIT</span>`;
                                 const presel = c.cliente_a_defender || '';
                                 const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
                                 const sel1 = presel === p1 ? 'checked' : '';
-                                const mkLabel = (val, sel, extra='') => `
+                                const mkLabel = (val, sel, nitBadge) => `
                                     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.08);transition:all 0.2s;box-sizing:border-box;width:100%;" onmouseover="this.style.background='rgba(212,175,55,0.06)'" onmouseout="if(!this.querySelector('input').checked)this.style.background='rgba(255,255,255,0.03)'" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>{const l=r.closest('label');l.style.borderColor='rgba(255,255,255,0.08)';l.style.background='rgba(255,255,255,0.03)'});this.style.borderColor='var(--gold)';this.style.background='rgba(212,175,55,0.08)';">
                                         <input type="radio" name="cad-${tok}" value="${esc(val)}" ${sel} style="accent-color:var(--gold);flex-shrink:0;width:16px;height:16px;">
-                                        <span style="font-size:0.85rem;font-weight:600;color:#fff;line-height:1.3;word-break:break-word;overflow-wrap:anywhere;">${esc(val)}</span>${extra}
+                                        <span style="font-size:0.85rem;font-weight:600;color:#fff;line-height:1.3;word-break:break-word;overflow-wrap:anywhere;">${esc(val)}</span>${nitBadge}
                                     </label>`;
                                 let html = `<div style="display:flex;flex-direction:column;gap:8px;">`;
-                                if (p0) html += mkLabel(p0, sel0, nit);
-                                if (p1) html += mkLabel(p1, sel1);
+                                if (p0) html += mkLabel(p0, sel0, mkNitBadge(nit0));
+                                if (p1) html += mkLabel(p1, sel1, mkNitBadge(nit1));
                                 html += `</div>`;
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
                                 return html;
@@ -1326,9 +1332,7 @@ async function loadRealData() {
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
             // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
-            if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) {
-                showToast('El email del cliente no tiene un formato válido.', 'error'); return;
-            }
+            // V2: email del cliente ya no se captura aquí — se completa después en pestaña Clientes
 
             const overlay = document.getElementById('loader');
             const term    = document.getElementById('term');
@@ -4394,12 +4398,12 @@ ${casosHTML}
         // ── Expose functions to global scope ──
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
-        window.addClient = addClient;
         window.addLawyer = addLawyer;
         window.applyRoleUI = applyRoleUI;
         window.cargarAnotaciones = cargarAnotaciones;
         window.closeClientModal = closeClientModal;
         window.closePdfModal = closePdfModal;
+        window.confirmClientInfo = confirmClientInfo;
         window.confirmarEditarAnotacion = confirmarEditarAnotacion;
         window.confirmarEditarGroupAnotacion = confirmarEditarGroupAnotacion;
         window.crearUsuario = crearUsuario;
