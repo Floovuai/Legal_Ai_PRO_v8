@@ -456,35 +456,10 @@
             <section id="clientes" class="content-section">
                 <div class="header"><h1>Directorio de Clientes</h1></div>
 
-                <!-- Formulario nuevo cliente -->
-                <div class="card" style="margin-bottom:2rem;">
-                    <p class="card-title">Nuevo Cliente</p>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="new-cli-nombre">Nombre Completo</label>
-                            <input type="text" id="new-cli-nombre" placeholder="Ej: Carlos Restrepo Muñoz">
-                            <p style="margin:5px 0 0;font-size:0.72rem;color:var(--gold);line-height:1.4;">⚠️ Debe coincidir con como aparece en los documentos que envía.</p>
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="new-cli-nit">NIT / RUT / Cédula</label>
-                            <input type="text" id="new-cli-nit" placeholder="Ej: 900.123.456-7">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="new-cli-email">Email</label>
-                            <input type="email" id="new-cli-email" placeholder="cliente@empresa.com">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="new-cli-telefono">Teléfono</label>
-                            <input type="text" id="new-cli-telefono" placeholder="+57 300 000 0000">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="new-cli-notas">Notas</label>
-                            <input type="text" id="new-cli-notas" placeholder="Observaciones adicionales">
-                        </div>
-                        <div style="display:flex;align-items:flex-end;">
-                            <button class="btn-premium" style="width:100%;height:38px;" onclick="addClient()">➕ Guardar Cliente</button>
-                        </div>
-                    </div>
+                <!-- Información sobre creación automática de clientes -->
+                <div class="card" style="margin-bottom:2rem;border-left:3px solid #3b82f6;background:rgba(59,130,246,0.05);">
+                    <p class="card-title" style="color:#3b82f6;">ℹ️ Creación Automática de Clientes</p>
+                    <p style="margin:0;font-size:0.78rem;color:var(--silver);line-height:1.5;">Los clientes se crean automáticamente cuando confirmas una asignación en la pestaña <strong>Asignaciones</strong>. Los nuevos clientes aparecerán aquí con una alerta ⚠️ para que completes su información (email, teléfono).</p>
                 </div>
 
                 <!-- Tabla unificada -->
@@ -555,7 +530,8 @@
 
                         <div style="display:flex;gap:1rem;margin-top:1.5rem;">
                             <button class="btn-outline" style="flex:1" onclick="closeClientModal()">Cancelar</button>
-                            <button class="btn-premium" style="flex:1" onclick="saveClientEdit()">💾 Guardar Cambios</button>
+                            <button class="btn-premium" style="flex:1" id="btn-confirm-client" style="display:none;background:linear-gradient(135deg,#22c55e,#16a34a);" onclick="confirmClientInfo()">✓ Confirmar Información</button>
+                            <button class="btn-premium" style="flex:1" id="btn-save-client" onclick="saveClientEdit()">💾 Guardar Cambios</button>
                         </div>
                     </div>
                 </div>

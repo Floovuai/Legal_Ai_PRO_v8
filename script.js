@@ -1033,25 +1033,6 @@ async function loadRealData() {
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
                                 return html;
                             })()}
-                            <!-- Datos provisorios del cliente para confirmar en asignación -->
-                            <div class="asig-client-fields">
-                                <div>
-                                    <label for="asig-nit-${tok}">NIT / CÉDULA</label>
-                                    <input type="text" id="asig-nit-${tok}" placeholder="Ej: 900.123.456-7" value="${esc(String(c.nit || ''))}">
-                                </div>
-                                <div>
-                                    <label for="asig-email-${tok}">EMAIL DEL CLIENTE</label>
-                                    <input type="email" id="asig-email-${tok}" placeholder="cliente@empresa.com" value="${esc(c.email_cliente || '')}">
-                                </div>
-                                <div>
-                                    <label for="asig-tel-${tok}">TELÉFONO</label>
-                                    <input type="text" id="asig-tel-${tok}" placeholder="+57 300 000 0000">
-                                </div>
-                                <div>
-                                    <label for="asig-notas-${tok}">NOTAS</label>
-                                    <input type="text" id="asig-notas-${tok}" placeholder="Observaciones del cliente">
-                                </div>
-                            </div>
                         </div>
                         <div id="desc-panel-${tok}" class="asig-desc-panel" style="display:none;">
                             ${descFormatted}
@@ -1327,10 +1308,7 @@ async function loadRealData() {
             if (!caseItem) { showToast('Caso no encontrado. Recarga la página.', 'error'); return; }
 
             const lawyerName  = document.getElementById(`law-sel-${caseToken}`).value;
-            const clientEmail = document.getElementById(`asig-email-${caseToken}`)?.value?.trim() || '';
-            const clientNit   = document.getElementById(`asig-nit-${caseToken}`)?.value || caseItem.nit || '';
-            const clientTel   = document.getElementById(`asig-tel-${caseToken}`)?.value || '';
-            const clientNotas = document.getElementById(`asig-notas-${caseToken}`)?.value || '';
+            const clientNit   = caseItem.nit || '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
             // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
             // FIX V9: buscar radio en todo el documento, no solo en el scope del bloque
@@ -1375,14 +1353,11 @@ async function loadRealData() {
                             row_number:                  caseItem.row_number || parseInt(caseItem.token.replace('FLV-EX-', '')) || parseInt(caseItem.token) || 2,
                             'Nombre Cliente':            clienteADefender,
                             'Estado Alerta':             'ASIGNADO',
-                            email_cliente:               clientEmail,
                             nombre_cliente:              clienteADefender,
                             nombre_cliente_identificado: clienteADefender,
                             cliente_a_defender:          clienteADefender,
                             'Cliente a defender':        clienteADefender,
                             nit_cliente:                 clientNit,
-                            telefono_cliente:            clientTel,
-                            notas_cliente:               clientNotas,
                             abogado_responsable:         lawyerName,
                             abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
@@ -1407,7 +1382,7 @@ async function loadRealData() {
                     if (resData?.debug) log(`📡 ${resData.debug}`);
                     log(`✓ Informe enviado a ${lawyerObj.email}.`);
 
-                    // AUTOMATIC CLIENT SAVE TO DIRECTORY
+                    // AUTOMATIC CLIENT SAVE TO DIRECTORY (V2: sin email/tel, status='NUEVO')
                     try {
                         log(`Guardando cliente en el directorio...`);
                         const clientRes = await authFetch(N8N_CLIENT_SAVE, {
@@ -1415,11 +1390,13 @@ async function loadRealData() {
                             body: JSON.stringify({
                                 nombre: clienteADefender,
                                 nit: clientNit,
-                                email: clientEmail,
-                                telefono: clientTel,
-                                notas: clientNotas,
+                                email: '',
+                                telefono: '',
+                                notas: `Creado automáticamente desde asignación del caso ${caseItem.token}`,
                                 abogado: lawyerName,
-                                token: caseItem.token
+                                token: caseItem.token,
+                                _status: 'NUEVO',
+                                _source: 'asignaciones'
                             })
                         });
                         if (clientRes.ok) {
@@ -1431,28 +1408,6 @@ async function loadRealData() {
                         log(`⚠️ Aviso: No se pudo guardar cliente en directorio.`);
                     }
 
-                    // AUTOMATIC OBSERVATION SAVE TO ANOTACIONES SHEET
-                    if (clientNotas && clientNotas.trim() !== '') {
-                        try {
-                            log(`Guardando nota en Anotaciones...`);
-                            const WH = window.FLOOVU_CONFIG.WEBHOOKS;
-                            await authFetch(WH.SAVE_OBS || WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion'), {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    token: caseItem.token,
-                                    tipo: 'NOTA',
-                                    texto: clientNotas,
-                                    anotacion: clientNotas,
-                                    visibilidad: 'Interno',
-                                    operador: window.currentUser?.name || lawyerName || 'Asignador',
-                                    fecha: new Date().toLocaleString('es-CO')
-                                })
-                            });
-                            log(`✓ Nota guardada en hoja de Anotaciones.`);
-                        } catch(e) {
-                            log(`⚠️ Aviso: No se pudo registrar la nota de asignación.`);
-                        }
-                    }
 
                     log(`✓ Operación finalizada. Sincronizando datos...`);
                     setTimeout(() => {
@@ -1655,6 +1610,47 @@ async function loadRealData() {
             allClientRows = [...clients];
             renderClients(clients);
             logError(`✓ ${manualClients.length} del directorio + ${casesNuevos.length} del registro = ${clients.length} clientes.`);
+        }
+
+        // ══════════════════════════════════════════
+        // FUNCIONES DE SINCRONIZACIÓN V2
+        // ══════════════════════════════════════════
+
+        // Obtener datos del cliente desde el directorio (clients array)
+        function getClientDataFromDirectory(clienteName) {
+            const found = clients.find(c =>
+                (c.nombre || '').toLowerCase().trim() === (clienteName || '').toLowerCase().trim()
+            );
+            return found ? {
+                nit:      found.nit      || '—',
+                email:    found.email    || '—',
+                telefono: found.telefono || '—'
+            } : { nit: '—', email: '—', telefono: '—' };
+        }
+
+        // Sincronizar cambios de cliente a todas las pestañas
+        async function syncClientDataToAllTabs(clientName) {
+            if (!clientName || !clientName.trim()) return;
+
+            // 1. Obtener datos actualizados del cliente
+            const updatedClient = clients.find(c =>
+                c.nombre.toLowerCase().trim() === clientName.toLowerCase().trim()
+            );
+            if (!updatedClient) return;
+
+            // 2. Encontrar todos los casos asociados
+            const relatedCases = db.filter(c =>
+                (c.cliente_a_defender || '').toLowerCase().trim() ===
+                clientName.toLowerCase().trim()
+            );
+
+            // 3. Actualizar UI del Registro Legal si hay casos
+            if (relatedCases.length > 0) {
+                renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
+            }
+
+            // 4. Refrescar tabla de Clientes
+            renderClients(clients);
         }
 
         function filterClients(query) {
@@ -2030,33 +2026,6 @@ async function loadRealData() {
         }
 
 
-        async function addClient() {
-            const nombre   = document.getElementById('new-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
-            const nit      = document.getElementById('new-cli-nit').value.trim().replace(/[<>"'&]/g,'');
-            const email    = document.getElementById('new-cli-email').value.trim();
-            const telefono = document.getElementById('new-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
-            const notas    = document.getElementById('new-cli-notas').value.trim().replace(/[<>"'&]/g,'');
-            if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('El email no es válido.', 'error'); return; }
-            logError(`Guardando cliente: ${nombre}...`);
-            try {
-                const res = await authFetch(N8N_CLIENT_SAVE, {
-                    method: 'POST',
-                    body: JSON.stringify({ nombre, nit, email, telefono, notas })
-                });
-                if (res.ok) {
-                    showToast(`${nombre} guardado en el directorio.`, 'ok');
-                    logError(`✓ Cliente guardado en Google Sheets.`);
-                    ['new-cli-nombre','new-cli-nit','new-cli-email','new-cli-telefono','new-cli-notas'].forEach(id => {
-                        document.getElementById(id).value = '';
-                    });
-                    await loadClients();
-                } else {
-                    showToast(`Error del servidor: ${esc(String(res.status))}`, 'error');
-                }
-            } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
-        }
-
         function openClientModal(idx) {
             const c = allClientRows[idx];
             if (!c) return;
@@ -2076,9 +2045,20 @@ async function loadRealData() {
                     ).join('');
                 sel.value = c.abogado || '';
             }
+            // V2: Mostrar botón "Confirmar Información" solo si cliente es nuevo
+            const btnConfirm = document.getElementById('btn-confirm-client');
+            const btnSave = document.getElementById('btn-save-client');
+            if (c._status === 'NUEVO') {
+                if (btnConfirm) btnConfirm.style.display = 'block';
+                if (btnSave) btnSave.style.display = 'none';
+            } else {
+                if (btnConfirm) btnConfirm.style.display = 'none';
+                if (btnSave) btnSave.style.display = 'block';
+            }
             document.getElementById('client-edit-modal').classList.add('visible');
             // Guardar nombre globalmente y cargar observaciones relacionadas
             window._currentClientModalName = c.nombre || '';
+            window._currentClientIdx = idx;
             loadClientModalObservaciones(c.nombre || '');
         }
 
@@ -2285,10 +2265,59 @@ async function loadRealData() {
                     if (caseItem) caseItem.partes = nombre;
                 }
                 await loadClients();
+                // V2: Sincronizar cambios a todas las pestañas
+                await syncClientDataToAllTabs(nombre);
                 closeClientModal();
                 showToast(`${nombre} actualizado correctamente.`, 'ok');
                 logError('✓ Cliente actualizado.');
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
+        }
+
+        // V2: Confirmar información de cliente nuevo
+        async function confirmClientInfo() {
+            const idx      = parseInt(document.getElementById('edit-client-idx').value);
+            const original = allClientRows[idx];
+            const nombre   = document.getElementById('edit-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
+            const nit      = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
+            const email    = document.getElementById('edit-cli-email').value.trim();
+            const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
+
+            // Validación de campos obligatorios
+            if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
+            if (!nit) { showToast('El NIT/Cédula es obligatorio.', 'error'); return; }
+            if (!email) { showToast('El email es obligatorio.', 'error'); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
+
+            logError(`Confirmando información de cliente: ${nombre}...`);
+            try {
+                const res = await authFetch(N8N_CLIENT_SAVE, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        nombre,
+                        nit,
+                        email,
+                        telefono: telefono || '',
+                        notas: original.notas || '',
+                        abogado: original.abogado || '',
+                        _status: 'CONFIRMADO'
+                    })
+                });
+                if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
+
+                // Actualizar estado en memoria
+                original._status = 'CONFIRMADO';
+                allClientRows[idx] = original;
+                clients = clients.map(c => c.nombre === nombre ? original : c);
+
+                await loadClients();
+                await syncClientDataToAllTabs(nombre);
+                closeClientModal();
+                showToast(`✓ ${nombre} confirmado exitosamente.`, 'ok');
+                logError('✓ Cliente confirmado y guardado.');
+            } catch(e) {
+                showToast('No se pudo conectar con n8n.', 'error');
+                logError(`Error: ${e.message}`);
+            }
         }
 
         async function deleteClient(idx) {
@@ -3394,6 +3423,9 @@ async function loadRealData() {
                     ? `<span style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;margin-left:8px;">⚡ NUEVO</span>`
                     : '';
 
+                // V2: Obtener datos del cliente desde el directorio
+                const clientData = getClientDataFromDirectory(clienteNombre);
+
                 // Último vencimiento del grupo (más próximo con color)
                 const vencimientos = casos
                     .map(c => c.venc)
@@ -3420,13 +3452,20 @@ async function loadRealData() {
                                 border:1px solid rgba(201,168,76,0.2);border-radius:10px 10px 0 0;
                                 padding:12px 16px;cursor:pointer;user-select:none;
                                 transition:background 0.2s;">
-                        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap;">
                             <span style="font-size:1.1rem;">👤</span>
-                            <span style="font-size:0.95rem;font-weight:700;color:var(--white);
-                                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                ${esc(clienteNombre)}
-                            </span>
-                            <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;white-space:nowrap;margin-left:5px;">
+                            <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
+                                <span style="font-size:0.95rem;font-weight:700;color:var(--white);
+                                             white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    ${esc(clienteNombre)}
+                                </span>
+                                <span style="font-size:0.65rem;color:rgba(226,232,240,0.7);display:flex;gap:12px;flex-wrap:wrap;">
+                                    <span title="NIT/Cédula">🔍 ${esc(clientData.nit)}</span>
+                                    <span title="Email">📧 ${esc(clientData.email)}</span>
+                                    <span title="Teléfono">📱 ${esc(clientData.telefono)}</span>
+                                </span>
+                            </div>
+                            <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;white-space:nowrap;">
                                 ${casos.map(c => c.token).filter(Boolean).join(' / ')}
                             </span>
                             ${badgeNuevo}
