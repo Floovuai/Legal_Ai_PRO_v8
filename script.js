@@ -620,6 +620,7 @@ async function loadRealData() {
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
                             tipo:         row['Tipo de Documento'] || row.tipo_documento || '',
+                            asunto:       row['Asunto'] || row['asunto'] || row['Subject'] || row['subject'] || '',
                             dictamen:     row['Dictamen JSON'] || row['Dictamen Json'] || row['dictamen_json'] || null,
                             informe_html:         (() => {
                                 let html = row.informe_html || row['Informe HTML'] || '';
@@ -631,7 +632,8 @@ async function loadRealData() {
                             })(),
                             messageId:            row['Email ID'] || row.messageId || row['messageId'] || '',
                             archivo_url:          row['Archivo URL'] || row.archivo_url || '',
-                            nit:                  row['NIT_Cedula'] || row['NIT'] || row['nit'] || row['nit_cedula'] || row['nit_cliente'] || '',
+                            nit:                  row['NIT'] || row['nit'] || row['nit_cliente'] || '',
+                            cedula:               row['Cedula'] || row['cedula'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
                             accion_requerida:     row['Acción Requerida'] || row['Accion Requerida'] || row['accion_requerida'] || '',
                             partes_array:         (() => {
@@ -1005,7 +1007,7 @@ async function loadRealData() {
                                 // V3: Partes como objetos con identificación integrada
                                 const getPartName = (part) => typeof part === 'object' ? (part.nombre || '') : String(part || '');
                                 const getPartId = (part) => {
-                                    if (typeof part !== 'object') return c.nit || c.nit_cedula || '';
+                                    if (typeof part !== 'object') return c.nit || c.cedula || '';
                                     return part.numero_id && part.numero_id !== 'DESCONOCIDO' ? part.numero_id : '';
                                 };
                                 const getPartIdType = (part) => {
@@ -1014,7 +1016,7 @@ async function loadRealData() {
                                 };
                                 const p0 = getPartName(parts[0]) || c.partes || '';
                                 const p1 = getPartName(parts[1]) || '';
-                                const nit0 = getPartId(parts[0]) || c.nit || c.nit_cedula || '';
+                                const nit0 = getPartId(parts[0]) || c.nit || c.cedula || '';
                                 const nit1 = getPartId(parts[1]) || '';
                                 const type0 = getPartIdType(parts[0]);
                                 const type1 = getPartIdType(parts[1]);
@@ -1320,6 +1322,7 @@ async function loadRealData() {
 
             const lawyerName  = document.getElementById(`law-sel-${caseToken}`).value;
             const clientNit   = caseItem.nit || '';
+            const clientCedula = caseItem.cedula || '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
             // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
             // FIX V9: buscar radio en todo el documento, no solo en el scope del bloque
@@ -1399,6 +1402,7 @@ async function loadRealData() {
                             body: JSON.stringify({
                                 nombre: clienteADefender,
                                 nit: clientNit,
+                                cedula: clientCedula,
                                 email: '',
                                 telefono: '',
                                 notas: `Creado automáticamente desde asignación del caso ${caseItem.token}`,
@@ -1572,7 +1576,8 @@ async function loadRealData() {
                     manualClients = (Array.isArray(raw) ? raw : (raw ? [raw] : []))
                         .map(c => ({
                             nombre:   c.nombre   || c.Nombre   || c.NOMBRE   || '',
-                            nit:      c.nit      || c.NIT      || c.nit_cedula || c.NIT_Cedula || c.nit_cliente || '',
+                            nit:      c.nit      || c.NIT      || c.nit_cliente || '',
+                            cedula:   c.cedula   || c.Cedula   || '',
                             email:    c.email    || c.Email    || c.EMAIL    || '',
                             telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || '',
                             notas:    c.notas    || c.Notas    || c.NOTAS    || '',
@@ -3935,7 +3940,7 @@ async function loadRealData() {
                             <div style="min-width:0;flex:1;">
                                 <p style="margin:0;font-size:0.8rem;color:var(--white);font-weight:600;
                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                                    📄 ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` — ${esc(c.asunto)}` : ''}
                                 </p>
                                 <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">
                                     📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `• Vence: ${esc(c.venc)}` : ''}
@@ -4241,7 +4246,7 @@ async function loadRealData() {
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
                         <div style="min-width:0;flex:1;">
                             <p style="margin:0;font-size:0.82rem;color:var(--white);font-weight:600;">
-                                📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                                📄 ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` — ${esc(c.asunto)}` : ''}
                             </p>
                             <p style="margin:3px 0 0;font-size:0.72rem;color:var(--silver);">
                                 📅 ${esc(c.date)}${c.venc && c.venc !== 'S/D' ? ` &nbsp;•&nbsp; Vence: <strong style="color:#f97316;">${esc(c.venc)}</strong>` : ''}
@@ -4357,7 +4362,7 @@ ${casosHTML}
             const filtered = _expAllData.filter(c =>
                 String(c.token || '').toLowerCase().includes(query) ||
                 String(c.cliente_a_defender || c.partes || '').toLowerCase().includes(query) ||
-                String(c.nit || c.nit_cedula || '').toLowerCase().includes(query) ||
+                String(c.nit || c.cedula || '').toLowerCase().includes(query) ||
                 String(c.lawyer || '').toLowerCase().includes(query) ||
                 String(c.tipo || '').toLowerCase().includes(query) ||
                 String(c.rama || '').toLowerCase().includes(query)
