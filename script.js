@@ -1071,21 +1071,21 @@ async function loadRealData() {
                                 const presel = c.cliente_a_defender || '';
                                 const sel0 = presel === p0 ? 'checked' : (!presel && p0 ? 'checked' : '');
                                 const sel1 = presel === p1 ? 'checked' : '';
-                                const mkLabel = (val, sel, nitBadge) => `
+                                const mkLabel = (val, sel, nitBadge, nitVal, tipoId) => `
                                     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.08);transition:all 0.2s;box-sizing:border-box;width:100%;" onmouseover="this.style.background='rgba(212,175,55,0.06)'" onmouseout="if(!this.querySelector('input').checked)this.style.background='rgba(255,255,255,0.03)'" onclick="this.querySelector('input').checked=true;document.querySelectorAll('[name=cad-${tok}]').forEach(r=>{const l=r.closest('label');l.style.borderColor='rgba(255,255,255,0.08)';l.style.background='rgba(255,255,255,0.03)'});this.style.borderColor='var(--gold)';this.style.background='rgba(212,175,55,0.08)';">
-                                        <input type="radio" name="cad-${tok}" value="${esc(val)}" ${sel} style="accent-color:var(--gold);flex-shrink:0;width:16px;height:16px;">
+                                        <input type="radio" name="cad-${tok}" value="${esc(val)}" ${sel} data-nit="${esc(nitVal||'')}" data-tipo="${esc(tipoId||'')}" style="accent-color:var(--gold);flex-shrink:0;width:16px;height:16px;">
                                         <span style="font-size:0.85rem;font-weight:600;color:#fff;line-height:1.3;word-break:break-word;overflow-wrap:anywhere;">${esc(val)}</span>${nitBadge}
                                     </label>`;
                                 let html = `<div style="display:flex;flex-direction:column;gap:8px;">`;
-                                if (p0) html += mkLabel(p0, sel0, mkNitBadge(nit0, type0));
-                                if (p1) html += mkLabel(p1, sel1, mkNitBadge(nit1, type1));
+                                if (p0) html += mkLabel(p0, sel0, mkNitBadge(nit0, type0), nit0, type0);
+                                if (p1) html += mkLabel(p1, sel1, mkNitBadge(nit1, type1), nit1, type1);
                                 // Partes adicionales (3+)
                                 for (let pi = 2; pi < parts.length; pi++) {
                                     const pn = getPartName(parts[pi]);
                                     const nitn = getPartId(parts[pi]);
                                     const typen = getPartIdType(parts[pi]);
                                     const seln = presel === pn ? 'checked' : '';
-                                    if (pn) html += mkLabel(pn, seln, mkNitBadge(nitn, typen));
+                                    if (pn) html += mkLabel(pn, seln, mkNitBadge(nitn, typen), nitn, typen);
                                 }
                                 html += `</div>`;
                                 if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
@@ -1366,8 +1366,13 @@ async function loadRealData() {
             if (!caseItem) { showToast('Caso no encontrado. Recarga la página.', 'error'); return; }
 
             const lawyerName  = document.getElementById(`law-sel-${caseToken}`).value;
-            const clientNit   = caseItem.nit || '';
-            const clientCedula = caseItem.cedula || '';
+            // Leer ID del radio seleccionado — determina NIT o Cédula según la parte elegida
+            const _selectedRadio = document.querySelector(`input[name="cad-${caseToken}"]:checked`)
+                                || document.querySelector(`input[name="cad-${caseToken}"]`);
+            const _selectedIdVal  = (_selectedRadio && _selectedRadio.dataset.nit)  || '';
+            const _selectedIdTipo = (_selectedRadio && _selectedRadio.dataset.tipo) || 'NIT';
+            const clientNit    = _selectedIdTipo === 'NIT'    ? _selectedIdVal : '';
+            const clientCedula = _selectedIdTipo === 'CEDULA' ? _selectedIdVal : '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
             // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
             // FIX V9: buscar radio en todo el documento, no solo en el scope del bloque
@@ -1415,6 +1420,8 @@ async function loadRealData() {
                             cliente_a_defender:          clienteADefender,
                             'Cliente a defender':        clienteADefender,
                             nit_cliente:                 clientNit,
+                            cedula_cliente:              clientCedula,
+                            tipo_identificacion:         _selectedIdTipo,
                             abogado_responsable:         lawyerName,
                             abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
