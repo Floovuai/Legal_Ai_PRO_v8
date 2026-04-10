@@ -115,7 +115,7 @@
 
         ACCOUNT_EMAIL: 'floovuai@gmail.com',
 
-        API_SECRET: 'sFD:qws/r>%:?v_HaQ14_hUGc*X0n*',
+        // API_SECRET eliminado — auth via JWT
 
         // ── Usuarios: autenticación 100% via W2C (Sheet) ──────
         USERS: [],
@@ -158,6 +158,7 @@
         const ADMIN_ONLY_TABS = ['usuarios'];
 
         let currentUser = null;
+        let _floovuJWT = null; // JWT en memoria — se pierde al refrescar (por diseño)
 
         async function sha256(msg) {
             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
@@ -188,7 +189,7 @@
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await fetch(WH.LOGIN_SHEET, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-floovu-secret': window.FLOOVU_CONFIG.API_SECRET },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, hash })
                 });
                 if (res.ok) {
@@ -196,6 +197,7 @@
                     let data = {};
                     try { if (_txt) data = JSON.parse(_txt); } catch(_e) {}
                     if (data.ok) {
+                        _floovuJWT = data.token || null;
                         user = { username: data.username, name: data.nombre, email: data.email, role: data.rol, hash, _fromSheet: true };
                     }
                 }
@@ -332,6 +334,7 @@
             if (typeof window.firebaseCloseSession === 'function') {
                 window.firebaseCloseSession();
             }
+            _floovuJWT = null;
             localStorage.removeItem('floovu_user');
             currentUser = null;
             document.getElementById('login-overlay').classList.remove('hidden');
@@ -348,7 +351,14 @@
         });
 
         // Verificar sesión guardada al cargar
+        // JWT vive en memoria — al refrescar se pierde → forzar re-login
         window.addEventListener('load', () => {
+            if (!_floovuJWT) {
+                localStorage.removeItem('floovu_user');
+                document.getElementById('login-overlay').classList.remove('hidden');
+                document.getElementById('app-shell').style.display = 'none';
+                return;
+            }
             const saved = localStorage.getItem('floovu_user');
             if (saved) {
                 try {
@@ -362,7 +372,6 @@
                     }
                 } catch(e) {}
             }
-            // Sin sesión — mostrar login
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('app-shell').style.display = 'none';
         });
@@ -379,7 +388,7 @@
         if (_accountEl) _accountEl.textContent = window.FLOOVU_CONFIG.ACCOUNT_EMAIL || '—';
 
         // URLs y token cargados desde config.js (no está en el repo)
-        const { WEBHOOKS, API_SECRET } = window.FLOOVU_CONFIG;
+        const { WEBHOOKS } = window.FLOOVU_CONFIG;
 
         const N8N_ASSIGN_WEBHOOK  = WEBHOOKS.ASSIGN;
         const N8N_LAWYER_SAVE     = WEBHOOKS.LAWYER_SAVE;
@@ -406,22 +415,57 @@
         }
 
         // Helper centralizado para todos los fetch — añade el token de autenticación
+        // FIX-CORS: JWT se envía TANTO en header Authorization como en body._jwt
+        // para compatibilidad con CORS preflight. n8n usa el que esté disponible.
         // FIX-TIMEOUT: AbortController con 60s para evitar requests colgados
-        async function authFetch(url, options = {}) {
+        // FIX-RETRY: reintenta una vez ante error de red/CORS
+        async function authFetch(url, options = {}, _retryCount = 0) {
+            if (!_floovuJWT) {
+                doLogout();
+                throw new Error('Sesión expirada. Inicia sesión nuevamente.');
+            }
+
+            // Inyectar JWT en el body si es POST con JSON body
+            if (options.method === 'POST' && options.body) {
+                try {
+                    const bodyObj = JSON.parse(options.body);
+                    bodyObj._jwt = _floovuJWT;
+                    options = { ...options, body: JSON.stringify(bodyObj) };
+                } catch(_) { /* body no es JSON, enviar sin _jwt */ }
+            } else if (options.method === 'POST' && !options.body) {
+                options = { ...options, body: JSON.stringify({ _jwt: _floovuJWT }) };
+            }
+
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 60000);
             const headers = {
                 'Content-Type': 'application/json',
-                'x-floovu-secret': API_SECRET,
+                'Authorization': 'Bearer ' + _floovuJWT,
                 ...(options.headers || {})
             };
             try {
                 const res = await fetch(url, { ...options, headers, signal: controller.signal });
                 clearTimeout(timer);
+                if (res.status === 401) {
+                    logError(`⚠️ Error 401 en ${url.split('/').pop()} — sesión expirada o JWT inválido.`);
+                    _floovuJWT = null; doLogout(); return res;
+                }
                 return res;
             } catch(e) {
                 clearTimeout(timer);
                 if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (60s). Verifica que n8n esté activo.');
+
+                // Reintento automático: si es error de red/CORS y es el primer intento
+                if (_retryCount === 0 && (e.message.includes('Failed to fetch') || e.name === 'TypeError')) {
+                    logError(`⚠️ Error de red en ${url.split('/').pop()}, reintentando en 2s...`);
+                    await new Promise(r => setTimeout(r, 2000));
+                    return authFetch(url, options, 1);
+                }
+
+                // Error descriptivo para CORS
+                if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+                    throw new Error(`Error de conexión con n8n (${url.split('/').pop()}). Posible problema de CORS o servidor caído.`);
+                }
                 throw e;
             }
         }
