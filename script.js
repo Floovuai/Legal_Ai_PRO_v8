@@ -488,7 +488,7 @@
                 loadUsuariosAdmin();
                 updateUI();
             } else if (tabId === 'clientes') {
-                if (clients.length > 0) { renderClients(); } else { loadClients(); }
+                loadClients();
             } else if (tabId === 'dashboard' || tabId === 'expedientes' || tabId === 'asignaciones') {
                 loadRealData();
                 if (tabId === 'dashboard' && currentUser) showDashboardForRole(currentUser.role);
