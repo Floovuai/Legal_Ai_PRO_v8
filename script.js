@@ -615,7 +615,7 @@ async function loadRealData() {
                             desc,
                             token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
                             row_number:   row.row_number || null,
-                            lawyer:       row['Abogado asignado'] || row['Abogado Asignado'] || row['abogado_asignado'] || row['abogado_responsable'] || null,
+                            lawyer:       (() => { const raw = row['Abogado asignado'] || row['Abogado Asignado'] || row['abogado_asignado'] || row['abogado_responsable'] || null; if (raw && typeof raw === 'object') { if (raw.value && Array.isArray(raw.value) && raw.value[0]) return raw.value[0].name || raw.value[0].address || ''; return raw.name || raw.text || JSON.stringify(raw); } return raw; })(),
                             priority:     row.Prioridad || row.prioridad || 'Media',
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
@@ -1006,17 +1006,18 @@ async function loadRealData() {
                                 const parts = c.partes_array || [];
                                 // V3: Partes como objetos con identificación integrada
                                 const getPartName = (part) => typeof part === 'object' ? (part.nombre || '') : String(part || '');
+                                const esEmpresa = (nombre) => /\b(S\.?A\.?S\.?|S\.?A\.?|LTDA|LLC|INC|CORP|CIA|SOCIEDAD|EMPRESA|INVERSIONES|CONSTRUCTORA|COMERCIALIZADORA|GRUPO|FUNDACION|ASOCIACION|COOPERATIVA|E\.?S\.?P\.?)\b/i.test(nombre || '');
                                 const getPartId = (part) => {
                                     if (typeof part !== 'object') return c.nit || c.cedula || '';
                                     return part.numero_id && part.numero_id !== 'DESCONOCIDO' ? part.numero_id : '';
                                 };
                                 const getPartIdType = (part) => {
                                     if (typeof part !== 'object') return 'NIT';
-                                    return part.tipo_id || 'NIT';
+                                    return esEmpresa(part.nombre || '') ? 'NIT' : 'CEDULA';
                                 };
                                 const p0 = getPartName(parts[0]) || c.partes || '';
                                 const p1 = getPartName(parts[1]) || '';
-                                const nit0 = getPartId(parts[0]) || c.nit || c.cedula || '';
+                                const nit0 = getPartId(parts[0]) || (getPartIdType(parts[0]) === 'NIT' ? c.nit : c.cedula) || '';
                                 const nit1 = getPartId(parts[1]) || '';
                                 const type0 = getPartIdType(parts[0]);
                                 const type1 = getPartIdType(parts[1]);
@@ -1592,12 +1593,13 @@ async function loadRealData() {
             // Combinar con casos del Registro Legal
             const casesAsClients = db
                 .filter(c => {
-                    const n = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '';
-                    return n && n.trim() !== '' && n !== '—';
+                    const p0 = c.partes_array && c.partes_array[0];
+                    const n = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || '';
+                    return n && String(n).trim() !== '' && n !== '—';
                 })
                 .map(c => {
-                // Usar cliente_a_defender si existe, sino primera parte de "partes"
-                const clienteName = c.cliente_a_defender || (c.partes_array && c.partes_array[0]) || c.partes || '—';
+                const p0 = c.partes_array && c.partes_array[0];
+                const clienteName = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || '—';
                 const datosIncompletos = !c.nit || c.nit === 'DESCONOCIDO';
                 const abogadoAsignado = c.lawyer && c.lawyer !== 'PENDIENTE' && c.lawyer !== 'Pendiente' ? c.lawyer : '';
                 return {
