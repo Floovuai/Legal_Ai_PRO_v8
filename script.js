@@ -1651,7 +1651,7 @@ async function loadRealData() {
                 .map(c => {
                 const p0 = c.partes_array && c.partes_array[0];
                 const clienteName = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || '—';
-                const datosIncompletos = !c.nit || c.nit === 'DESCONOCIDO';
+                const datosIncompletos = (!c.nit || c.nit === 'DESCONOCIDO') && (!c.cedula || c.cedula === 'DESCONOCIDO');
                 const abogadoAsignado = c.lawyer && c.lawyer !== 'PENDIENTE' && c.lawyer !== 'Pendiente' ? c.lawyer : '';
                 return {
                     nombre:   clienteName,
@@ -1759,7 +1759,7 @@ async function loadRealData() {
                                 ${esc(c.nombre || '—')}
                                 ${c._incompleto ? '<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px;">⚠ Datos incompletos — actualizar</div>' : ''}
                             </td>
-                            <td style="color:${!c.nit || c.nit === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || '—')}</td>
+                            <td style="color:${(!c.nit && !c.cedula) || (c.nit === '—' && !c.cedula) ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || c.cedula || '—')}</td>
                             <td style="color:${!c.email || c.email === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || '—')}</td>
                             <td style="color:${!c.telefono || c.telefono === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || '—')}</td>
                             <td>
@@ -2100,7 +2100,7 @@ async function loadRealData() {
             document.getElementById('edit-client-idx').value    = idx;
             document.getElementById('edit-client-source').value = c._source || 'directorio';
             document.getElementById('edit-cli-nombre').value    = c.nombre   || '';
-            document.getElementById('edit-cli-nit').value       = c.nit      || '';
+            document.getElementById('edit-cli-nit').value       = c.nit || c.cedula || '';
             document.getElementById('edit-cli-email').value     = c.email    || '';
             document.getElementById('edit-cli-telefono').value  = c.telefono || '';
             document.getElementById('edit-cli-notas').value     = c.notas    || '';
