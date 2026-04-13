@@ -1422,6 +1422,8 @@ async function loadRealData() {
                             nit_cliente:                 clientNit,
                             cedula_cliente:              clientCedula,
                             tipo_identificacion:         _selectedIdTipo,
+                            email_cliente:               caseItem.email_cliente || caseItem['email cliente'] || '',
+                            telefono_cliente:            caseItem.telefono || caseItem['Teléfono'] || '',
                             abogado_responsable:         lawyerName,
                             abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
