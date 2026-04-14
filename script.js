@@ -2351,7 +2351,6 @@ async function loadRealData() {
             logError(`Actualizando: ${nombre}...`);
             try {
                 // Unificar edición: primero eliminar el registro viejo, luego crear el nuevo
-                // Identificar por NIT original O por nombre original como fallback
                 const deleteKey = original.nit || original.nombre;
                 if (deleteKey) {
                     try {
@@ -2364,13 +2363,26 @@ async function loadRealData() {
                         logError(`Aviso: delete previo falló (${delErr.message}), continuando con save...`);
                     }
                 }
-                // Guardar el registro actualizado con todos los campos
+                
                 const estado = original.estado || original._status || 'DIRECTORIO';
+                const finalEstado = estado === 'NUEVO' ? 'CONFIRMADO' : estado;
+                const token = original.token || ''; // Extraer token p/ backend
+                
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST', body: JSON.stringify({
-                        nombre, nit, email, telefono, notas, abogado,
-                        estado: estado === 'NUEVO' ? 'CONFIRMADO' : estado,
-                        _status: estado === 'NUEVO' ? 'CONFIRMADO' : estado,
+                        nombre, 
+                        nit, 
+                        cedula: nit, // Mapeo dual para n8n
+                        email, 
+                        'Correo electrónico': email,
+                        correo_electronico: email,
+                        telefono, 
+                        notas, 
+                        abogado,
+                        estado: finalEstado,
+                        _status: finalEstado,
+                        token, 
+                        Token: token,
                         nit_original: original.nit || '',
                         nombre_original: original.nombre || ''
                     })
@@ -2382,7 +2394,6 @@ async function loadRealData() {
                     if (caseItem) caseItem.partes = nombre;
                 }
                 await loadClients();
-                // V2: Sincronizar cambios a todas las pestañas
                 await syncClientDataToAllTabs(nombre);
                 closeClientModal();
                 showToast(`${nombre} actualizado correctamente.`, 'ok');
@@ -2420,17 +2431,24 @@ async function loadRealData() {
                     }
                 }
 
+                const token = original.token || ''; // Extraer token p/ backend
+
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST',
                     body: JSON.stringify({
                         nombre,
                         nit,
+                        cedula: nit, // Mapeo dual para n8n
                         email,
+                        'Correo electrónico': email,
+                        correo_electronico: email,
                         telefono: telefono || '',
                         notas: original.notas || '',
                         abogado: original.abogado || '',
                         estado: 'CONFIRMADO',
                         _status: 'CONFIRMADO',
+                        token, 
+                        Token: token,
                         nit_original: original.nit || '',
                         nombre_original: original.nombre || ''
                     })
