@@ -1637,6 +1637,7 @@ async function loadRealData() {
                             notas:    c.notas    || c.Notas    || c.NOTAS    || '',
                             abogado:  c.abogado  || c.Abogado  || c['Abogado Asignado'] || c.abogado_asignado || '',
                             estado:   c.estado   || c.Estado   || 'DIRECTORIO',
+                            _status:  c._status  || c.status   || c.Estado   || c.estado || '',
                             _source:  'directorio'
                         }))
                         .filter(c => c.nombre && c.nombre.trim() !== '');
@@ -2118,7 +2119,8 @@ async function loadRealData() {
             // V2: Mostrar botón "Confirmar Información" solo si cliente es nuevo
             const btnConfirm = document.getElementById('btn-confirm-client');
             const btnSave = document.getElementById('btn-save-client');
-            if (c._status === 'NUEVO') {
+            const isNuevo = c._status === 'NUEVO' || c.estado === 'NUEVO';
+            if (isNuevo) {
                 if (btnConfirm) btnConfirm.style.display = 'block';
                 if (btnSave) btnSave.style.display = 'none';
             } else {
@@ -2321,12 +2323,30 @@ async function loadRealData() {
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
             try {
-                // Unificar edición: siempre actualizar la hoja CLIENTES
-                if (original.nit) {
-                    await authFetch(N8N_CLIENT_DELETE, { method: 'POST', body: JSON.stringify({ nit: original.nit }) });
+                // Unificar edición: primero eliminar el registro viejo, luego crear el nuevo
+                // Identificar por NIT original O por nombre original como fallback
+                const deleteKey = original.nit || original.nombre;
+                if (deleteKey) {
+                    try {
+                        const delRes = await authFetch(N8N_CLIENT_DELETE, {
+                            method: 'POST',
+                            body: JSON.stringify({ nit: original.nit || '', nombre: original.nombre || '' })
+                        });
+                        logError(`Delete previo: ${delRes.status}`);
+                    } catch(delErr) {
+                        logError(`Aviso: delete previo falló (${delErr.message}), continuando con save...`);
+                    }
                 }
+                // Guardar el registro actualizado con todos los campos
+                const estado = original.estado || original._status || 'DIRECTORIO';
                 const res = await authFetch(N8N_CLIENT_SAVE, {
-                    method: 'POST', body: JSON.stringify({ nombre, nit, email, telefono, notas, abogado })
+                    method: 'POST', body: JSON.stringify({
+                        nombre, nit, email, telefono, notas, abogado,
+                        estado: estado === 'NUEVO' ? 'CONFIRMADO' : estado,
+                        _status: estado === 'NUEVO' ? 'CONFIRMADO' : estado,
+                        nit_original: original.nit || '',
+                        nombre_original: original.nombre || ''
+                    })
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
@@ -2360,6 +2380,19 @@ async function loadRealData() {
 
             logError(`Confirmando información de cliente: ${nombre}...`);
             try {
+                // Eliminar registro viejo antes de guardar el actualizado
+                const deleteKey = original.nit || original.nombre;
+                if (deleteKey) {
+                    try {
+                        await authFetch(N8N_CLIENT_DELETE, {
+                            method: 'POST',
+                            body: JSON.stringify({ nit: original.nit || '', nombre: original.nombre || '' })
+                        });
+                    } catch(delErr) {
+                        logError(`Aviso: delete previo falló (${delErr.message}), continuando...`);
+                    }
+                }
+
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST',
                     body: JSON.stringify({
@@ -2369,13 +2402,17 @@ async function loadRealData() {
                         telefono: telefono || '',
                         notas: original.notas || '',
                         abogado: original.abogado || '',
-                        _status: 'CONFIRMADO'
+                        estado: 'CONFIRMADO',
+                        _status: 'CONFIRMADO',
+                        nit_original: original.nit || '',
+                        nombre_original: original.nombre || ''
                     })
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
                 // Actualizar estado en memoria
                 original._status = 'CONFIRMADO';
+                original.estado = 'CONFIRMADO';
                 allClientRows[idx] = original;
                 clients = clients.map(c => c.nombre === nombre ? original : c);
 
