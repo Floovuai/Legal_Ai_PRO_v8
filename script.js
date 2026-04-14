@@ -669,6 +669,17 @@ async function loadRealData() {
                             informe_html:         (() => {
                                 let html = row.informe_html || row['Informe HTML'] || '';
                                 let tok = row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00');
+                                let archivoUrl = row['Archivo URL'] || row.archivo_url || '';
+                                
+                                // Limpiar sintaxis rota de n8n que se filtra en el HTML
+                                html = html.replace(/' \+ \(\$\('Parsear Caso[\s\S]*?\) \+ '/g, '');
+                                html = html.replace(/' \+ \(\$\('Parsear Caso[\s\S]*?(?:\: ""|\: '')\) \+ '/g, '');
+
+                                // Añadir el botón correcto si existe URL
+                                if (archivoUrl && !html.includes('Descargar Documento Original')) {
+                                    html += `<br><br><div style="text-align:center; padding: 10px;"><a href="${archivoUrl}" target="_blank" style="background-color: #F4D03F; color: #1B2631; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📎 Descargar Documento Original</a></div>`;
+                                }
+
                                 if (html && html.includes('Abogado Asignado') && !html.includes('>Token</td>')) {
                                     html = html.replace(/(<tr><td[^>]*>Abogado Asignado<\/td>)/, `<tr><td style="padding:10px;font-weight:bold;color:#495057;border-bottom:1px solid #eee;width:150px;">Token</td><td style="padding:10px;border-bottom:1px solid #eee;font-weight:bold;font-family:monospace;color:#2980b9;">${tok}</td></tr>$1`);
                                 }
