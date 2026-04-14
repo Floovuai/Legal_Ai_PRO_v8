@@ -1681,22 +1681,38 @@ async function loadRealData() {
             allClientRows = [...clients];
             renderClients(clients);
             logError(`✓ ${manualClients.length} del directorio + ${casesNuevos.length} del registro = ${clients.length} clientes.`);
+
+            // V2: Re-render expedientes para que muestren la cédula, email y teléfono cargados desde el directorio
+            if (db && db.length > 0 && typeof renderExpedientesCards === 'function') {
+                renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
+            }
         }
 
         // ══════════════════════════════════════════
         // FUNCIONES DE SINCRONIZACIÓN V2
         // ══════════════════════════════════════════
 
-        // Obtener datos del cliente desde el directorio (clients array)
+        // Obtener datos del cliente desde el directorio (clients array) + caso (db) como fallback
         function getClientDataFromDirectory(clienteName) {
+            // 1. Buscar en el directorio de clientes
             const found = clients.find(c =>
                 (c.nombre || '').toLowerCase().trim() === (clienteName || '').toLowerCase().trim()
             );
-            return found ? {
-                nit:      found.nit      || '—',
-                email:    found.email    || '—',
-                telefono: found.telefono || '—'
-            } : { nit: '—', email: '—', telefono: '—' };
+            // 2. Buscar en los datos del caso (db) como fallback
+            const caseMatch = db.find(c =>
+                (c.cliente_a_defender || c.partes || '').toLowerCase().trim() === (clienteName || '').toLowerCase().trim()
+            );
+
+            // 3. Merge: priorizar directorio, fallback al caso
+            const nit = (found && found.nit && found.nit !== '—') ? found.nit
+                      : (found && found.cedula) ? found.cedula
+                      : (caseMatch && caseMatch.nit && caseMatch.nit !== 'DESCONOCIDO') ? caseMatch.nit
+                      : (caseMatch && caseMatch.cedula && caseMatch.cedula !== 'DESCONOCIDO') ? caseMatch.cedula
+                      : '—';
+            const email = (found && found.email && found.email !== '—') ? found.email : '—';
+            const telefono = (found && found.telefono && found.telefono !== '—') ? found.telefono : '—';
+
+            return { nit, email, telefono };
         }
 
         // Sincronizar cambios de cliente a todas las pestañas
