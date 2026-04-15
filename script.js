@@ -1,4 +1,4 @@
-// ============================================
+﻿// ============================================
 // FLOOVU Legal AI PRO V8 - Application Script
 // ============================================
 
@@ -22,7 +22,7 @@
             var FB_USER  = null;
             var FB_HB    = null;
 
-            // ── Registrar sesión ──
+            // â”€â”€ Registrar sesiÃ³n â”€â”€
             window.firebaseRegisterSession = async function(username, profile) {
                 FB_USER = username;
                 var ref  = FB_DB.ref('sessions/' + username);
@@ -57,7 +57,7 @@
                 return { blocked: false };
             };
 
-            // ── Cerrar sesión ──
+            // â”€â”€ Cerrar sesiÃ³n â”€â”€
             window.firebaseCloseSession = async function() {
                 if (FB_HB) clearInterval(FB_HB);
                 if (FB_USER) {
@@ -68,18 +68,18 @@
                 FB_USER = null;
             };
 
-            // ── Forzar cierre ──
+            // â”€â”€ Forzar cierre â”€â”€
             window.firebaseForceLogout = async function(username) {
                 await FB_DB.ref('sessions/' + username).remove();
             };
 
-            // ── Obtener sesiones ──
+            // â”€â”€ Obtener sesiones â”€â”€
             window.firebaseGetSessions = async function() {
                 var snap = await FB_DB.ref('sessions').once('value');
                 return snap.exists() ? snap.val() : {};
             };
 
-            // ── Expulsión ──
+            // â”€â”€ ExpulsiÃ³n â”€â”€
             window.firebaseHandleExpulsion = function() {
                 if (typeof currentUser !== 'undefined') currentUser = null;
                 var ov = document.getElementById('login-overlay');
@@ -87,10 +87,10 @@
                 if (ov) ov.classList.remove('hidden');
                 if (ap) ap.style.display = 'none';
                 if (typeof showToast === 'function')
-                    showToast('⚠️ Sesión cerrada — se inició sesión desde otro dispositivo', 'error');
+                    showToast('âš ï¸ SesiÃ³n cerrada â€” se iniciÃ³ sesiÃ³n desde otro dispositivo', 'error');
             };
 
-            // ── Escucha en tiempo real → panel admin ──
+            // â”€â”€ Escucha en tiempo real â†’ panel admin â”€â”€
             window.fbWatchSessions = function() {
                 FB_DB.ref('sessions').on('value', function(snap) {
                     var sessions = snap.exists() ? snap.val() : {};
@@ -101,26 +101,26 @@
                 });
             };
 
-            console.log('[Floovu] Firebase ✓ listo');
+            console.log('[Floovu] Firebase âœ“ listo');
         } catch(e) {
             console.warn('[Floovu] Firebase no disponible:', e.message);
         }
     });
 
 // --- Configuration ---
-    // ══════════════════════════════════════════════════════════
-    // FLOOVU Legal AI PRO V8 — Configuración integrada
-    // ══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // FLOOVU Legal AI PRO V8 â€” ConfiguraciÃ³n integrada
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     window.FLOOVU_CONFIG = {
 
         ACCOUNT_EMAIL: 'floovuai@gmail.com',
 
-        // API_SECRET eliminado — auth via JWT
+        // API_SECRET eliminado â€” auth via JWT
 
-        // ── Usuarios: autenticación 100% via W2C (Sheet) ──────
+        // â”€â”€ Usuarios: autenticaciÃ³n 100% via W2C (Sheet) â”€â”€â”€â”€â”€â”€
         USERS: [],
 
-        // ── Webhooks de n8n ───────────────────────────────────
+        // â”€â”€ Webhooks de n8n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         WEBHOOKS: {
             ASSIGN:        'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-caso',
             LAWYER_SAVE:   'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-abogado',
@@ -146,19 +146,19 @@
     };
 
 // --- Main Application ---
-        // ══════════════════════════════════════════
-        // SISTEMA DE AUTENTICACIÓN Y ROLES
-        // ══════════════════════════════════════════
-        // Usuarios cargados desde config.js — nunca hardcodeados en el HTML
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // SISTEMA DE AUTENTICACIÃ“N Y ROLES
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // Usuarios cargados desde config.js â€” nunca hardcodeados en el HTML
         const FLOOVU_USERS = (window.FLOOVU_CONFIG && window.FLOOVU_CONFIG.USERS) || [];
 
-        // Pestañas visibles por rol (ADMIN_TABS y OPERATOR_TABS definidos abajo)
+        // PestaÃ±as visibles por rol (ADMIN_TABS y OPERATOR_TABS definidos abajo)
 
-        // Pestañas que NADIE ve excepto admin
+        // PestaÃ±as que NADIE ve excepto admin
         const ADMIN_ONLY_TABS = ['usuarios'];
 
         let currentUser = null;
-        let _floovuJWT = null; // JWT en memoria — se pierde al refrescar (por diseño)
+        let _floovuJWT = null; // JWT en memoria â€” se pierde al refrescar (por diseÃ±o)
 
         async function sha256(msg) {
             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
@@ -173,7 +173,7 @@
 
             errEl.style.display = 'none';
             if (!username || !password) {
-                errEl.textContent = 'Completa usuario y contraseña.';
+                errEl.textContent = 'Completa usuario y contraseÃ±a.';
                 errEl.style.display = 'block';
                 return;
             }
@@ -201,10 +201,10 @@
                         user = { username: data.username, name: data.nombre, email: data.email, role: data.rol, hash, _fromSheet: true };
                     }
                 }
-            } catch(e) { /* red caída — login no disponible */ }
+            } catch(e) { /* red caÃ­da â€” login no disponible */ }
 
             if (!user) {
-                errEl.textContent = 'Usuario o contraseña incorrectos.';
+                errEl.textContent = 'Usuario o contraseÃ±a incorrectos.';
                 errEl.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Ingresar al Sistema';
@@ -212,10 +212,10 @@
             }
 
             // Login exitoso
-            // Verificar sesión única con Firebase
+            // Verificar sesiÃ³n Ãºnica con Firebase
             if (typeof window.firebaseRegisterSession === 'function') {
                 const btn = document.getElementById('login-btn');
-                if (btn) { btn.disabled = true; btn.textContent = 'Verificando sesión...'; }
+                if (btn) { btn.disabled = true; btn.textContent = 'Verificando sesiÃ³n...'; }
                 try {
                     // Pasar perfil completo a Firebase
                     window._sessionProfile = { name: user.name, email: user.email || '', role: user.role };
@@ -224,15 +224,15 @@
                         const errEl = document.getElementById('login-error');
                         if (errEl) {
                             errEl.style.display = 'block';
-                            errEl.textContent = '⚠️ Ya hay una sesión activa en otro dispositivo. Cerrá sesión allí primero.';
+                            errEl.textContent = 'âš ï¸ Ya hay una sesiÃ³n activa en otro dispositivo. CerrÃ¡ sesiÃ³n allÃ­ primero.';
                         }
-                        if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema →'; }
+                        if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema â†’'; }
                         return;
                     }
                 } catch(e) {
                     console.warn('Firebase session check failed, continuing:', e);
                 }
-                if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema →'; }
+                if (btn) { btn.disabled = false; btn.textContent = 'Acceder al Sistema â†’'; }
             }
 
             currentUser = user;
@@ -246,7 +246,7 @@
             btn.textContent = 'Ingresar al Sistema';
         }
 
-        // Pestañas que ve cada rol
+        // PestaÃ±as que ve cada rol
         const OPERATOR_TABS = ['dashboard','asignaciones','expedientes','abogados','clientes','calendario','version'];
         const ADMIN_TABS    = ['dashboard','usuarios','version'];
 
@@ -260,7 +260,7 @@
                 badgeEl.className = `role-badge ${user.role}`;
             }
 
-            // Control de pestañas por rol
+            // Control de pestaÃ±as por rol
             const allowedTabs = user.role === 'admin' ? ADMIN_TABS : OPERATOR_TABS;
             const allTabs = document.querySelectorAll('.nav-item[data-tab]');
             allTabs.forEach(tab => {
@@ -268,7 +268,7 @@
                 tab.style.display = allowedTabs.includes(tabId) ? 'flex' : 'none';
             });
 
-            // Control de secciones de navegación (Agency no ve Core/Tools)
+            // Control de secciones de navegaciÃ³n (Agency no ve Core/Tools)
             const navSectionCore = document.getElementById('nav-section-core');
             const navSectionTools = document.getElementById('nav-section-tools');
             if (user.role === 'admin') {
@@ -286,18 +286,18 @@
                 }
             });
 
-            // Activar la primera pestaña permitida
+            // Activar la primera pestaÃ±a permitida
             const firstTab = document.querySelector(`.nav-item[data-tab="${allowedTabs[0]}"]`);
             if (firstTab) firstTab.click();
 
-            // Versión de Capacidades según rol
+            // VersiÃ³n de Capacidades segÃºn rol
             renderCapacidadesForRole(user.role);
 
             // Iniciar el sistema
             init();
             // Auto-refresh de servicios para admin
             if (user.role === 'admin') startHealthAutoRefresh();
-            // Mostrar dashboard según rol
+            // Mostrar dashboard segÃºn rol
             showDashboardForRole(user.role);
         }
 
@@ -305,21 +305,21 @@
             const versionSection = document.getElementById('version');
             if (!versionSection) return;
 
-            // Título de versión
+            // TÃ­tulo de versiÃ³n
             const headerH1 = versionSection.querySelector('h1');
             if (headerH1) headerH1.textContent = `Capacidades del Sistema (${role === 'admin' ? 'v8 Full' : 'v8 Pro'})`;
 
             if (role === 'operator') {
-                // Ocultar todas las tarjetas técnicas marcadas
+                // Ocultar todas las tarjetas tÃ©cnicas marcadas
                 const techCards = versionSection.querySelectorAll('.version-tech-card');
                 techCards.forEach(c => c.style.display = 'none');
 
-                // Personalizar el resumen de arquitectura para que sea menos técnico y más enfocado en beneficios
+                // Personalizar el resumen de arquitectura para que sea menos tÃ©cnico y mÃ¡s enfocado en beneficios
                 const archCard = versionSection.querySelector('.card:not(.version-tech-card)');
                 if (archCard) {
                     const archText = archCard.querySelector('p:not(.card-title)');
                     if (archText) {
-                        archText.innerHTML = '<b>FLOOVU Legal AI Pro V8</b> es tu asistente inteligente de alto rendimiento. El sistema centraliza la recepción de correos, analiza tus documentos con IA para extraer estrategias clave y gestiona tu agenda judicial automáticamente, permitiéndote enfocarte 100% en la labor jurídica estratégica.';
+                        archText.innerHTML = '<b>FLOOVU Legal AI Pro V8</b> es tu asistente inteligente de alto rendimiento. El sistema centraliza la recepciÃ³n de correos, analiza tus documentos con IA para extraer estrategias clave y gestiona tu agenda judicial automÃ¡ticamente, permitiÃ©ndote enfocarte 100% en la labor jurÃ­dica estratÃ©gica.';
                     }
                 }
             } else {
@@ -330,7 +330,7 @@
         }
 
         function doLogout() {
-            // Cerrar sesión en Firebase
+            // Cerrar sesiÃ³n en Firebase
             if (typeof window.firebaseCloseSession === 'function') {
                 window.firebaseCloseSession();
             }
@@ -350,8 +350,8 @@
             }
         });
 
-        // Verificar sesión guardada al cargar
-        // JWT vive en memoria — al refrescar se pierde → forzar re-login
+        // Verificar sesiÃ³n guardada al cargar
+        // JWT vive en memoria â€” al refrescar se pierde â†’ forzar re-login
         window.addEventListener('load', () => {
             if (!_floovuJWT) {
                 localStorage.removeItem('floovu_user');
@@ -377,17 +377,17 @@
         });
 
                 let db = [];
-        let lawyers = [];      // Se carga desde Google Sheets — no hardcodeado en config.js
+        let lawyers = [];      // Se carga desde Google Sheets â€” no hardcodeado en config.js
         let clients = [];      // Directorio unificado (manual + casos)
-        let allClientRows = []; // Cache para búsqueda
+        let allClientRows = []; // Cache para bÃºsqueda
         let observacionesData = [];
         let bandejaData = [];
 
         // Mostrar email de cuenta en sidebar (viene de config.js, no del HTML)
         const _accountEl = document.getElementById('sidebar-account-email');
-        if (_accountEl) _accountEl.textContent = window.FLOOVU_CONFIG.ACCOUNT_EMAIL || '—';
+        if (_accountEl) _accountEl.textContent = window.FLOOVU_CONFIG.ACCOUNT_EMAIL || 'â€”';
 
-        // URLs y token cargados desde config.js (no está en el repo)
+        // URLs y token cargados desde config.js (no estÃ¡ en el repo)
         const { WEBHOOKS } = window.FLOOVU_CONFIG;
 
         const N8N_ASSIGN_WEBHOOK  = WEBHOOKS.ASSIGN;
@@ -403,7 +403,7 @@
         const N8N_GET_CLIENT_MAILS  = WEBHOOKS.GET_CLIENT_MAILS;
         const N8N_GET_DEBUG_LOG     = WEBHOOKS.GET_DEBUG_LOG;
 
-        // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
+        // Sanitizador contra XSS â€” escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
             if (str === null || str === undefined) return '';
             return String(str)
@@ -414,15 +414,15 @@
                 .replace(/'/g, '&#39;');
         }
 
-        // Helper centralizado para todos los fetch — añade el token de autenticación
-        // FIX-CORS: JWT se envía TANTO en header Authorization como en body._jwt
-        // para compatibilidad con CORS preflight. n8n usa el que esté disponible.
+        // Helper centralizado para todos los fetch â€” aÃ±ade el token de autenticaciÃ³n
+        // FIX-CORS: JWT se envÃ­a TANTO en header Authorization como en body._jwt
+        // para compatibilidad con CORS preflight. n8n usa el que estÃ© disponible.
         // FIX-TIMEOUT: AbortController con 60s para evitar requests colgados
         // FIX-RETRY: reintenta una vez ante error de red/CORS
         async function authFetch(url, options = {}, _retryCount = 0) {
             if (!_floovuJWT) {
                 doLogout();
-                throw new Error('Sesión expirada. Inicia sesión nuevamente.');
+                throw new Error('SesiÃ³n expirada. Inicia sesiÃ³n nuevamente.');
             }
 
             // Inyectar JWT en el body si es POST con JSON body
@@ -447,31 +447,31 @@
                 const res = await fetch(url, { ...options, headers, signal: controller.signal });
                 clearTimeout(timer);
                 if (res.status === 401) {
-                    logError(`⚠️ Error 401 en ${url.split('/').pop()} — sesión expirada o JWT inválido.`);
+                    logError(`âš ï¸ Error 401 en ${url.split('/').pop()} â€” sesiÃ³n expirada o JWT invÃ¡lido.`);
                     _floovuJWT = null; doLogout(); return res;
                 }
                 return res;
             } catch(e) {
                 clearTimeout(timer);
-                if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (60s). Verifica que n8n esté activo.');
+                if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado (60s). Verifica que n8n estÃ© activo.');
 
-                // Reintento automático: si es error de red/CORS y es el primer intento
+                // Reintento automÃ¡tico: si es error de red/CORS y es el primer intento
                 if (_retryCount === 0 && (e.message.includes('Failed to fetch') || e.name === 'TypeError')) {
-                    logError(`⚠️ Error de red en ${url.split('/').pop()}, reintentando en 2s...`);
+                    logError(`âš ï¸ Error de red en ${url.split('/').pop()}, reintentando en 2s...`);
                     await new Promise(r => setTimeout(r, 2000));
                     return authFetch(url, options, 1);
                 }
 
                 // Error descriptivo para CORS
                 if (e.message.includes('Failed to fetch') || e.name === 'TypeError') {
-                    throw new Error(`Error de conexión con n8n (${url.split('/').pop()}). Posible problema de CORS o servidor caído.`);
+                    throw new Error(`Error de conexiÃ³n con n8n (${url.split('/').pop()}). Posible problema de CORS o servidor caÃ­do.`);
                 }
                 throw e;
             }
         }
 
         document.querySelectorAll('.nav-item').forEach(i => i.onclick = () => {
-            // Verificar que el tab está permitido para el rol actual
+            // Verificar que el tab estÃ¡ permitido para el rol actual
             const tabId = i.dataset.tab;
             const allowed = currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia') ? ADMIN_TABS : OPERATOR_TABS;
             if (!allowed.includes(tabId)) return;
@@ -497,7 +497,7 @@
             }
         });
 
-        // Caché de elementos DOM estáticos (F5-02)
+        // CachÃ© de elementos DOM estÃ¡ticos (F5-02)
         const _els = {};
         function el(id) {
             if (!_els[id]) _els[id] = document.getElementById(id);
@@ -506,10 +506,10 @@
 
         // Carga el directorio de abogados directamente desde la hoja ABOGADOS
         // n8n (nodo Normalizar Abogados) ya devuelve: { name, email, especialidad }
-        // También soporta columnas crudas del sheet: Nombre | Email | Especialidad | Estado
+        // TambiÃ©n soporta columnas crudas del sheet: Nombre | Email | Especialidad | Estado
         async function loadLawyers() {
             const container = document.getElementById('lawyer-list-full');
-            if (container) container.innerHTML = `<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando directorio...</p>`;
+            if (container) container.innerHTML = `<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">â³ Cargando directorio...</p>`;
 
             try {
                 const res = await authFetch(N8N_GET_LAWYERS, { method: 'POST' });
@@ -519,14 +519,14 @@
                         const txt = await res.text();
                         rawData = txt ? JSON.parse(txt) : [];
                     } catch(parseErr) {
-                        logError(`⚠️ Error parseando respuesta de abogados: ${parseErr.message}`);
+                        logError(`âš ï¸ Error parseando respuesta de abogados: ${parseErr.message}`);
                     }
 
                     const rows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
 
                     // FIX-LAW-1: acepta tanto la salida normalizada de n8n (name/email/especialidad)
                     // como las columnas crudas del sheet (Nombre/Email/Especialidad).
-                    // FIX-LAW-2: el filtro de Estado ya lo aplica n8n; aquí solo descartamos filas vacías.
+                    // FIX-LAW-2: el filtro de Estado ya lo aplica n8n; aquÃ­ solo descartamos filas vacÃ­as.
                     // FIX-LAW-3: email ya NO es obligatorio para no perder abogados sin email en el sheet.
                     lawyers = rows
                         .map(row => ({
@@ -534,28 +534,28 @@
                             email:        row['email']        || row['Email']        || '',
                             especialidad: row['especialidad'] || row['Especialidad'] || ''
                         }))
-                        .filter(l => l.name.trim()); // solo descartar filas completamente vacías
+                        .filter(l => l.name.trim()); // solo descartar filas completamente vacÃ­as
 
                     renderLawyers();
-                    updateUI(); // refrescar dropdowns de asignación con los nuevos abogados
-                    logError(`✓ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
+                    updateUI(); // refrescar dropdowns de asignaciÃ³n con los nuevos abogados
+                    logError(`âœ“ ${lawyers.length} abogados cargados desde hoja ABOGADOS.`);
                 } else {
                     logError(`Error al cargar abogados: HTTP ${res.status}`);
-                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ No se pudo conectar con n8n (${res.status}).</p>`;
+                    if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">âš ï¸ No se pudo conectar con n8n (${res.status}).</p>`;
                 }
             } catch(e) {
                 logError(`Error al cargar abogados: ${e.message}`);
-                if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">⚠️ Sin conexión con n8n.</p>`;
+                if (container) container.innerHTML = `<p style="color:#ef4444;font-size:0.85rem;text-align:center;padding:2rem;">âš ï¸ Sin conexiÃ³n con n8n.</p>`;
             }
         }
 
-        // B5 — renderPartialAlerts y openPartialClientForm eliminados
+        // B5 â€” renderPartialAlerts y openPartialClientForm eliminados
         // Los datos del cliente ahora se confirman directamente en la tarjeta de Asignaciones
 
 async function loadRealData() {
-            el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">⏳ Sincronizando...</td></tr>`;
+            el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--silver);padding:2rem;font-size:0.85rem;">â³ Sincronizando...</td></tr>`;
             const expContainer = document.getElementById('exp-cards-container');
-            if (expContainer) expContainer.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>Cargando...</div>`;
+            if (expContainer) expContainer.innerHTML = `<div class="empty-state"><span class="empty-icon">ðŸ“</span>Cargando...</div>`;
             logError("Sincronizando base de datos real...");
             try {
                 const res = await authFetch(N8N_GET_DATA, { method: 'POST' });
@@ -566,19 +566,19 @@ async function loadRealData() {
                         const txt = await res.text();
                         rawData = txt ? JSON.parse(txt) : [];
                     } catch(parseErr) {
-                        logError(`⚠️ Respuesta no es JSON válido: ${parseErr.message}`);
-                        el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Respuesta inválida de n8n.</td></tr>`;
+                        logError(`âš ï¸ Respuesta no es JSON vÃ¡lido: ${parseErr.message}`);
+                        el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">âš ï¸ Respuesta invÃ¡lida de n8n.</td></tr>`;
                         const _expParse = document.getElementById('exp-cards-container');
-                        if (_expParse) _expParse.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Error de formato.</div>`;
+                        if (_expParse) _expParse.innerHTML = `<div class="empty-state" style="color:#ef4444;">âš ï¸ Error de formato.</div>`;
                         return;
                     }
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
                     db = normalizedRows.map(row => {
-                        // FASE 2: leer fecha de vencimiento desde múltiples campos posibles
+                        // FASE 2: leer fecha de vencimiento desde mÃºltiples campos posibles
                         const venc = row['Fecha de Vencimiento'] || row['vencimiento'] ||
                                      row['vencimiento_explicito'] || row['Vencimiento'] || 'S/D';
 
-                        // FASE 3: parser robusto de fechas — normaliza CUALQUIER formato a DD/MM/AAAA HH:mm
+                        // FASE 3: parser robusto de fechas â€” normaliza CUALQUIER formato a DD/MM/AAAA HH:mm
                         const fechaRaw = row.Fecha || row.fecha || '';
                         const dateStr = (() => {
                             if (!fechaRaw) return new Date().toLocaleString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
@@ -596,7 +596,7 @@ async function loadRealData() {
                                 // Primero intenta con coma opcional
                                 const engMatch = raw.match(/^([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})/);
                                 if (engMatch) { const p = new Date(engMatch[1]); if (!isNaN(p.getTime())) d = p; }
-                                // Si aún no, busca el patrón en cualquier parte y extrae
+                                // Si aÃºn no, busca el patrÃ³n en cualquier parte y extrae
                                 if (!d || isNaN(d.getTime())) {
                                     const looseMon = raw.match(/([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})/);
                                     if (looseMon) { const p = new Date(`${looseMon[1]} ${looseMon[2]}, ${looseMon[3]}`); if (!isNaN(p.getTime())) d = p; }
@@ -619,16 +619,16 @@ async function loadRealData() {
                             return d.getHours() || d.getMinutes() ? `${fecha} ${hora}` : fecha;
                         })();
 
-                        // FASE 4: score robusto — acepta string, number, con o sin tilde
-                        const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
+                        // FASE 4: score robusto â€” acepta string, number, con o sin tilde
+                        const scoreRaw = row['Score Auto-EvaluaciÃ³n'] || row['Score Auto-Evaluacion'] ||
                                          row['Score IA'] || row['Score_IA'] || row['score_ia'] ||
                                          row['score'] || row['Score'] || row.score || '0';
-                        // Score viene del sheet como string 0-100 — normalizar a escala 0-10
+                        // Score viene del sheet como string 0-100 â€” normalizar a escala 0-10
                         let scoreParsed = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
                         // Si viene en escala 0-100 (ej: 85), convertir a 0-10 (ej: 8.5)
                         const score = scoreParsed > 10 ? parseFloat((scoreParsed / 10).toFixed(1)) : scoreParsed;
 
-                        // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
+                        // FASE 7: limpiar el resumen â€” quitar el bloque DATA, quitar markdown **
                         let desc = row['Resumen del Documento'] || row['resumen'] || '';
                         // Eliminar bloque [[[DATA_START]]]...[[[DATA_END]]]
                         desc = desc.replace(/\[\[\[DATA_START\]\]\][\s\S]*?\[\[\[DATA_END\]\]\]/g, '').trim();
@@ -675,9 +675,9 @@ async function loadRealData() {
                                 html = html.replace(/' \+ \(\$\('Parsear Caso[\s\S]*?\) \+ '/g, '');
                                 html = html.replace(/' \+ \(\$\('Parsear Caso[\s\S]*?(?:\: ""|\: '')\) \+ '/g, '');
 
-                                // Añadir el botón correcto si existe URL
+                                // AÃ±adir el botÃ³n correcto si existe URL
                                 if (archivoUrl && !html.includes('Descargar Documento Original')) {
-                                    html += `<br><br><div style="text-align:center; padding: 10px;"><a href="${archivoUrl}" target="_blank" style="background-color: #F4D03F; color: #1B2631; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">📎 Descargar Documento Original</a></div>`;
+                                    html += `<br><br><div style="text-align:center; padding: 10px;"><a href="${archivoUrl}" target="_blank" style="background-color: #F4D03F; color: #1B2631; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-family: sans-serif; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">ðŸ“Ž Descargar Documento Original</a></div>`;
                                 }
 
                                 if (html && html.includes('Abogado Asignado') && !html.includes('>Token</td>')) {
@@ -690,10 +690,10 @@ async function loadRealData() {
                             nit:                  row['NIT'] || row['nit'] || row['nit_cliente'] || '',
                             cedula:               row['Cedula'] || row['cedula'] || '',
                             cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
-                            accion_requerida:     row['Acción Requerida'] || row['Accion Requerida'] || row['accion_requerida'] || '',
+                            accion_requerida:     row['AcciÃ³n Requerida'] || row['Accion Requerida'] || row['accion_requerida'] || '',
                             partes_array:         (() => {
                                 const p = row.Partes || row.partes || '';
-                                // Intentar parsear JSON (nuevo formato con identificación)
+                                // Intentar parsear JSON (nuevo formato con identificaciÃ³n)
                                 if (typeof p === 'string' && p.startsWith('[')) {
                                     try {
                                         const parsed = JSON.parse(p);
@@ -711,18 +711,18 @@ async function loadRealData() {
                         };
                     });
                     updateUI();
-                    logError(`✓ ${db.length} casos cargados desde Google Sheets.`);
+                    logError(`âœ“ ${db.length} casos cargados desde Google Sheets.`);
                 } else {
-                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
+                    el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">âš ï¸ Error al conectar con n8n (${res.status}). Reintenta.</td></tr>`;
                     const _expErr = document.getElementById('exp-cards-container');
-                    if (_expErr) _expErr.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Error de sincronización.</div>`;
-                    logError(`Error de sincronización: HTTP ${res.status}`);
+                    if (_expErr) _expErr.innerHTML = `<div class="empty-state" style="color:#ef4444;">âš ï¸ Error de sincronizaciÃ³n.</div>`;
+                    logError(`Error de sincronizaciÃ³n: HTTP ${res.status}`);
                 }
             } catch(e) {
-                el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">⚠️ Sin conexión con n8n.</td></tr>`;
+                el('dash-rows').innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:1.5rem;font-size:0.85rem;">âš ï¸ Sin conexiÃ³n con n8n.</td></tr>`;
                 const _expErr2 = document.getElementById('exp-cards-container');
-                if (_expErr2) _expErr2.innerHTML = `<div class="empty-state" style="color:#ef4444;">⚠️ Sin conexión.</div>`;
-                logError(`Error de sincronización: ${e.message}`);
+                if (_expErr2) _expErr2.innerHTML = `<div class="empty-state" style="color:#ef4444;">âš ï¸ Sin conexiÃ³n.</div>`;
+                logError(`Error de sincronizaciÃ³n: ${e.message}`);
             }
         }
 
@@ -737,16 +737,16 @@ async function loadRealData() {
             logEl.prepend(line);
         }
 
-        // F2-05 aplicado: toggleDesc busca por token, no por índice (F2-02 complemento)
+        // F2-05 aplicado: toggleDesc busca por token, no por Ã­ndice (F2-02 complemento)
         function toggleDesc(token) {
             const panel = document.getElementById(`desc-panel-${token}`);
             if (!panel) return;
             panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         }
 
-        // ══════════════════════════════════════════
-        // TREND BADGES — cálculo real (últimos 7d vs 7d anteriores)
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // TREND BADGES â€” cÃ¡lculo real (Ãºltimos 7d vs 7d anteriores)
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function calculateTrends(cases) {
             const now = new Date();
             now.setHours(23, 59, 59, 999);
@@ -816,11 +816,11 @@ async function loadRealData() {
             const tbEl = document.getElementById(elId);
             if (!tbEl) return;
             if (trend.pct === '0.0') {
-                tbEl.textContent = '→ 0%';
+                tbEl.textContent = 'â†’ 0%';
                 tbEl.className = 'kpi-v2-delta';
                 return;
             }
-            const arrow = trend.dir === 'up' ? '↗' : trend.dir === 'down' ? '↘' : '→';
+            const arrow = trend.dir === 'up' ? 'â†—' : trend.dir === 'down' ? 'â†˜' : 'â†’';
             tbEl.textContent = arrow + ' ' + trend.pct + '%';
             let cssDir = trend.dir === 'neutral' ? '' : trend.dir;
             if (invertColor && cssDir) cssDir = cssDir === 'up' ? 'down' : 'up';
@@ -829,15 +829,15 @@ async function loadRealData() {
 
         function updateUI() {
             if (!db.length) {
-                el('chart-area').innerHTML      = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span>Sin datos en métricas</span></div>`;
+                el('chart-area').innerHTML      = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span>Sin datos en mÃ©tricas</span></div>`;
                 el('dash-rows').innerHTML       = `<tr><td colspan="6" class="empty-state">No se reconoce actividad reciente</td></tr>`;
                 el('dash-deadlines').innerHTML  = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin actividad</span></div>`;
                 el('asig-content').innerHTML    = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Sin casos pendientes de despacho</span></div>`;
                 const _expEmpty = document.getElementById('exp-cards-container');
-                if (_expEmpty) _expEmpty.innerHTML = `<div class="empty-state"><span class="empty-icon">📁</span>La base de datos se encuentra vacía</div>`;
+                if (_expEmpty) _expEmpty.innerHTML = `<div class="empty-state"><span class="empty-icon">ðŸ“</span>La base de datos se encuentra vacÃ­a</div>`;
                 el('cal-content').innerHTML     = `<div class="empty-state-svg no-bg" style="padding:2rem 0;"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>No hay vencimientos agendados</span></div>`;
                 el('kpi-hours').innerText       = '0h';
-                el('kpi-score').innerText       = '—';
+                el('kpi-score').innerText       = 'â€”';
                 el('kpi-total').innerText       = '0';
                 el('kpi-pending').innerText     = '0';
                 ['trend-cases','trend-pending','trend-hours','trend-score'].forEach(function(id) {
@@ -887,14 +887,14 @@ async function loadRealData() {
             if (pendBar)  pendBar.style.width  = totalCases ? `${(pendingCases/totalCases)*100}%` : '0%';
             if (hoursBar) hoursBar.style.width = totalHours > 0 ? `${Math.min(parseFloat(totalHours)/20*100, 100)}%` : '0%';
 
-            // Trend badges operador — cálculo real últimos 7d vs 7d anteriores
+            // Trend badges operador â€” cÃ¡lculo real Ãºltimos 7d vs 7d anteriores
             const trends = calculateTrends(db);
             updateTrendBadge('trend-cases', trends.cases);
             updateTrendBadge('trend-pending', trends.pending, true); // invertido: menos pendientes = bueno (verde)
             updateTrendBadge('trend-hours', trends.hours);
             updateTrendBadge('trend-score', trends.score);
 
-            // Gráfico rama jurídica — canvas futurista
+            // GrÃ¡fico rama jurÃ­dica â€” canvas futurista
             const ramaCount = {};
             db.forEach(c => { ramaCount[c.rama] = (ramaCount[c.rama] || 0) + 1; });
             const ramaLabels = Object.keys(ramaCount);
@@ -913,7 +913,7 @@ async function loadRealData() {
                     <td><span style="color:var(--gold);font-weight:700;">${esc((c.priority||'Media').toUpperCase())}</span></td>
                     <td>${esc(c.partes)}</td>
                     <td>${esc(c.rama)}</td>
-                    <td style="color:var(--silver);">${(c.venc && c.venc !== 'S/D' && c.venc !== 'N/A') ? esc(c.venc) : '<em>—</em>'}</td>
+                    <td style="color:var(--silver);">${(c.venc && c.venc !== 'S/D' && c.venc !== 'N/A') ? esc(c.venc) : '<em>â€”</em>'}</td>
                     <td style="color:${c.lawyer ? 'var(--white)' : 'var(--silver)'};font-style:${c.lawyer ? 'normal' : 'italic'};">${esc(c.lawyer || 'Pendiente')}</td>
                 </tr>`
             ).join('');
@@ -936,53 +936,53 @@ async function loadRealData() {
                 el('dash-deadlines').innerHTML = conVenc.slice(0, 5).map(c => {
                     const diff = c.vencSort ? Math.ceil((new Date(c.vencSort) - today) / 86400000) : 99;
                     const level = diff <= 3 ? 'urgente' : diff <= 10 ? 'proximo' : 'normal';
-                    const badge = diff <= 0 ? 'VENCIDO' : diff <= 3 ? `${diff}d` : diff <= 10 ? `${diff} días` : c.venc;
+                    const badge = diff <= 0 ? 'VENCIDO' : diff <= 3 ? `${diff}d` : diff <= 10 ? `${diff} dÃ­as` : c.venc;
                     return `<div class="deadline-item ${level}">
                         <span class="deadline-badge ${level}">${esc(badge)}</span>
                         <div style="min-width:0;flex:1;">
                             <p style="margin:0;font-size:0.72rem;color:var(--white);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.partes)}</p>
-                            <p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);">${esc(c.rama)} · ${esc(c.tipo || '—')}</p>
+                            <p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);">${esc(c.rama)} Â· ${esc(c.tipo || 'â€”')}</p>
                         </div>
                     </div>`;
                 }).join('');
             } else {
-                el('dash-deadlines').innerHTML = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin vencimientos próximos</span></div>`;
+                el('dash-deadlines').innerHTML = `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>Sin vencimientos prÃ³ximos</span></div>`;
             }
 
-            // Agenda Judicial — solo casos ASIGNADOS con abogado vinculado
+            // Agenda Judicial â€” solo casos ASIGNADOS con abogado vinculado
             const conVencAsig = conVenc.filter(c => c.lawyer && c.status === 'ASIGNADO');
             if (conVencAsig.length) {
                 el('cal-content').innerHTML = conVencAsig.map(c => {
                     const programado = (c.venc && c.venc !== 'S/D' && c.venc !== 'N/A');
                     const calBadge = programado
-                        ? `<span class="cal-calendar-badge">● Programado</span>`
-                        : `<span class="cal-calendar-badge pending">○ Sin programar</span>`;
-                    const prioKey = (c.priority||'').toUpperCase().includes('ALTA') || (c.priority||'').includes('🔴') ? 'alta'
-                        : (c.priority||'').toUpperCase().includes('MEDIA') || (c.priority||'').includes('🟡') ? 'media' : 'baja';
-                    const prioLabel = (c.priority||'—').replace(/🔴|🟡|🟢/g,'').trim();
+                        ? `<span class="cal-calendar-badge">â— Programado</span>`
+                        : `<span class="cal-calendar-badge pending">â—‹ Sin programar</span>`;
+                    const prioKey = (c.priority||'').toUpperCase().includes('ALTA') || (c.priority||'').includes('ðŸ”´') ? 'alta'
+                        : (c.priority||'').toUpperCase().includes('MEDIA') || (c.priority||'').includes('ðŸŸ¡') ? 'media' : 'baja';
+                    const prioLabel = (c.priority||'â€”').replace(/ðŸ”´|ðŸŸ¡|ðŸŸ¢/g,'').trim();
                     const archivoLink = c.archivo_url
-                        ? `<a href="${esc(c.archivo_url)}" target="_blank" class="cal-file-btn">📎 Archivo</a>`
+                        ? `<a href="${esc(c.archivo_url)}" target="_blank" class="cal-file-btn">ðŸ“Ž Archivo</a>`
                         : '';
                     const diff = c.venc ? (new Date(c.venc) - new Date()) / (1000*60*60*24) : 999;
                     return `<div class="cal-grid-row">
-                        <div class="cal-cell cal-cell-token">${esc(c.token || '—')}</div>
+                        <div class="cal-cell cal-cell-token">${esc(c.token || 'â€”')}</div>
                         <div class="cal-cell">
-                            <div class="cal-cell-partes">${esc(c.partes || '—')}</div>
-                            <div class="cal-cell-partes cal-cliente">${esc(c.cliente_a_defender || '—')}</div>
+                            <div class="cal-cell-partes">${esc(c.partes || 'â€”')}</div>
+                            <div class="cal-cell-partes cal-cliente">${esc(c.cliente_a_defender || 'â€”')}</div>
                         </div>
-                        <div class="cal-cell cal-cell-venc ${diff < 15 ? 'deadline-near' : ''}">${esc(c.venc || '—')}</div>
+                        <div class="cal-cell cal-cell-venc ${diff < 15 ? 'deadline-near' : ''}">${esc(c.venc || 'â€”')}</div>
                         <div class="cal-cell cal-cell-rama">
-                            ${esc(c.rama || '—')}
-                            <div class="cal-tipo">${esc(c.tipo || '—')}</div>
+                            ${esc(c.rama || 'â€”')}
+                            <div class="cal-tipo">${esc(c.tipo || 'â€”')}</div>
                         </div>
-                        <div class="cal-cell cal-cell-abogado">${esc(c.lawyer || '—')}</div>
+                        <div class="cal-cell cal-cell-abogado">${esc(c.lawyer || 'â€”')}</div>
                         <div class="cal-cell"><span class="cal-prioridad ${prioKey}">${prioLabel}</span></div>
                         <div class="cal-cell cal-estado-wrap">
-                            <span class="cal-estado">${esc(c.status || '—')}</span>
+                            <span class="cal-estado">${esc(c.status || 'â€”')}</span>
                             ${calBadge}
                         </div>
                         <div class="cal-cell cal-action-wrap">
-                            <span class="cal-action-text">${esc(c.accion_requerida || '—')}</span>
+                            <span class="cal-action-text">${esc(c.accion_requerida || 'â€”')}</span>
                             ${archivoLink}
                         </div>
                     </div>`;
@@ -1002,13 +1002,13 @@ async function loadRealData() {
                 asigContent.classList.remove('empty-state');
                 asigContent.innerHTML = pend.map(c => {
                     const tok = esc(c.token);
-                    // Si aún no hay abogados cargados, mostrar placeholder
+                    // Si aÃºn no hay abogados cargados, mostrar placeholder
                     const lawyerOptions = lawyers.length
                         ? lawyers.map(l => `<option value="${esc(l.name)}">${esc(l.name)}</option>`).join('')
                         : `<option value="">Cargando abogados...</option>`;
 
-                    // FASE 8: formatear desc — párrafos separados, sin markdown crudo
-                    // FIX-XSS: esc() aplicado a cada párrafo de desc antes de insertar en DOM
+                    // FASE 8: formatear desc â€” pÃ¡rrafos separados, sin markdown crudo
+                    // FIX-XSS: esc() aplicado a cada pÃ¡rrafo de desc antes de insertar en DOM
                     const descFormatted = (() => {
                         // Limpiar "Bloque JSON" y lo que sigue
                         let cleaned = c.desc
@@ -1023,7 +1023,7 @@ async function loadRealData() {
                                     const title = p.replace(/\|\|\|TITLE\|\|\|(.*)\|\|\|ENDTITLE\|\|\|/, '$1');
                                     return `<p style="margin:8px 0 4px;font-size:0.8rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">${esc(title)}</p>`;
                                 }
-                                // Preservar <em> sin escapar — reemplazar temporalmente
+                                // Preservar <em> sin escapar â€” reemplazar temporalmente
                                 const safe = p
                                     .replace(/<em>(.*?)<\/em>/g, (_, t) => `<em>${esc(t)}</em>`)
                                     .replace(/<\/em>|<em>/g, m => m); // dejar etiquetas em intactas
@@ -1048,18 +1048,18 @@ async function loadRealData() {
                             <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.05);padding:4px 10px;border-radius:20px;">Recibido: ${esc(c.date)}</span>
                         </div>
                         <div class="asig-actions">
-                            <button class="btn-outline" onclick="toggleDesc('${tok}')">📂 Ver Resumen</button>
+                            <button class="btn-outline" onclick="toggleDesc('${tok}')">ðŸ“‚ Ver Resumen</button>
                             <div style="flex-grow:1;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                                 <select id="law-sel-${tok}" style="max-width:200px;">${lawyerOptions}</select>
-                                <button class="btn-asig-main" onclick="finish('${tok}')">⚖️ Confirmar Asignación</button>
+                                <button class="btn-asig-main" onclick="finish('${tok}')">âš–ï¸ Confirmar AsignaciÃ³n</button>
                             </div>
                         </div>
-                        <!-- CLIENTE A DEFENDER — B5 -->
+                        <!-- CLIENTE A DEFENDER â€” B5 -->
                         <div style="margin-top:10px;padding:12px 16px;background:linear-gradient(135deg,rgba(212,175,55,0.08),rgba(26,26,46,0.6));border:1px solid rgba(212,175,55,0.3);border-radius:12px;">
-                            <p style="margin:0 0 10px;font-size:0.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;">🛡 Cliente a Defender</p>
+                            <p style="margin:0 0 10px;font-size:0.68rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;display:flex;align-items:center;gap:6px;">ðŸ›¡ Cliente a Defender</p>
                             ${(() => {
                                 const parts = c.partes_array || [];
-                                // V3: Partes como objetos con identificación integrada
+                                // V3: Partes como objetos con identificaciÃ³n integrada
                                 const getPartName = (part) => typeof part === 'object' ? (part.nombre || '') : String(part || '');
                                 const esEmpresa = (nombre) => /\b(S\.?A\.?S\.?|S\.?A\.?|LTDA|LLC|INC|CORP|CIA|SOCIEDAD|EMPRESA|INVERSIONES|CONSTRUCTORA|COMERCIALIZADORA|GRUPO|FUNDACION|ASOCIACION|COOPERATIVA|E\.?S\.?P\.?)\b/i.test(nombre || '');
                                 const getPartId = (part) => {
@@ -1099,7 +1099,7 @@ async function loadRealData() {
                                     if (pn) html += mkLabel(pn, seln, mkNitBadge(nitn, typen), nitn, typen);
                                 }
                                 html += `</div>`;
-                                if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">⚡ Pre-detectado por el sistema</p>`;
+                                if (presel) html += `<p style="margin:4px 0 0;font-size:0.68rem;color:var(--gold);">âš¡ Pre-detectado por el sistema</p>`;
                                 return html;
                             })()}
                         </div>
@@ -1113,15 +1113,15 @@ async function loadRealData() {
                 asigContent.classList.add('empty-state');
                 const asignado = db.find(c => c.status === 'ASIGNADO');
                 asigContent.innerHTML = asignado
-                    ? `<div class="empty-state"><span class="empty-icon">✅</span>Expediente de ${esc(asignado.partes)} asignado a ${esc(asignado.lawyer || '—')}.</div>`
+                    ? `<div class="empty-state"><span class="empty-icon">âœ…</span>Expediente de ${esc(asignado.partes)} asignado a ${esc(asignado.lawyer || 'â€”')}.</div>`
                     : `<div class="empty-state-svg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg><span>Sin casos pendientes</span></div>`;
             }
 
-            // Registro Legal — solo casos ASIGNADOS, vista tarjetas
+            // Registro Legal â€” solo casos ASIGNADOS, vista tarjetas
             renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
         }
 
-        // F4-04: Toast — reemplaza alert() nativo
+        // F4-04: Toast â€” reemplaza alert() nativo
         function showToast(msg, type = 'ok') {
             const t = document.getElementById('toast');
             t.textContent = msg;
@@ -1130,7 +1130,7 @@ async function loadRealData() {
             t._timer = setTimeout(() => { t.classList.remove('show'); }, 3500);
         }
 
-        // F4-05: Confirmación visual — reemplaza confirm() nativo
+        // F4-05: ConfirmaciÃ³n visual â€” reemplaza confirm() nativo
         function floovuConfirm(msg) {
             return new Promise(resolve => {
                 const modal = document.getElementById('confirm-modal');
@@ -1180,18 +1180,18 @@ async function loadRealData() {
                     body: JSON.stringify({ email: currentUser ? currentUser.email : '' })
                 });
                 if (res.ok) {
-                    // Pipeline async en n8n — cada email con múltiples PDFs puede tomar 30-60s
-                    logError('✓ Escaneo iniciado. Procesando emails y PDFs en segundo plano...');
-                    showToast('Gmail procesándose. Los casos nuevos aparecerán en 30-60 segundos.', 'ok');
+                    // Pipeline async en n8n â€” cada email con mÃºltiples PDFs puede tomar 30-60s
+                    logError('âœ“ Escaneo iniciado. Procesando emails y PDFs en segundo plano...');
+                    showToast('Gmail procesÃ¡ndose. Los casos nuevos aparecerÃ¡n en 30-60 segundos.', 'ok');
                     // Primera recarga a los 30s
                     setTimeout(async () => {
                         await loadRealData();
-                        logError('✓ Primera actualización de datos.');
+                        logError('âœ“ Primera actualizaciÃ³n de datos.');
                     }, 30000);
-                    // Segunda recarga a los 65s por si hay múltiples emails o PDFs pesados
+                    // Segunda recarga a los 65s por si hay mÃºltiples emails o PDFs pesados
                     setTimeout(async () => {
                         await loadRealData();
-                        logError('✓ Datos actualizados (verificación final).');
+                        logError('âœ“ Datos actualizados (verificaciÃ³n final).');
                     }, 65000);
                 } else {
                     logError(`Error Sync: ${res.status}`);
@@ -1204,8 +1204,8 @@ async function loadRealData() {
         }
 
         function renderLawyers() {
-            // FIX-RENDER-1: no usar el caché _els para lawyer-list-full ya que su
-            // contenido se sobreescribe y el DOM se mantiene estable; sí hacemos
+            // FIX-RENDER-1: no usar el cachÃ© _els para lawyer-list-full ya que su
+            // contenido se sobreescribe y el DOM se mantiene estable; sÃ­ hacemos
             // getElementById directo para estar seguros.
             const container = document.getElementById('lawyer-list-full');
             if (!container) return;
@@ -1217,7 +1217,7 @@ async function loadRealData() {
                 <div style="padding:1rem;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <strong style="color:var(--gold);">${esc(l.name)}</strong><br>
-                        <small style="color:var(--silver)">${esc(l.email || '—')} | ${esc(l.especialidad || '—')}</small>
+                        <small style="color:var(--silver)">${esc(l.email || 'â€”')} | ${esc(l.especialidad || 'â€”')}</small>
                     </div>
                     <button class="btn-delete" onclick="deleteLawyer(${i})">Eliminar</button>
                 </div>
@@ -1230,9 +1230,9 @@ async function loadRealData() {
             const spec  = document.getElementById('new-law-spec').value;
 
             if (!name) { showToast('El nombre del abogado es obligatorio.', 'error'); return; }
-            // FIX-ADD-1: email es opcional, pero si se ingresa debe ser válido
+            // FIX-ADD-1: email es opcional, pero si se ingresa debe ser vÃ¡lido
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                showToast('El email ingresado no tiene un formato válido.', 'error'); return;
+                showToast('El email ingresado no tiene un formato vÃ¡lido.', 'error'); return;
             }
 
             // FIX-INPUT-ESC: sanitizar inputs antes de enviar a n8n
@@ -1251,7 +1251,7 @@ async function loadRealData() {
                     renderLawyers();
                     updateUI();
                     showToast(`Abogado ${name} guardado correctamente.`, 'ok');
-                    logError(`✓ Abogado guardado en Google Sheets.`);
+                    logError(`âœ“ Abogado guardado en Google Sheets.`);
                     document.getElementById('new-law-name').value  = '';
                     document.getElementById('new-law-email').value = '';
                     document.getElementById('new-law-spec').selectedIndex = 0;
@@ -1264,7 +1264,7 @@ async function loadRealData() {
         async function deleteLawyer(idx) {
             const l = lawyers[idx];
             // F4-05: floovuConfirm en vez de confirm() nativo
-            const ok = await floovuConfirm(`¿Eliminar a ${l.name} del directorio?`);
+            const ok = await floovuConfirm(`Â¿Eliminar a ${l.name} del directorio?`);
             if (!ok) return;
 
             logError(`Eliminando abogado: ${l.name}...`);
@@ -1278,7 +1278,7 @@ async function loadRealData() {
                     renderLawyers();
                     updateUI();
                     showToast(`${l.name} eliminado del directorio.`, 'ok');
-                    logError(`✓ Abogado eliminado del sistema.`);
+                    logError(`âœ“ Abogado eliminado del sistema.`);
                 } else {
                     showToast(`Error del servidor: ${res.status}`, 'error');
                 }
@@ -1303,7 +1303,7 @@ async function loadRealData() {
             const btn   = document.getElementById('btn-refresh-debug');
             if (!logEl) return;
             logEl.innerHTML = '<span style="color:var(--silver);">[System] Cargando logs de n8n...</span>';
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Cargando...'; }
+            if (btn) { btn.disabled = true; btn.textContent = 'â³ Cargando...'; }
             try {
                 const res = await authFetch(N8N_GET_DEBUG_LOG, { method: 'POST' });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1312,10 +1312,10 @@ async function loadRealData() {
                     const txt = await res.text();
                     rows = txt ? JSON.parse(txt) : [];
                 } catch(e) {
-                    throw new Error('Respuesta no es JSON válido');
+                    throw new Error('Respuesta no es JSON vÃ¡lido');
                 }
                 if (!Array.isArray(rows) || rows.length === 0) {
-                    logEl.innerHTML = '<span style="color:var(--silver);">[System] Sin logs registrados aún. Los workflows deben ejecutarse para generar telemetría.</span>';
+                    logEl.innerHTML = '<span style="color:var(--silver);">[System] Sin logs registrados aÃºn. Los workflows deben ejecutarse para generar telemetrÃ­a.</span>';
                     return;
                 }
                 // Mostrar errores en badge
@@ -1335,49 +1335,49 @@ async function loadRealData() {
                     const isErr = estado === 'ERROR';
                     const line  = document.createElement('div');
                     line.style.cssText = `padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.71rem;color:${isErr ? '#ef4444' : '#94a3b8'};line-height:1.5;`;
-                    line.innerHTML = `<span style="color:${isErr?'#ef4444':'#c5a059'};font-weight:700;">[${estado}]</span> <span style="color:#fff;">${nodo}</span> <span style="color:#475569;font-size:0.67rem;">${ts}</span>${error ? `<br><span style="color:#ef4444;padding-left:8px;">↳ ${error}</span>` : ''}${extra ? `<br><span style="color:#64748b;padding-left:8px;font-size:0.67rem;">${extra}</span>` : ''}${sid ? `<span style="color:#334155;font-size:0.63rem;float:right;">sid:${sid}</span>` : ''}`;
+                    line.innerHTML = `<span style="color:${isErr?'#ef4444':'#c5a059'};font-weight:700;">[${estado}]</span> <span style="color:#fff;">${nodo}</span> <span style="color:#475569;font-size:0.67rem;">${ts}</span>${error ? `<br><span style="color:#ef4444;padding-left:8px;">â†³ ${error}</span>` : ''}${extra ? `<br><span style="color:#64748b;padding-left:8px;font-size:0.67rem;">${extra}</span>` : ''}${sid ? `<span style="color:#334155;font-size:0.63rem;float:right;">sid:${sid}</span>` : ''}`;
                     logEl.prepend(line);
                 });
-                logError(`✓ ${rows.length} logs de n8n cargados.`);
+                logError(`âœ“ ${rows.length} logs de n8n cargados.`);
             } catch(e) {
                 logEl.innerHTML = `<span style="color:#ef4444;">[Error] No se pudo cargar el Debug_Log: ${e.message}</span>`;
                 logError(`Error cargando Debug_Log: ${e.message}`);
             } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '⟳ Cargar Logs n8n'; }
+                if (btn) { btn.disabled = false; btn.textContent = 'âŸ³ Cargar Logs n8n'; }
             }
         }
 
         async function pingEngine() {
-            logError("Lanzando diagnóstico de sistema...");
+            logError("Lanzando diagnÃ³stico de sistema...");
             const nodes = ['web', 'gmail', 'sheet', 'ai'];
-            nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "⌛");
+            nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "âŒ›");
             try {
                 const res = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
                 if (res.ok) {
                     const txt = await res.text();
                     const health = txt ? JSON.parse(txt) : {};
-                    document.getElementById('h-web').innerHTML   = "🟢 OK";
-                    document.getElementById('h-gmail').innerHTML = health.gmail ? "🟢 OK" : "🔴 ERROR";
-                    document.getElementById('h-sheet').innerHTML = health.sheet ? "🟢 OK" : "🔴 ERROR";
-                    document.getElementById('h-ai').innerHTML    = health.ai    ? "🟢 OK" : "🔴 ERROR";
-                    logError("✓ Diagnóstico finalizado con éxito.");
+                    document.getElementById('h-web').innerHTML   = "ðŸŸ¢ OK";
+                    document.getElementById('h-gmail').innerHTML = health.gmail ? "ðŸŸ¢ OK" : "ðŸ”´ ERROR";
+                    document.getElementById('h-sheet').innerHTML = health.sheet ? "ðŸŸ¢ OK" : "ðŸ”´ ERROR";
+                    document.getElementById('h-ai').innerHTML    = health.ai    ? "ðŸŸ¢ OK" : "ðŸ”´ ERROR";
+                    logError("âœ“ DiagnÃ³stico finalizado con Ã©xito.");
                 } else {
-                    nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 CAÍDO");
-                    logError("❌ No se pudo conectar con el motor n8n.");
+                    nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "ðŸ”´ CAÃDO");
+                    logError("âŒ No se pudo conectar con el motor n8n.");
                 }
             } catch(e) {
-                nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "🔴 ERR");
-                logError(`❌ Error de diagnóstico: ${e.message}`);
+                nodes.forEach(n => document.getElementById(`h-${n}`).innerHTML = "ðŸ”´ ERR");
+                logError(`âŒ Error de diagnÃ³stico: ${e.message}`);
             }
         }
 
         // F5-08: finish usa classList en vez de style.display en el overlay
         async function finish(caseToken) {
             const caseItem = db.find(c => c.token === caseToken && c.status === 'PENDIENTE');
-            if (!caseItem) { showToast('Caso no encontrado. Recarga la página.', 'error'); return; }
+            if (!caseItem) { showToast('Caso no encontrado. Recarga la pÃ¡gina.', 'error'); return; }
 
             const lawyerName  = document.getElementById(`law-sel-${caseToken}`).value;
-            // Leer ID del radio seleccionado — determina NIT o Cédula según la parte elegida
+            // Leer ID del radio seleccionado â€” determina NIT o CÃ©dula segÃºn la parte elegida
             const _selectedRadio = document.querySelector(`input[name="cad-${caseToken}"]:checked`)
                                 || document.querySelector(`input[name="cad-${caseToken}"]`);
             const _selectedIdVal  = (_selectedRadio && _selectedRadio.dataset.nit)  || '';
@@ -1385,7 +1385,7 @@ async function loadRealData() {
             const clientNit    = _selectedIdTipo === 'NIT'    ? _selectedIdVal : '';
             const clientCedula = _selectedIdTipo === 'CEDULA' ? _selectedIdVal : '';
             const lawyerObj   = lawyers.find(l => l.name === lawyerName);
-            // FIX BUG 1: definir clienteADefender FUERA del IIFE para que esté accesible en el setTimeout posterior
+            // FIX BUG 1: definir clienteADefender FUERA del IIFE para que estÃ© accesible en el setTimeout posterior
             // FIX V9: buscar radio en todo el documento, no solo en el scope del bloque
             const _cadRadioOuter = document.querySelector(`input[name="cad-${caseToken}"]:checked`)
                                 || document.querySelector(`input[name="cad-${caseToken}"]`); // fallback al primero si ninguno checked
@@ -1395,13 +1395,13 @@ async function loadRealData() {
             } else if (caseItem.cliente_a_defender && caseItem.cliente_a_defender.trim()) {
                 clienteADefender = caseItem.cliente_a_defender.trim();
             } else {
-                // último recurso: primera parte del campo Partes
-                clienteADefender = (caseItem.partes || '').split(/[,;·\/]|vs\.?|contra/i)[0].trim() || caseItem.partes || '';
+                // Ãºltimo recurso: primera parte del campo Partes
+                clienteADefender = (caseItem.partes || '').split(/[,;Â·\/]|vs\.?|contra/i)[0].trim() || caseItem.partes || '';
             }
 
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
-            // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
-            // V2: email del cliente ya no se captura aquí — se completa después en pestaña Clientes
+            // FIX: email del cliente es opcional; solo valida formato si se ingresÃ³ algo
+            // V2: email del cliente ya no se captura aquÃ­ â€” se completa despuÃ©s en pestaÃ±a Clientes
 
             const overlay = document.getElementById('loader');
             const term    = document.getElementById('term');
@@ -1434,11 +1434,11 @@ async function loadRealData() {
                             cedula_cliente:              clientCedula,
                             tipo_identificacion:         _selectedIdTipo,
                             email_cliente:               caseItem.email_cliente || caseItem['email cliente'] || '',
-                            telefono_cliente:            caseItem.telefono || caseItem['Teléfono'] || '',
+                            telefono_cliente:            caseItem.telefono || caseItem['TelÃ©fono'] || '',
                             abogado_responsable:         lawyerName,
                             abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
-                            asunto:                      `Asignación de Caso: ${caseItem.partes}`,
+                            asunto:                      `AsignaciÃ³n de Caso: ${caseItem.partes}`,
                             tipo_documento:              caseItem.tipo || caseItem.rama || 'General',
                             rama:                        caseItem.rama,
                             vencimiento:                 caseItem.venc,
@@ -1455,9 +1455,9 @@ async function loadRealData() {
                     const resText = await response.text();
                     let resData = {};
                     try { if (resText) resData = JSON.parse(resText); } catch(err) {}
-                    log(`✓ n8n: recepción confirmada.`);
-                    if (resData?.debug) log(`📡 ${resData.debug}`);
-                    log(`✓ Informe enviado a ${lawyerObj.email}.`);
+                    log(`âœ“ n8n: recepciÃ³n confirmada.`);
+                    if (resData?.debug) log(`ðŸ“¡ ${resData.debug}`);
+                    log(`âœ“ Informe enviado a ${lawyerObj.email}.`);
 
                     // AUTOMATIC CLIENT SAVE TO DIRECTORY (V2: sin email/tel, status='NUEVO')
                     try {
@@ -1470,7 +1470,7 @@ async function loadRealData() {
                                 cedula: clientCedula,
                                 email: '',
                                 telefono: '',
-                                notas: `Creado automáticamente desde asignación del caso ${caseItem.token}`,
+                                notas: `Creado automÃ¡ticamente desde asignaciÃ³n del caso ${caseItem.token}`,
                                 abogado: lawyerName,
                                 token: caseItem.token,
                                 _status: 'NUEVO',
@@ -1478,16 +1478,16 @@ async function loadRealData() {
                             })
                         });
                         if (clientRes.ok) {
-                            log(`✓ Cliente guardado en directorio exitosamente.`);
+                            log(`âœ“ Cliente guardado en directorio exitosamente.`);
                         } else {
-                            log(`⚠️ Aviso: Respuesta inesperada al guardar cliente (${clientRes.status}).`);
+                            log(`âš ï¸ Aviso: Respuesta inesperada al guardar cliente (${clientRes.status}).`);
                         }
                     } catch(e) {
-                        log(`⚠️ Aviso: No se pudo guardar cliente en directorio.`);
+                        log(`âš ï¸ Aviso: No se pudo guardar cliente en directorio.`);
                     }
 
 
-                    log(`✓ Operación finalizada. Sincronizando datos...`);
+                    log(`âœ“ OperaciÃ³n finalizada. Sincronizando datos...`);
                     setTimeout(() => {
                         overlay.classList.remove('visible');
                         // FIX: Hacer refresh REAL de los datos desde GS para sincronizar con W1B
@@ -1503,7 +1503,7 @@ async function loadRealData() {
                     throw new Error(`Error en n8n: ${response.status} ${response.statusText}`);
                 }
             } catch (error) {
-                log(`❌ ERROR: ${error.message}`);
+                log(`âŒ ERROR: ${error.message}`);
                 const btn = document.createElement('button');
                 btn.innerText = "Cerrar";
                 btn.style.cssText = "margin-top:10px;background:#333;border:1px solid #555;color:#fff;padding:6px 16px;border-radius:6px;cursor:pointer;";
@@ -1512,20 +1512,20 @@ async function loadRealData() {
             }
         }
 
-        // ══════════════════════════════════════════
-        // CLIENTES — Directorio unificado
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // CLIENTES â€” Directorio unificado
         // Fuente 1: hoja CLIENTES (directorio manual)
         // Fuente 2: db (casos del Registro Legal)
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        // ══════════════════════════════════════════
-        // GESTIÓN DE USUARIOS — Sheet como fuente
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // GESTIÃ“N DE USUARIOS â€” Sheet como fuente
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         async function loadUsuariosAdmin() {
             const container = document.getElementById('usuarios-list-container');
             if (!container) return;
-            container.innerHTML = '<p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">⏳ Cargando...</p>';
+            container.innerHTML = '<p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">â³ Cargando...</p>';
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.GET_USUARIOS, { method: 'POST' });
@@ -1535,18 +1535,18 @@ async function loadRealData() {
                 try { if (_txt2) data = JSON.parse(_txt2); } catch(_e) {}
                 const lista = data.usuarios || [];
                 if (!lista.length) {
-                    container.innerHTML = '<p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">Sin usuarios en el Sheet aún.</p>';
+                    container.innerHTML = '<p style="color:var(--silver);font-size:0.82rem;text-align:center;padding:2rem;">Sin usuarios en el Sheet aÃºn.</p>';
                     return;
                 }
                 container.innerHTML = lista.map(u => `
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
                         <div>
                             <p style="font-weight:700;font-size:0.88rem;color:var(--white);margin:0;">@${u.username}</p>
-                            <p style="font-size:0.72rem;color:var(--silver);margin:2px 0 0;">${u.nombre || '—'} · ${u.email || 'sin email'}</p>
+                            <p style="font-size:0.72rem;color:var(--silver);margin:2px 0 0;">${u.nombre || 'â€”'} Â· ${u.email || 'sin email'}</p>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:0.65rem;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;${u.rol==='admin' ? 'background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);' : 'background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.25);'}">${u.rol==='admin' ? 'Admin' : 'Operador'}</span>
-                            <button onclick="eliminarUsuario('${u.username}')" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;font-size:0.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">🗑</button>
+                            <button onclick="eliminarUsuario('${u.username}')" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;font-size:0.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">ðŸ—‘</button>
                         </div>
                     </div>`).join('');
             } catch(e) {
@@ -1571,9 +1571,9 @@ async function loadRealData() {
                 msgEl.textContent = txt;
             };
 
-            if (!nombre || !username || !pass1) { showMsg('Completá nombre, usuario y contraseña.', false); return; }
-            if (pass1 !== pass2) { showMsg('Las contraseñas no coinciden.', false); return; }
-            if (pass1.length < 8) { showMsg('La contraseña debe tener al menos 8 caracteres.', false); return; }
+            if (!nombre || !username || !pass1) { showMsg('CompletÃ¡ nombre, usuario y contraseÃ±a.', false); return; }
+            if (pass1 !== pass2) { showMsg('Las contraseÃ±as no coinciden.', false); return; }
+            if (pass1.length < 8) { showMsg('La contraseÃ±a debe tener al menos 8 caracteres.', false); return; }
 
             try {
                 const hash = await sha256(pass1);
@@ -1586,7 +1586,7 @@ async function loadRealData() {
                 let data = {};
                 try { if (_txt3) data = JSON.parse(_txt3); } catch(_e) {}
                 if (res.ok && data.ok) {
-                    showMsg(`✅ Usuario @${username} creado correctamente.`, true);
+                    showMsg(`âœ… Usuario @${username} creado correctamente.`, true);
                     ['nu-nombre','nu-username','nu-email','nu-pass','nu-pass2'].forEach(id => {
                         const el = document.getElementById(id); if (el) el.value = '';
                     });
@@ -1599,7 +1599,7 @@ async function loadRealData() {
         }
 
         async function eliminarUsuario(username) {
-            const ok = await floovuConfirm(`¿Eliminar al usuario @${username}? Esta acción no se puede deshacer.`);
+            const ok = await floovuConfirm(`Â¿Eliminar al usuario @${username}? Esta acciÃ³n no se puede deshacer.`);
             if (!ok) return;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
@@ -1624,14 +1624,14 @@ async function loadRealData() {
             const lbl = document.getElementById('nu-strength-label');
             if (!bar || !lbl) return;
             const score = [val.length >= 8, /[A-Z]/.test(val), /[0-9]/.test(val), /[^a-zA-Z0-9]/.test(val)].filter(Boolean).length;
-            const cfg = [{w:'25%',c:'#ef4444',t:'Débil'},{w:'50%',c:'#f97316',t:'Regular'},{w:'75%',c:'#eab308',t:'Buena'},{w:'100%',c:'#22c55e',t:'Fuerte'}];
-            const s = cfg[score-1] || {w:'0%',c:'transparent',t:'—'};
+            const cfg = [{w:'25%',c:'#ef4444',t:'DÃ©bil'},{w:'50%',c:'#f97316',t:'Regular'},{w:'75%',c:'#eab308',t:'Buena'},{w:'100%',c:'#22c55e',t:'Fuerte'}];
+            const s = cfg[score-1] || {w:'0%',c:'transparent',t:'â€”'};
             bar.style.width = s.w; bar.style.background = s.c; lbl.textContent = s.t; lbl.style.color = s.c;
         }
 
         async function loadClients() {
             const container = document.getElementById('client-list-container');
-            if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">⏳ Cargando directorio...</p>';
+            if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:2rem;">â³ Cargando directorio...</p>';
             let manualClients = [];
             try {
                 const res = await authFetch(N8N_GET_CLIENTS, { method: 'POST' });
@@ -1643,12 +1643,12 @@ async function loadRealData() {
                             nombre:   c.nombre   || c.Nombre   || c.NOMBRE   || '',
                             nit:      c.nit      || c.NIT      || c.nit_cliente || '',
                             cedula:   c.cedula   || c.Cedula   || '',
-                            email:    c.email    || c.Email    || c.EMAIL    || '',
-                            telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || '',
-                            notas:    c.notas    || c.Notas    || c.NOTAS    || '',
+                            email:    c.email    || c.Email    || c.EMAIL    || c['Correo electrónico'] || c['Correo electronico'] || c.correo_electronico || '',
+                            telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || c['Teléfono'] || c['Telefono'] || '',
+                            notas:    c.notas    || c.Notas    || c.NOTAS    || c.Observaciones || c.observaciones || '',
                             abogado:  c.abogado  || c.Abogado  || c['Abogado Asignado'] || c.abogado_asignado || '',
-                            estado:   c.estado   || c.Estado   || 'DIRECTORIO',
-                            _status:  c._status  || c.status   || c.Estado   || c.estado || '',
+                            estado:   c.estado   || c.Estado   || c._status || c.status || 'DIRECTORIO',
+                            _status:  c._status  || c.status   || c.Estado   || c.estado || 'DIRECTORIO',
                             _source:  'directorio'
                         }))
                         .filter(c => c.nombre && c.nombre.trim() !== '');
@@ -1660,11 +1660,11 @@ async function loadRealData() {
                 .filter(c => {
                     const p0 = c.partes_array && c.partes_array[0];
                     const n = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || '';
-                    return n && String(n).trim() !== '' && n !== '—';
+                    return n && String(n).trim() !== '' && n !== 'â€”';
                 })
                 .map(c => {
                 const p0 = c.partes_array && c.partes_array[0];
-                const clienteName = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || '—';
+                const clienteName = c.cliente_a_defender || (p0 && typeof p0 === 'object' ? p0.nombre : p0) || c.partes || 'â€”';
                 const datosIncompletos = (!c.nit || c.nit === 'DESCONOCIDO') && (!c.cedula || c.cedula === 'DESCONOCIDO');
                 const abogadoAsignado = c.lawyer && c.lawyer !== 'PENDIENTE' && c.lawyer !== 'Pendiente' ? c.lawyer : '';
                 return {
@@ -1676,13 +1676,13 @@ async function loadRealData() {
                     token:    c.token,
                     abogado:  abogadoAsignado,
                     venc:     c.venc     || 'S/D',
-                    estado:   abogadoAsignado ? 'ASIGNADO' : (c.status || '—'),
+                    estado:   abogadoAsignado ? 'ASIGNADO' : (c.status || 'â€”'),
                     _source:  'registro',
                     _incompleto: datosIncompletos
                 };
             });
 
-            // Unificar — los del directorio primero, luego casos sin match en directorio
+            // Unificar â€” los del directorio primero, luego casos sin match en directorio
             const nombresDirectorio = new Set(manualClients.map(c => (c.nombre || '').toLowerCase().trim()));
             const casesNuevos = casesAsClients.filter(c =>
                 !nombresDirectorio.has((c.nombre || '').toLowerCase().trim())
@@ -1691,17 +1691,17 @@ async function loadRealData() {
             clients = [...manualClients, ...casesNuevos];
             allClientRows = [...clients];
             renderClients(clients);
-            logError(`✓ ${manualClients.length} del directorio + ${casesNuevos.length} del registro = ${clients.length} clientes.`);
+            logError(`âœ“ ${manualClients.length} del directorio + ${casesNuevos.length} del registro = ${clients.length} clientes.`);
 
-            // V2: Re-render expedientes para que muestren la cédula, email y teléfono cargados desde el directorio
+            // V2: Re-render expedientes para que muestren la cÃ©dula, email y telÃ©fono cargados desde el directorio
             if (db && db.length > 0 && typeof renderExpedientesCards === 'function') {
                 renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
             }
         }
 
-        // ══════════════════════════════════════════
-        // FUNCIONES DE SINCRONIZACIÓN V2
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // FUNCIONES DE SINCRONIZACIÃ“N V2
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         // Obtener datos del cliente desde el directorio (clients array) + caso (db) como fallback
         function getClientDataFromDirectory(clienteName) {
@@ -1715,40 +1715,61 @@ async function loadRealData() {
             );
 
             // 3. Merge: priorizar directorio, fallback al caso
-            const nit = (found && found.nit && found.nit !== '—') ? found.nit
+            const nit = (found && found.nit && found.nit !== 'â€”') ? found.nit
                       : (found && found.cedula) ? found.cedula
                       : (caseMatch && caseMatch.nit && caseMatch.nit !== 'DESCONOCIDO') ? caseMatch.nit
                       : (caseMatch && caseMatch.cedula && caseMatch.cedula !== 'DESCONOCIDO') ? caseMatch.cedula
-                      : '—';
-            const email = (found && found.email && found.email !== '—') ? found.email : '—';
-            const telefono = (found && found.telefono && found.telefono !== '—') ? found.telefono : '—';
+                      : 'â€”';
+            const email = (found && found.email && found.email !== 'â€”') ? found.email : 'â€”';
+            const telefono = (found && found.telefono && found.telefono !== 'â€”') ? found.telefono : 'â€”';
 
             return { nit, email, telefono };
         }
 
-        // Sincronizar cambios de cliente a todas las pestañas
-        async function syncClientDataToAllTabs(clientName) {
-            if (!clientName || !clientName.trim()) return;
+        // Sincronizar cambios de cliente a todas las pestaÃ±as
+        async function syncClientDataToAllTabs(payload) {
+            const data = (typeof payload === 'string') ? { newName: payload } : (payload || {});
+            const oldName = String(data.oldName || '').trim();
+            const newName = String(data.newName || '').trim();
+            const token   = String(data.token || '').trim();
+            if (!newName) return;
+
+            const norm = (v) => String(v || '').toLowerCase().trim();
+            const oldNorm = norm(oldName);
+            const newNorm = norm(newName);
 
             // 1. Obtener datos actualizados del cliente
-            const updatedClient = clients.find(c =>
-                c.nombre.toLowerCase().trim() === clientName.toLowerCase().trim()
-            );
-            if (!updatedClient) return;
+            const updatedClient = clients.find(c => norm(c.nombre) === newNorm) || null;
 
-            // 2. Encontrar todos los casos asociados
-            const relatedCases = db.filter(c =>
-                (c.cliente_a_defender || '').toLowerCase().trim() ===
-                clientName.toLowerCase().trim()
-            );
+            // 2. Sincronizar casos en memoria para que Registro/Bandeja reflejen el cambio
+            db.forEach(c => {
+                const clienteCaso = norm(c.cliente_a_defender || '');
+                const partesCaso  = norm(c.partes || '');
+                const tokenMatch  = token && c.token && String(c.token) === token;
+                const nameMatch   = (oldNorm && (clienteCaso === oldNorm || partesCaso === oldNorm)) ||
+                                    (clienteCaso === newNorm || partesCaso === newNorm);
+                if (!tokenMatch && !nameMatch) return;
 
-            // 3. Actualizar UI del Registro Legal si hay casos
-            if (relatedCases.length > 0) {
+                c.cliente_a_defender = newName;
+                if (!c.partes || partesCaso === oldNorm || partesCaso === newNorm) c.partes = newName;
+
+                if (updatedClient) {
+                    if (updatedClient.nit && updatedClient.nit !== '—') c.nit = updatedClient.nit;
+                    if (updatedClient.cedula && updatedClient.cedula !== '—') c.cedula = updatedClient.cedula;
+                    if (updatedClient.email && updatedClient.email !== '—') c.email_cliente = updatedClient.email;
+                    if (updatedClient.telefono && updatedClient.telefono !== '—') c.telefono_cliente = updatedClient.telefono;
+                }
+            });
+
+            // 3. Refrescar UI dependiente
+            if (typeof renderExpedientesCards === 'function') {
                 renderExpedientesCards(db.filter(c => c.status === 'ASIGNADO'));
             }
-
-            // 4. Refrescar tabla de Clientes
+            if (typeof renderBandeja === 'function' && Array.isArray(bandejaData) && bandejaData.length) {
+                renderBandeja(bandejaData);
+            }
             renderClients(clients);
+            if (typeof updateUI === 'function') updateUI();
         }
 
         function filterClients(query) {
@@ -1774,9 +1795,9 @@ async function loadRealData() {
                 <div class="table-scroll"><table>
                     <thead><tr>
                         <th>CLIENTE</th>
-                        <th>NIT / CÉDULA</th>
+                        <th>NIT / CÃ‰DULA</th>
                         <th>EMAIL</th>
-                        <th>TELÉFONO</th>
+                        <th>TELÃ‰FONO</th>
                         <th>ABOGADO ASIGNADO</th>
                         <th>ESTADO</th>
                         <th>ORIGEN</th>
@@ -1786,42 +1807,42 @@ async function loadRealData() {
                         ${list.map((c, i) => `
                         <tr${c._incompleto ? ' style="border-left:3px solid #f59e0b;"' : ''}>
                             <td style="font-weight:600;color:var(--white);">
-                                ${esc(c.nombre || '—')}
-                                ${c._incompleto ? '<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px;">⚠ Datos incompletos — actualizar</div>' : ''}
+                                ${esc(c.nombre || 'â€”')}
+                                ${c._incompleto ? '<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px;">âš  Datos incompletos â€” actualizar</div>' : ''}
                             </td>
-                            <td style="color:${(!c.nit && !c.cedula) || (c.nit === '—' && !c.cedula) ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || c.cedula || '—')}</td>
-                            <td style="color:${!c.email || c.email === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || '—')}</td>
-                            <td style="color:${!c.telefono || c.telefono === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || '—')}</td>
+                            <td style="color:${(!c.nit && !c.cedula) || (c.nit === 'â€”' && !c.cedula) ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || c.cedula || 'â€”')}</td>
+                            <td style="color:${!c.email || c.email === 'â€”' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || 'â€”')}</td>
+                            <td style="color:${!c.telefono || c.telefono === 'â€”' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || 'â€”')}</td>
                             <td>
                                 ${c._source === 'registro' && !c.abogado
                                     ? `<select id="cli-law-${allClientRows.indexOf(c)}" onchange="assignLawyerFromClients(${allClientRows.indexOf(c)}, this.value)"
                                         style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.78rem;width:100%;">
-                                        <option value="">— Asignar —</option>
+                                        <option value="">â€” Asignar â€”</option>
                                         ${lawyers.map(l => `<option value="${esc(l.name)}" ${c.abogado === l.name ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
                                       </select>`
-                                    : `<span style="color:${c.abogado ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado ? 'normal' : 'italic'};">${esc(c.abogado || '—')}</span>`
+                                    : `<span style="color:${c.abogado ? 'var(--white)' : 'var(--silver)'};font-style:${c.abogado ? 'normal' : 'italic'};">${esc(c.abogado || 'â€”')}</span>`
                                 }
                             </td>
-                            <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
+                            <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : 'â€”'))}</span></td>
                             <td><span style="font-size:0.68rem;padding:2px 8px;border-radius:20px;background:${c._source === 'directorio' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.05)'};color:${c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${c._source === 'directorio' ? 'Directorio' : 'Registro'}</span></td>
                             <td style="display:flex;gap:6px;align-items:center;">
-                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})" title="Editar">✏️</button>
-                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})" title="Eliminar">🗑</button>` : ''}
+                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})" title="Editar">âœï¸</button>
+                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})" title="Eliminar">ðŸ—‘</button>` : ''}
                         </td>
                         </tr>`).join('')}
                     </tbody>
                 </table>`;
         }
 
-        // ══════════════════════════════════════════
-        // EXPORTAR CLIENTES — Excel y PDF
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // EXPORTAR CLIENTES â€” Excel y PDF
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        // ══════════════════════════════════════════
-        // EXPORTAR — según perfil
-        // Admin:    Panel de Agencia + Configuración
-        // Operador: Todas sus pestañas
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // EXPORTAR â€” segÃºn perfil
+        // Admin:    Panel de Agencia + ConfiguraciÃ³n
+        // Operador: Todas sus pestaÃ±as
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         function exportClientsExcel() {
             var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia');
@@ -1831,7 +1852,7 @@ async function loadRealData() {
             var filename = '';
 
             if (isAdmin) {
-                // ── ADMIN: Panel de Agencia + Configuración ──
+                // â”€â”€ ADMIN: Panel de Agencia + ConfiguraciÃ³n â”€â”€
                 if (!db || !db.length) { showToast('Sin datos para exportar.', 'error'); return; }
 
                 var total     = db.length;
@@ -1844,18 +1865,18 @@ async function loadRealData() {
                 db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
 
                 // KPIs
-                csv += '=== PANEL DE AGENCIA — FLOOVU Legal AI PRO V8 ===' + NL;
+                csv += '=== PANEL DE AGENCIA â€” FLOOVU Legal AI PRO V8 ===' + NL;
                 csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
                 csv += '=== KPIs ===' + NL;
-                csv += [q('Métrica'), q('Valor')].join(sep) + NL;
+                csv += [q('MÃ©trica'), q('Valor')].join(sep) + NL;
                 csv += [q('Total de casos'),        q(total)].join(sep) + NL;
                 csv += [q('Casos asignados'),        q(asignados)].join(sep) + NL;
                 csv += [q('Casos pendientes'),       q(total - asignados)].join(sep) + NL;
                 csv += [q('Score IA promedio'),      q(avgScore + '/10')].join(sep) + NL;
                 csv += [q('Horas ahorradas por IA'), q(hrsStr)].join(sep) + NL + NL;
 
-                // Distribución por rama
-                csv += '=== DISTRIBUCIÓN POR RAMA ===' + NL;
+                // DistribuciÃ³n por rama
+                csv += '=== DISTRIBUCIÃ“N POR RAMA ===' + NL;
                 csv += [q('Rama'), q('Casos'), q('Porcentaje')].join(sep) + NL;
                 Object.keys(ramaCount).forEach(function(r) {
                     csv += [q(r), q(ramaCount[r]), q(Math.round(ramaCount[r]/total*100)+'%')].join(sep) + NL;
@@ -1867,21 +1888,21 @@ async function loadRealData() {
                 csv += [q('Fecha'),q('Rama'),q('Tipo'),q('Abogado'),q('Vencimiento'),q('Score IA'),q('Estado'),q('Tiempo IA')].join(sep) + NL;
                 db.forEach(function(c) {
                     csv += [
-                        q(c.date), q(c.rama), q(c.tipo||'—'),
-                        q(c.lawyer||'Pendiente'), q(c.venc||'—'),
-                        q(c.score>0 ? c.score+'/10' : '—'),
-                        q(c.status||'—'),
-                        q(c.ahorroMin>0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—')
+                        q(c.date), q(c.rama), q(c.tipo||'â€”'),
+                        q(c.lawyer||'Pendiente'), q(c.venc||'â€”'),
+                        q(c.score>0 ? c.score+'/10' : 'â€”'),
+                        q(c.status||'â€”'),
+                        q(c.ahorroMin>0 ? Math.round(c.ahorroMin/60*10)/10+'h' : 'â€”')
                     ].join(sep) + NL;
                 });
                 csv += NL;
 
-                // Configuración: abogados del directorio
+                // ConfiguraciÃ³n: abogados del directorio
                 csv += '=== DIRECTORIO DE ABOGADOS ===' + NL;
                 csv += [q('Nombre'),q('Email'),q('Especialidad')].join(sep) + NL;
                 if (lawyers && lawyers.length) {
                     lawyers.forEach(function(l) {
-                        csv += [q(l.name||'—'), q(l.email||'—'), q(l.spec||l.especialidad||'—')].join(sep) + NL;
+                        csv += [q(l.name||'â€”'), q(l.email||'â€”'), q(l.spec||l.especialidad||'â€”')].join(sep) + NL;
                     });
                 } else {
                     csv += q('Sin abogados registrados') + NL;
@@ -1890,42 +1911,42 @@ async function loadRealData() {
                 filename = 'Floovu_Agencia_' + new Date().toISOString().slice(0,10) + '.csv';
 
             } else {
-                // ── OPERADOR: todas sus pestañas ──
+                // â”€â”€ OPERADOR: todas sus pestaÃ±as â”€â”€
                 var opName   = currentUser && currentUser.name;
                 var opEmail  = currentUser && currentUser.email;
                 var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
                 var misExpedientes = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
 
-                csv += '=== REPORTE DE OPERADOR — FLOOVU Legal AI PRO V8 ===' + NL;
-                csv += 'Operador: ' + (opName||'—') + ' | Email: ' + (opEmail||'—') + NL;
+                csv += '=== REPORTE DE OPERADOR â€” FLOOVU Legal AI PRO V8 ===' + NL;
+                csv += 'Operador: ' + (opName||'â€”') + ' | Email: ' + (opEmail||'â€”') + NL;
                 csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
 
                 // Resumen dashboard
                 var scores2   = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
                 var avgScore2 = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
-                csv += '=== DASHBOARD — MIS MÉTRICAS ===' + NL;
-                csv += [q('Métrica'),q('Valor')].join(sep) + NL;
+                csv += '=== DASHBOARD â€” MIS MÃ‰TRICAS ===' + NL;
+                csv += [q('MÃ©trica'),q('Valor')].join(sep) + NL;
                 csv += [q('Casos asignados'), q(misCasos.length)].join(sep) + NL;
                 csv += [q('Score IA promedio'), q(avgScore2+'/10')].join(sep) + NL;
                 csv += [q('Horas ahorradas'), q(totalMin2>0?(totalMin2/60).toFixed(1)+'h':'0h')].join(sep) + NL + NL;
 
                 // Expedientes / Registro Legal
-                csv += '=== REGISTRO LEGAL — MIS CASOS ===' + NL;
+                csv += '=== REGISTRO LEGAL â€” MIS CASOS ===' + NL;
                 csv += [q('Token'),q('Fecha'),q('Rama'),q('Partes'),q('Tipo'),q('Vencimiento'),q('Score IA'),q('Estado'),q('Tiempo IA')].join(sep) + NL;
                 misExpedientes.forEach(function(c) {
                     csv += [
-                        q(c.token||'—'), q(c.date||'—'), q(c.rama||'—'),
-                        q(c.partes||'—'), q(c.tipo||'—'), q(c.venc||'—'),
-                        q(c.score>0?c.score+'/10':'—'), q(c.status||'—'),
-                        q(c.ahorroMin>0?Math.round(c.ahorroMin/60*10)/10+'h':'—')
+                        q(c.token||'â€”'), q(c.date||'â€”'), q(c.rama||'â€”'),
+                        q(c.partes||'â€”'), q(c.tipo||'â€”'), q(c.venc||'â€”'),
+                        q(c.score>0?c.score+'/10':'â€”'), q(c.status||'â€”'),
+                        q(c.ahorroMin>0?Math.round(c.ahorroMin/60*10)/10+'h':'â€”')
                     ].join(sep) + NL;
                 });
                 csv += NL;
 
                 // Clientes asociados a sus casos
                 csv += '=== MIS CLIENTES ===' + NL;
-                csv += [q('Nombre'),q('Email'),q('Teléfono'),q('NIT / Cédula'),q('Estado'),q('Notas')].join(sep) + NL;
+                csv += [q('Nombre'),q('Email'),q('TelÃ©fono'),q('NIT / CÃ©dula'),q('Estado'),q('Notas')].join(sep) + NL;
                 var clientesVistos = {};
                 misCasos.forEach(function(c) {
                     if (!allClientRows) return;
@@ -1933,8 +1954,8 @@ async function loadRealData() {
                         if (cl.nombre && c.partes && c.partes.toLowerCase().includes(cl.nombre.toLowerCase()) && !clientesVistos[cl.nombre]) {
                             clientesVistos[cl.nombre] = true;
                             csv += [
-                                q(cl.nombre||'—'), q(cl.email||'—'), q(cl.telefono||'—'),
-                                q(cl.nit||'—'), q(cl.estado||'—'), q(cl.notas||'—')
+                                q(cl.nombre||'â€”'), q(cl.email||'â€”'), q(cl.telefono||'â€”'),
+                                q(cl.nit||'â€”'), q(cl.estado||'â€”'), q(cl.notas||'â€”')
                             ].join(sep) + NL;
                         }
                     });
@@ -1942,12 +1963,12 @@ async function loadRealData() {
                 csv += NL;
 
                 // Agenda judicial de sus casos
-                csv += '=== AGENDA JUDICIAL — MIS VENCIMIENTOS ===' + NL;
+                csv += '=== AGENDA JUDICIAL â€” MIS VENCIMIENTOS ===' + NL;
                 csv += [q('Fecha'),q('Partes'),q('Rama'),q('Tipo'),q('Abogado'),q('Vencimiento')].join(sep) + NL;
                 var conVenc = misCasos.filter(function(c){ return c.venc && c.venc !== 'S/D' && c.venc !== 'N/A'; });
                 if (conVenc.length) {
                     conVenc.forEach(function(c) {
-                        csv += [q(c.date||'—'),q(c.partes||'—'),q(c.rama||'—'),q(c.tipo||'—'),q(c.lawyer||'—'),q(c.venc||'—')].join(sep) + NL;
+                        csv += [q(c.date||'â€”'),q(c.partes||'â€”'),q(c.rama||'â€”'),q(c.tipo||'â€”'),q(c.lawyer||'â€”'),q(c.venc||'â€”')].join(sep) + NL;
                     });
                 } else {
                     csv += q('Sin vencimientos registrados') + NL;
@@ -1961,7 +1982,7 @@ async function loadRealData() {
             var a    = document.createElement('a');
             a.href = url; a.download = filename; a.click();
             URL.revokeObjectURL(url);
-            showToast('✓ Exportado correctamente', 'ok');
+            showToast('âœ“ Exportado correctamente', 'ok');
         }
 
         function exportClientsPDF() {
@@ -2002,7 +2023,7 @@ async function loadRealData() {
                 var ramaCount = {};
                 db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
 
-                body += '<div class="cover"><h1>⚖ Floovu Legal AI PRO V8</h1>' +
+                body += '<div class="cover"><h1>âš– Floovu Legal AI PRO V8</h1>' +
                     '<p>Reporte de Agencia</p><p style="opacity:0.5;margin-top:8px;font-size:10px;">Generado el ' + now + '</p></div>';
                 body += '<div style="padding:0 32px 32px;">';
                 body += '<div class="sec">KPIs del Panel</div>';
@@ -2013,7 +2034,7 @@ async function loadRealData() {
                     '<div class="kpi"><div class="kpi-val">' + asig + '/' + total + '</div><div class="kpi-lbl">Casos Asignados</div></div>' +
                     '</div>';
 
-                body += '<div class="sec">Distribución por Rama</div>';
+                body += '<div class="sec">DistribuciÃ³n por Rama</div>';
                 body += '<table><thead><tr><th>Rama</th><th>Casos</th><th>Porcentaje</th></tr></thead><tbody>';
                 Object.keys(ramaCount).forEach(function(r) {
                     body += '<tr><td>' + r + '</td><td>' + ramaCount[r] + '</td><td>' + Math.round(ramaCount[r]/total*100) + '%</td></tr>';
@@ -2024,11 +2045,11 @@ async function loadRealData() {
                 body += '<table><thead><tr><th>Fecha</th><th>Rama</th><th>Tipo</th><th>Abogado</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th></tr></thead><tbody>';
                 db.slice(0,50).forEach(function(c) {
                     var badge = c.status==='ASIGNADO' ? 'badge-green' : 'badge-grey';
-                    body += '<tr><td>' + (c.date||'—') + '</td><td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
+                    body += '<tr><td>' + (c.date||'â€”') + '</td><td>' + (c.rama||'â€”') + '</td><td>' + (c.tipo||'â€”') + '</td>' +
                         '<td>' + (c.lawyer||'Pendiente') + '</td>' +
-                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
-                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'—') + '</td>' +
-                        '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'â€”') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'â€”') + '</td>' +
+                        '<td><span class="' + badge + '">' + (c.status||'â€”') + '</span></td></tr>';
                 });
                 body += '</tbody></table>';
 
@@ -2036,49 +2057,49 @@ async function loadRealData() {
                 body += '<table><thead><tr><th>Nombre</th><th>Email</th><th>Especialidad</th></tr></thead><tbody>';
                 if (lawyers && lawyers.length) {
                     lawyers.forEach(function(l) {
-                        body += '<tr><td>' + (l.name||'—') + '</td><td>' + (l.email||'—') + '</td><td>' + (l.spec||l.especialidad||'—') + '</td></tr>';
+                        body += '<tr><td>' + (l.name||'â€”') + '</td><td>' + (l.email||'â€”') + '</td><td>' + (l.spec||l.especialidad||'â€”') + '</td></tr>';
                     });
                 } else { body += '<tr><td colspan="3" style="text-align:center;color:' + S + ';">Sin abogados registrados</td></tr>'; }
                 body += '</tbody></table>';
 
             } else {
-                // ── OPERADOR ──
+                // â”€â”€ OPERADOR â”€â”€
                 var opName  = currentUser && currentUser.name;
                 var opEmail = currentUser && currentUser.email;
                 var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
-                if (!misCasos.length) { showToast('No tenés casos asignados para exportar.', 'error'); return; }
+                if (!misCasos.length) { showToast('No tenÃ©s casos asignados para exportar.', 'error'); return; }
 
                 var scores2  = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
                 var avg2     = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
 
-                body += '<div class="cover"><h1>⚖ Floovu Legal AI PRO V8</h1>' +
-                    '<p>Reporte de Operador — ' + (opName||'') + '</p>' +
-                    '<p style="opacity:0.5;margin-top:8px;font-size:10px;">' + (opEmail||'') + ' · Generado el ' + now + '</p></div>';
+                body += '<div class="cover"><h1>âš– Floovu Legal AI PRO V8</h1>' +
+                    '<p>Reporte de Operador â€” ' + (opName||'') + '</p>' +
+                    '<p style="opacity:0.5;margin-top:8px;font-size:10px;">' + (opEmail||'') + ' Â· Generado el ' + now + '</p></div>';
                 body += '<div style="padding:0 32px 32px;">';
 
-                body += '<div class="sec">Mis Métricas</div>';
+                body += '<div class="sec">Mis MÃ©tricas</div>';
                 body += '<div class="kpi-grid">' +
                     '<div class="kpi"><div class="kpi-val">' + misCasos.length + '</div><div class="kpi-lbl">Casos Asignados</div></div>' +
                     '<div class="kpi"><div class="kpi-val">' + avg2 + '/10</div><div class="kpi-lbl">Score IA Promedio</div></div>' +
                     '<div class="kpi"><div class="kpi-val">' + (totalMin2>0?(totalMin2/60).toFixed(1)+'h':'0h') + '</div><div class="kpi-lbl">Horas Ahorradas</div></div>' +
                     '</div>';
 
-                body += '<div class="sec">Registro Legal — Mis Casos</div>';
+                body += '<div class="sec">Registro Legal â€” Mis Casos</div>';
                 body += '<table><thead><tr><th>Fecha</th><th>Partes</th><th>Rama</th><th>Tipo</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th></tr></thead><tbody>';
                 misCasos.forEach(function(c) {
                     var badge = c.status==='ASIGNADO'?'badge-green':'badge-grey';
-                    body += '<tr><td>' + (c.date||'—') + '</td><td style="font-weight:600;">' + (c.partes||'—') + '</td>' +
-                        '<td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
-                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
-                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'—') + '</td>' +
-                        '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
+                    body += '<tr><td>' + (c.date||'â€”') + '</td><td style="font-weight:600;">' + (c.partes||'â€”') + '</td>' +
+                        '<td>' + (c.rama||'â€”') + '</td><td>' + (c.tipo||'â€”') + '</td>' +
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D'?'#c0392b':'#555') + ';">' + (c.venc||'â€”') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0?c.score+'/10':'â€”') + '</td>' +
+                        '<td><span class="' + badge + '">' + (c.status||'â€”') + '</span></td></tr>';
                 });
                 body += '</tbody></table>';
 
                 // Clientes asociados
                 body += '<div class="sec">Mis Clientes</div>';
-                body += '<table><thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>NIT / Cédula</th><th>Estado</th><th>Notas</th></tr></thead><tbody>';
+                body += '<table><thead><tr><th>Nombre</th><th>Email</th><th>TelÃ©fono</th><th>NIT / CÃ©dula</th><th>Estado</th><th>Notas</th></tr></thead><tbody>';
                 var vistos = {};
                 var hayClientes = false;
                 misCasos.forEach(function(c) {
@@ -2088,10 +2109,10 @@ async function loadRealData() {
                             vistos[cl.nombre] = true;
                             hayClientes = true;
                             var badge2 = cl.estado==='ASIGNADO'?'badge-green':'badge-gold';
-                            body += '<tr><td style="font-weight:600;">' + (cl.nombre||'—') + '</td><td>' + (cl.email||'—') + '</td>' +
-                                '<td>' + (cl.telefono||'—') + '</td><td>' + (cl.nit||'—') + '</td>' +
-                                '<td><span class="' + badge2 + '">' + (cl.estado||'—') + '</span></td>' +
-                                '<td>' + (cl.notas||'—') + '</td></tr>';
+                            body += '<tr><td style="font-weight:600;">' + (cl.nombre||'â€”') + '</td><td>' + (cl.email||'â€”') + '</td>' +
+                                '<td>' + (cl.telefono||'â€”') + '</td><td>' + (cl.nit||'â€”') + '</td>' +
+                                '<td><span class="' + badge2 + '">' + (cl.estado||'â€”') + '</span></td>' +
+                                '<td>' + (cl.notas||'â€”') + '</td></tr>';
                         }
                     });
                 });
@@ -2101,26 +2122,26 @@ async function loadRealData() {
                 // Agenda judicial
                 var conVenc = misCasos.filter(function(c){ return c.venc && c.venc !== 'S/D' && c.venc !== 'N/A'; });
                 if (conVenc.length) {
-                    body += '<div class="sec">Agenda Judicial — Mis Vencimientos</div>';
+                    body += '<div class="sec">Agenda Judicial â€” Mis Vencimientos</div>';
                     body += '<table><thead><tr><th>Fecha Caso</th><th>Partes</th><th>Rama</th><th>Tipo</th><th>Vencimiento</th></tr></thead><tbody>';
                     conVenc.forEach(function(c) {
-                        body += '<tr><td>' + (c.date||'—') + '</td><td>' + (c.partes||'—') + '</td>' +
-                            '<td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
+                        body += '<tr><td>' + (c.date||'â€”') + '</td><td>' + (c.partes||'â€”') + '</td>' +
+                            '<td>' + (c.rama||'â€”') + '</td><td>' + (c.tipo||'â€”') + '</td>' +
                             '<td style="color:#c0392b;font-weight:700;">' + c.venc + '</td></tr>';
                     });
                     body += '</tbody></table>';
                 }
             }
 
-            body += '<div class="footer">Floovu Legal AI PRO V8 · Reporte confidencial · ' + now + '</div></div>';
+            body += '<div class="footer">Floovu Legal AI PRO V8 Â· Reporte confidencial Â· ' + now + '</div></div>';
 
             var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Reporte Floovu</title>' + css + '</head><body>' + body + '</body></html>';
             var win = window.open('', '_blank');
-            if (!win) { showToast('Habilitá las ventanas emergentes para exportar PDF.', 'error'); return; }
+            if (!win) { showToast('HabilitÃ¡ las ventanas emergentes para exportar PDF.', 'error'); return; }
             win.document.write(html);
             win.document.close();
             win.onload = function() { win.focus(); win.print(); };
-            showToast('✓ PDF listo para imprimir / guardar', 'ok');
+            showToast('âœ“ PDF listo para imprimir / guardar', 'ok');
         }
 
 
@@ -2137,13 +2158,13 @@ async function loadRealData() {
             // Populate abogado dropdown with current lawyers list
             const sel = document.getElementById('edit-cli-abogado');
             if (sel) {
-                sel.innerHTML = '<option value="">— Sin asignar —</option>' +
+                sel.innerHTML = '<option value="">â€” Sin asignar â€”</option>' +
                     (lawyers || []).map(l =>
                         `<option value="${esc(l.name)}" ${(c.abogado || '') === l.name ? 'selected' : ''}>${esc(l.name)}</option>`
                     ).join('');
                 sel.value = c.abogado || '';
             }
-            // V2: Mostrar botón "Confirmar Información" solo si cliente es nuevo
+            // V2: Mostrar botÃ³n "Confirmar InformaciÃ³n" solo si cliente es nuevo
             const btnConfirm = document.getElementById('btn-confirm-client');
             const btnSave = document.getElementById('btn-save-client');
             const isNuevo = c._status === 'NUEVO' || c.estado === 'NUEVO';
@@ -2165,14 +2186,14 @@ async function loadRealData() {
             document.getElementById('client-edit-modal').classList.remove('visible');
         }
 
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // OBSERVACIONES EN PERFIL DEL CLIENTE
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         async function loadClientModalObservaciones(clienteNombre) {
             const listEl = document.getElementById('client-modal-obs-list');
             if (!listEl) return;
-            listEl.innerHTML = '<p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">⏳ Cargando observaciones...</p>';
+            listEl.innerHTML = '<p style="font-size:0.78rem;color:var(--silver);font-style:italic;text-align:center;padding:12px;">â³ Cargando observaciones...</p>';
 
             // Buscar todos los tokens de casos asociados a este cliente
             const clientTokens = (db || [])
@@ -2208,7 +2229,7 @@ async function loadRealData() {
                 const id  = a.ID  || a.id  || '';
                 const tok = a.Token || a.token || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
-                const isPublic = vis === 'Público' || vis === 'Publico';
+                const isPublic = vis === 'PÃºblico' || vis === 'Publico';
                 const borderColor = isPublic ? 'rgba(34,197,94,0.45)' : 'rgba(201,168,76,0.3)';
                 const safeId  = esc(id);
                 const safeTok = esc(tok);
@@ -2221,7 +2242,7 @@ async function loadRealData() {
                             <span style="font-size:0.62rem;font-weight:700;padding:1px 6px;border-radius:4px;
                                          background:rgba(201,168,76,0.08);color:rgba(201,168,76,0.7);">${esc(a.Tipo || a.tipo || 'NOTA')}</span>
                             <span style="font-size:0.62rem;font-weight:700;color:${isPublic ? '#22c55e' : 'var(--silver)'};"
-                                  title="${isPublic ? 'Visible en portal' : 'Solo interno'}">${isPublic ? '👁️ Portal' : '🔒 Interno'}</span>
+                                  title="${isPublic ? 'Visible en portal' : 'Solo interno'}">${isPublic ? 'ðŸ‘ï¸ Portal' : 'ðŸ”’ Interno'}</span>
                         </div>
                         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                             <span style="font-size:0.6rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
@@ -2230,12 +2251,12 @@ async function loadRealData() {
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;
                                        transition:0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'"
-                                       onmouseout="this.style.background='none'">✏️</button>
+                                       onmouseout="this.style.background='none'">âœï¸</button>
                             <button onclick="eliminarObsClienteModal('${safeId}','${safeTok}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;
                                        transition:0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'"
-                                       onmouseout="this.style.background='none'">🗑️</button>
+                                       onmouseout="this.style.background='none'">ðŸ—‘ï¸</button>
                             ` : ''}
                         </div>
                     </div>
@@ -2258,9 +2279,9 @@ async function loadRealData() {
                 <div style="background:#0c0f16;border:1px solid rgba(201,168,76,0.3);border-radius:12px;
                             padding:22px;width:90%;max-width:480px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Observación</span>
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">âœï¸ Editar ObservaciÃ³n</span>
                         <button onclick="document.getElementById('modal-editar-cliobs').remove()"
-                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.2rem;line-height:1;">✕</button>
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.2rem;line-height:1;">âœ•</button>
                     </div>
                     <textarea id="modal-cliobs-texto" rows="4"
                         style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
@@ -2271,7 +2292,7 @@ async function loadRealData() {
                         <input type="checkbox" id="modal-cliobs-vis" ${isPublic ? 'checked' : ''}
                             style="accent-color:var(--gold);width:15px;height:15px;cursor:pointer;">
                         <label for="modal-cliobs-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
-                            👁️ Visible en Portal del Cliente
+                            ðŸ‘ï¸ Visible en Portal del Cliente
                         </label>
                     </div>
                     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
@@ -2280,7 +2301,7 @@ async function loadRealData() {
                                    background:none;color:var(--silver);cursor:pointer;font-size:0.82rem;">Cancelar</button>
                         <button onclick="confirmarEditarObsClienteModal('${id}','${tok}')"
                             style="padding:7px 18px;border:none;border-radius:8px;background:var(--gold);
-                                   color:#000;cursor:pointer;font-weight:700;font-size:0.82rem;">💾 Guardar</button>
+                                   color:#000;cursor:pointer;font-weight:700;font-size:0.82rem;">ðŸ’¾ Guardar</button>
                     </div>
                 </div>`;
             document.body.appendChild(modal);
@@ -2289,8 +2310,8 @@ async function loadRealData() {
         async function confirmarEditarObsClienteModal(id, tok) {
             const texto = document.getElementById('modal-cliobs-texto')?.value?.trim();
             const cb    = document.getElementById('modal-cliobs-vis');
-            const visibilidad = cb?.checked ? 'Público' : 'Interno';
-            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            const visibilidad = cb?.checked ? 'PÃºblico' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacÃ­o.', 'error'); return; }
             try {
                 const WH  = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.EDIT_OBS, {
@@ -2298,7 +2319,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Observación actualizada.', 'ok');
+                    showToast('ObservaciÃ³n actualizada.', 'ok');
                     document.getElementById('modal-editar-cliobs')?.remove();
                     loadClientModalObservaciones(window._currentClientModalName);
                 } else { showToast(`Error al editar: ${res.status}`, 'error'); }
@@ -2306,7 +2327,7 @@ async function loadRealData() {
         }
 
         async function eliminarObsClienteModal(id, tok) {
-            if (!confirm('¿Eliminar esta observación? Esta acción no se puede deshacer.')) return;
+            if (!confirm('Â¿Eliminar esta observaciÃ³n? Esta acciÃ³n no se puede deshacer.')) return;
             try {
                 const WH  = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.DELETE_OBS, {
@@ -2314,7 +2335,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Observación eliminada.', 'ok');
+                    showToast('ObservaciÃ³n eliminada.', 'ok');
                     loadClientModalObservaciones(window._currentClientModalName);
                 } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -2326,7 +2347,7 @@ async function loadRealData() {
             if(url && url !== 'undefined') {
                 content.innerHTML = `<iframe src="${url.replace('/view', '/preview')}" width="100%" height="100%" frameborder="0"></iframe>`;
             } else {
-                content.innerHTML = `<p style="padding:20px;color:#333;text-align:center;">No hay documento adjunto válido.</p>`;
+                content.innerHTML = `<p style="padding:20px;color:#333;text-align:center;">No hay documento adjunto vÃ¡lido.</p>`;
             }
             modal.classList.add('visible');
         }
@@ -2347,10 +2368,10 @@ async function loadRealData() {
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
             const abogado  = document.getElementById('edit-cli-abogado')?.value || '';
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
-            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email invÃ¡lido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
             try {
-                // Unificar edición: primero eliminar el registro viejo, luego crear el nuevo
+                // Unificar ediciÃ³n: primero eliminar el registro viejo, luego crear el nuevo
                 const deleteKey = original.nit || original.nombre;
                 if (deleteKey) {
                     try {
@@ -2360,7 +2381,7 @@ async function loadRealData() {
                         });
                         logError(`Delete previo: ${delRes.status}`);
                     } catch(delErr) {
-                        logError(`Aviso: delete previo falló (${delErr.message}), continuando con save...`);
+                        logError(`Aviso: delete previo fallÃ³ (${delErr.message}), continuando con save...`);
                     }
                 }
                 
@@ -2374,7 +2395,7 @@ async function loadRealData() {
                         nit, 
                         cedula: nit, // Mapeo dual para n8n
                         email, 
-                        'Correo electrónico': email,
+                        'Correo electrÃ³nico': email,
                         correo_electronico: email,
                         telefono, 
                         notas, 
@@ -2394,14 +2415,14 @@ async function loadRealData() {
                     if (caseItem) caseItem.partes = nombre;
                 }
                 await loadClients();
-                await syncClientDataToAllTabs(nombre);
+                await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
                 showToast(`${nombre} actualizado correctamente.`, 'ok');
-                logError('✓ Cliente actualizado.');
+                logError('âœ“ Cliente actualizado.');
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
-        // V2: Confirmar información de cliente nuevo
+        // V2: Confirmar informaciÃ³n de cliente nuevo
         async function confirmClientInfo() {
             const idx      = parseInt(document.getElementById('edit-client-idx').value);
             const original = allClientRows[idx];
@@ -2410,13 +2431,13 @@ async function loadRealData() {
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
 
-            // Validación de campos obligatorios
+            // ValidaciÃ³n de campos obligatorios
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
-            if (!nit) { showToast('El NIT/Cédula es obligatorio.', 'error'); return; }
+            if (!nit) { showToast('El NIT/CÃ©dula es obligatorio.', 'error'); return; }
             if (!email) { showToast('El email es obligatorio.', 'error'); return; }
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email invÃ¡lido.', 'error'); return; }
 
-            logError(`Confirmando información de cliente: ${nombre}...`);
+            logError(`Confirmando informaciÃ³n de cliente: ${nombre}...`);
             try {
                 // Eliminar registro viejo antes de guardar el actualizado
                 const deleteKey = original.nit || original.nombre;
@@ -2427,7 +2448,7 @@ async function loadRealData() {
                             body: JSON.stringify({ nit: original.nit || '', nombre: original.nombre || '' })
                         });
                     } catch(delErr) {
-                        logError(`Aviso: delete previo falló (${delErr.message}), continuando...`);
+                        logError(`Aviso: delete previo fallÃ³ (${delErr.message}), continuando...`);
                     }
                 }
 
@@ -2440,7 +2461,7 @@ async function loadRealData() {
                         nit,
                         cedula: nit, // Mapeo dual para n8n
                         email,
-                        'Correo electrónico': email,
+                        'Correo electrÃ³nico': email,
                         correo_electronico: email,
                         telefono: telefono || '',
                         notas: original.notas || '',
@@ -2462,10 +2483,10 @@ async function loadRealData() {
                 clients = clients.map(c => c.nombre === nombre ? original : c);
 
                 await loadClients();
-                await syncClientDataToAllTabs(nombre);
+                await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
-                showToast(`✓ ${nombre} confirmado exitosamente.`, 'ok');
-                logError('✓ Cliente confirmado y guardado.');
+                showToast(`âœ“ ${nombre} confirmado exitosamente.`, 'ok');
+                logError('âœ“ Cliente confirmado y guardado.');
             } catch(e) {
                 showToast('No se pudo conectar con n8n.', 'error');
                 logError(`Error: ${e.message}`);
@@ -2475,7 +2496,7 @@ async function loadRealData() {
         async function deleteClient(idx) {
             const c = allClientRows[idx];
             if (c._source !== 'directorio') { showToast('Solo se pueden eliminar clientes del directorio manual.', 'error'); return; }
-            const ok = await floovuConfirm(`¿Eliminar a ${c.nombre} del directorio?`);
+            const ok = await floovuConfirm(`Â¿Eliminar a ${c.nombre} del directorio?`);
             if (!ok) return;
             logError(`Eliminando: ${c.nombre}...`);
             try {
@@ -2485,7 +2506,7 @@ async function loadRealData() {
                 if (res.ok) {
                     await loadClients();
                     showToast(`${c.nombre} eliminado.`, 'ok');
-                    logError('✓ Cliente eliminado.');
+                    logError('âœ“ Cliente eliminado.');
                 } else {
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
                 }
@@ -2496,7 +2517,7 @@ async function loadRealData() {
             const panel = document.getElementById(`mails-panel-${tok}`);
             if (!panel) return;
 
-            // Toggle: si ya está abierto, cerrar
+            // Toggle: si ya estÃ¡ abierto, cerrar
             if (panel.style.display !== 'none') {
                 panel.style.display = 'none';
                 return;
@@ -2514,12 +2535,12 @@ async function loadRealData() {
 
             if (!clientEmail) {
                 panel.style.display = 'block';
-                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#f97316;">⚠️ Ingresá el email del cliente en el campo de arriba para buscar sus correos.</p>`;
+                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#f97316;">âš ï¸ IngresÃ¡ el email del cliente en el campo de arriba para buscar sus correos.</p>`;
                 return;
             }
 
             panel.style.display = 'block';
-            panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">⏳ Buscando correos con PDF de <strong style="color:var(--gold);">${esc(clientEmail)}</strong>...</p>`;
+            panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">â³ Buscando correos con PDF de <strong style="color:var(--gold);">${esc(clientEmail)}</strong>...</p>`;
 
             try {
                 const res = await authFetch(N8N_GET_CLIENT_MAILS, {
@@ -2533,25 +2554,25 @@ async function loadRealData() {
                 const mails = Array.isArray(data) ? data : (data.mails || data.emails || []);
 
                 if (!mails.length) {
-                    panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">📭 No se encontraron correos con PDF de <strong>${esc(clientEmail)}</strong>.</p>`;
+                    panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:var(--silver);">ðŸ“­ No se encontraron correos con PDF de <strong>${esc(clientEmail)}</strong>.</p>`;
                     return;
                 }
 
-                // Mostrar lista y disparar procesamiento automático en paralelo
+                // Mostrar lista y disparar procesamiento automÃ¡tico en paralelo
                 panel.innerHTML = `
                     <p style="margin:0 0 10px;font-size:0.75rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;">
-                        📧 ${mails.length} correo(s) encontrado(s) — procesando automáticamente...
+                        ðŸ“§ ${mails.length} correo(s) encontrado(s) â€” procesando automÃ¡ticamente...
                     </p>
                     ${mails.map(m => `
                         <div id="mail-row-${esc(m.messageId)}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);gap:1rem;">
                             <div style="min-width:0;flex:1;">
-                                <p style="margin:0;font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${esc(m.subject || '(Sin asunto)')}</p>
-                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">📅 ${esc(m.date || '—')}${m.attachments ? ` · 📎 ${m.attachments} adjunto(s)` : ''}</p>
+                                <p style="margin:0;font-size:0.82rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ðŸ“„ ${esc(m.subject || '(Sin asunto)')}</p>
+                                <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">ðŸ“… ${esc(m.date || 'â€”')}${m.attachments ? ` Â· ðŸ“Ž ${m.attachments} adjunto(s)` : ''}</p>
                             </div>
-                            <span id="mail-status-${esc(m.messageId)}" style="font-size:0.72rem;color:var(--silver);flex-shrink:0;">⏳ Enviando...</span>
+                            <span id="mail-status-${esc(m.messageId)}" style="font-size:0.72rem;color:var(--silver);flex-shrink:0;">â³ Enviando...</span>
                         </div>`).join('')}`;
 
-                // Procesar cada correo automáticamente sin esperar al anterior
+                // Procesar cada correo automÃ¡ticamente sin esperar al anterior
                 mails.forEach(async (m) => {
                     const statusEl = document.getElementById(`mail-status-${m.messageId}`);
                     try {
@@ -2566,24 +2587,24 @@ async function loadRealData() {
                         });
                         if (statusEl) {
                             if (r.ok) {
-                                statusEl.textContent = '✅ Guardado';
+                                statusEl.textContent = 'âœ… Guardado';
                                 statusEl.style.color = '#22c55e';
                             } else {
-                                statusEl.textContent = `⚠️ Error ${r.status}`;
+                                statusEl.textContent = `âš ï¸ Error ${r.status}`;
                                 statusEl.style.color = '#f97316';
                             }
                         }
                     } catch(e) {
-                        if (statusEl) { statusEl.textContent = '🔴 Falló'; statusEl.style.color = '#ef4444'; }
+                        if (statusEl) { statusEl.textContent = 'ðŸ”´ FallÃ³'; statusEl.style.color = '#ef4444'; }
                         logError(`Error procesando correo ${m.messageId}: ${e.message}`);
                     }
                 });
 
                 showToast(`${mails.length} correo(s) de ${clientName} enviados al Registro Legal.`, 'ok');
-                logError(`✓ ${mails.length} correos de ${clientEmail} procesados automáticamente.`);
+                logError(`âœ“ ${mails.length} correos de ${clientEmail} procesados automÃ¡ticamente.`);
 
             } catch(e) {
-                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#ef4444;">🔴 Error al conectar con n8n: ${esc(e.message)}</p>`;
+                panel.innerHTML = `<p style="margin:0;font-size:0.82rem;color:#ef4444;">ðŸ”´ Error al conectar con n8n: ${esc(e.message)}</p>`;
                 logError(`Error buscando correos: ${e.message}`);
             }
         }
@@ -2618,7 +2639,7 @@ async function loadRealData() {
                     caseItem.lawyer = lawyerName;
                     c.abogado = lawyerName;
                     showToast(`${lawyerName} asignado a ${c.nombre}.`, 'ok');
-                    logError(`✓ Asignación completada desde Directorio de Clientes.`);
+                    logError(`âœ“ AsignaciÃ³n completada desde Directorio de Clientes.`);
                     await loadClients();
                 } else {
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
@@ -2626,14 +2647,14 @@ async function loadRealData() {
             } catch(e) { showToast('No se pudo conectar con n8n.', 'error'); logError(`Error: ${e.message}`); }
         }
 
-                // ══════════════════════════════════════════
-        // GESTIÓN DE USUARIOS — solo para Admin
-        // ══════════════════════════════════════════
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // GESTIÃ“N DE USUARIOS â€” solo para Admin
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         async function generateHashAdmin() {
             const pass  = document.getElementById('hash-pass').value;
             const pass2 = document.getElementById('hash-pass2').value;
-            if (!pass) { showToast('Escribe una contraseña.', 'error'); return; }
-            if (pass !== pass2) { showToast('Las contraseñas no coinciden.', 'error'); return; }
+            if (!pass) { showToast('Escribe una contraseÃ±a.', 'error'); return; }
+            if (pass !== pass2) { showToast('Las contraseÃ±as no coinciden.', 'error'); return; }
             const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pass));
             const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
             document.getElementById('hash-value-admin').textContent = hash;
@@ -2664,7 +2685,7 @@ async function loadRealData() {
                 function checkHashStrength(pass) {
             const fill  = document.getElementById('hash-strength-fill');
             const label = document.getElementById('hash-strength-label');
-            if (!pass) { fill.style.width = '0%'; label.textContent = '—'; label.style.color = '#475569'; return; }
+            if (!pass) { fill.style.width = '0%'; label.textContent = 'â€”'; label.style.color = '#475569'; return; }
             let score = 0;
             if (pass.length >= 8)  score++;
             if (pass.length >= 12) score++;
@@ -2672,8 +2693,8 @@ async function loadRealData() {
             if (/[0-9]/.test(pass)) score++;
             if (/[^A-Za-z0-9]/.test(pass)) score++;
             const levels = [
-                { w: '20%', c: '#ef4444', t: 'Muy débil' },
-                { w: '40%', c: '#f97316', t: 'Débil' },
+                { w: '20%', c: '#ef4444', t: 'Muy dÃ©bil' },
+                { w: '40%', c: '#f97316', t: 'DÃ©bil' },
                 { w: '60%', c: '#eab308', t: 'Regular' },
                 { w: '80%', c: '#84cc16', t: 'Buena' },
                 { w: '100%', c: '#22c55e', t: 'Excelente' },
@@ -2697,7 +2718,7 @@ async function loadRealData() {
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
                     <div>
                         <p style="margin:0;font-size:0.82rem;font-weight:700;color:var(--white);">@${esc(u.username)}</p>
-                        <p style="margin:0;font-size:0.72rem;color:var(--silver);">${esc(u.name)} · ${esc(u.email||'')}</p>
+                        <p style="margin:0;font-size:0.72rem;color:var(--silver);">${esc(u.name)} Â· ${esc(u.email||'')}</p>
                     </div>
                     <span style="font-size:0.62rem;padding:3px 8px;border-radius:10px;font-weight:700;text-transform:uppercase;
                         background:${u.role==='admin' ? 'rgba(197,160,89,0.15)' : 'rgba(99,153,34,0.15)'};
@@ -2707,9 +2728,9 @@ async function loadRealData() {
                 </div>`).join('');
         }
 
-                // ══════════════════════════════════════════
-        // DASHBOARD ADMIN — métricas de agencia
-        // ══════════════════════════════════════════
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // DASHBOARD ADMIN â€” mÃ©tricas de agencia
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function showDashboardForRole(role) {
             const opDash    = document.getElementById('dashboard-operator');
             const adminDash = document.getElementById('dashboard-admin');
@@ -2719,12 +2740,12 @@ async function loadRealData() {
                 if (adminDash) adminDash.style.display = 'block';
                 if (title)     title.textContent        = 'Panel de Agencia';
                 renderAdminDashboard();
-                // Esperar que Firebase esté listo y mostrar sesiones
+                // Esperar que Firebase estÃ© listo y mostrar sesiones
                 waitForFirebaseAndRender();
             } else {
                 if (opDash)    opDash.style.display    = '';
                 if (adminDash) adminDash.style.display = 'none';
-                if (title)     title.textContent        = 'Visión General';
+                if (title)     title.textContent        = 'VisiÃ³n General';
             }
         }
 
@@ -2732,12 +2753,12 @@ async function loadRealData() {
             let attempts = 0;
             function tryRender() {
                 attempts++;
-                // Si ya tenemos datos en caché (onValue los puso ahí)
+                // Si ya tenemos datos en cachÃ© (onValue los puso ahÃ­)
                 if (window._firebaseSessions !== undefined) {
                     renderActiveSessionsLive(window._firebaseSessions);
                     return;
                 }
-                // Si Firebase está listo podemos hacer get
+                // Si Firebase estÃ¡ listo podemos hacer get
                 if (window.firebaseGetSessions) {
                     // Iniciar escucha en tiempo real
                     if (typeof window.fbWatchSessions === 'function') {
@@ -2750,20 +2771,20 @@ async function loadRealData() {
                     });
                     return;
                 }
-                // Todavía no está listo — reintentar hasta 10 veces
+                // TodavÃ­a no estÃ¡ listo â€” reintentar hasta 10 veces
                 if (attempts < 10) {
                     setTimeout(tryRender, 800);
                 } else {
                     var container = document.getElementById('active-sessions-list');
-                    if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:1rem;opacity:0.5;">Firebase no disponible. Verificá tu conexión.</p>';
+                    if (container) container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;text-align:center;padding:1rem;opacity:0.5;">Firebase no disponible. VerificÃ¡ tu conexiÃ³n.</p>';
                 }
             }
             setTimeout(tryRender, 600);
         }
 
-        // ══════════════════════════════════════════
-        // SESIONES ACTIVAS — lee Firebase en tiempo real
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // SESIONES ACTIVAS â€” lee Firebase en tiempo real
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function renderActiveSessionsLive(sessions) {
             const container = document.getElementById('active-sessions-list');
             if (!container) return;
@@ -2781,22 +2802,22 @@ async function loadRealData() {
                 const role        = data.role === 'admin' ? 'AGC' : 'OPR';
                 const roleColor   = data.role === 'admin' ? 'var(--gold)' : '#97C459';
                 const statusColor = isOnline ? '#22c55e' : 'var(--kpi-alert)';
-                const statusDot   = isOnline ? '●' : '○';
-                const statusTip   = isOnline ? 'En línea' : ('Hace ' + lastSeenAgo + 's');
+                const statusDot   = isOnline ? 'â—' : 'â—‹';
+                const statusTip   = isOnline ? 'En lÃ­nea' : ('Hace ' + lastSeenAgo + 's');
                 const ua          = data.userAgent || '';
-                const devIcon     = ua.includes('Mobile') ? '📱' : '🖥️';
+                const devIcon     = ua.includes('Mobile') ? 'ðŸ“±' : 'ðŸ–¥ï¸';
 
                 return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;">' +
-                    '<span style="font-size:0.85rem;flex-shrink:0;">' + (data.role === 'admin' ? '👑' : '👤') + '</span>' +
+                    '<span style="font-size:0.85rem;flex-shrink:0;">' + (data.role === 'admin' ? 'ðŸ‘‘' : 'ðŸ‘¤') + '</span>' +
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="display:flex;align-items:center;gap:6px;">' +
                             '<span style="font-size:0.75rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.name || username) + '</span>' +
                             '<span style="font-size:0.6rem;font-weight:700;color:' + roleColor + ';letter-spacing:0.5px;background:rgba(201,168,76,0.08);padding:1px 5px;border-radius:4px;flex-shrink:0;">' + role + '</span>' +
                             '<span style="font-size:0.65rem;color:' + statusColor + ';font-weight:700;flex-shrink:0;" title="' + statusTip + '">' + statusDot + '</span>' +
                         '</div>' +
-                        '<p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.email || username) + ' · ' + devIcon + ' · ' + loginDate + '</p>' +
+                        '<p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.email || username) + ' Â· ' + devIcon + ' Â· ' + loginDate + '</p>' +
                     '</div>' +
-                    '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:0.62rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.06)\'">✕</button>' +
+                    '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:0.62rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.06)\'">âœ•</button>' +
                 '</div>';
             }).join('');
         }
@@ -2807,7 +2828,7 @@ async function loadRealData() {
             if (!container) return;
             container.innerHTML = '<p style="color:var(--silver);font-size:0.85rem;opacity:0.5;text-align:center;padding:1.5rem;">Cargando...</p>';
 
-            // Usar cache en tiempo real si ya está disponible
+            // Usar cache en tiempo real si ya estÃ¡ disponible
             if (window._firebaseSessions !== undefined) {
                 renderActiveSessionsLive(window._firebaseSessions);
                 return;
@@ -2830,14 +2851,14 @@ async function loadRealData() {
 
         async function forceLogoutSession(username) {
             if (!window.firebaseForceLogout) return;
-            const ok = await floovuConfirm(`¿Cerrar sesión de @${username}?`);
+            const ok = await floovuConfirm(`Â¿Cerrar sesiÃ³n de @${username}?`);
             if (!ok) return;
             try {
                 await window.firebaseForceLogout(username);
-                showToast(`✓ Sesión de @${username} cerrada`, 'ok');
+                showToast(`âœ“ SesiÃ³n de @${username} cerrada`, 'ok');
                 renderActiveSessions();
             } catch(e) {
-                showToast('Error al cerrar sesión: ' + e.message, 'error');
+                showToast('Error al cerrar sesiÃ³n: ' + e.message, 'error');
             }
         }
 
@@ -2864,14 +2885,14 @@ async function loadRealData() {
                 if (asigBar  && total)   asigBar.style.width  = `${Math.min(asignados/total*100,100)}%`;
             }, 100);
 
-            // Trend badges admin — cálculo real últimos 7d vs 7d anteriores
+            // Trend badges admin â€” cÃ¡lculo real Ãºltimos 7d vs 7d anteriores
             const adminTrends = calculateTrends(db);
             updateTrendBadge('admin-trend-cases', adminTrends.cases);
             updateTrendBadge('admin-trend-score', adminTrends.score);
             updateTrendBadge('admin-trend-hours', adminTrends.hours);
             updateTrendBadge('admin-trend-asig', adminTrends.assigned);
 
-            // Tabla últimos casos (sin datos privados — solo métricas)
+            // Tabla Ãºltimos casos (sin datos privados â€” solo mÃ©tricas)
             const tbody = document.getElementById('admin-dash-rows');
             if (tbody) {
                 if (!db.length) {
@@ -2880,15 +2901,15 @@ async function loadRealData() {
                     tbody.innerHTML = db.slice(0,10).map(c => `<tr>
                         <td style="color:var(--silver);font-size:0.8rem;">${esc(c.date)}</td>
                         <td>${esc(c.rama)}</td>
-                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.tipo||'—')}</td>
-                        <td style="color:${c.score>0?'var(--gold)':'var(--silver)'};">${c.score > 0 ? c.score+'/10' : '—'}</td>
-                        <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:${c.status==='ASIGNADO'?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='ASIGNADO'?'#22c55e':'var(--silver)'};">${esc(c.status||'—')}</span></td>
-                        <td style="color:var(--silver);">${c.ahorroMin > 0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—'}</td>
+                        <td style="color:var(--silver);font-size:0.8rem;">${esc(c.tipo||'â€”')}</td>
+                        <td style="color:${c.score>0?'var(--gold)':'var(--silver)'};">${c.score > 0 ? c.score+'/10' : 'â€”'}</td>
+                        <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:${c.status==='ASIGNADO'?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='ASIGNADO'?'#22c55e':'var(--silver)'};">${esc(c.status||'â€”')}</span></td>
+                        <td style="color:var(--silver);">${c.ahorroMin > 0 ? Math.round(c.ahorroMin/60*10)/10+'h' : 'â€”'}</td>
                     </tr>`).join('');
                 }
             }
 
-            // Gráfico de ramas en admin-chart-area — canvas futurista
+            // GrÃ¡fico de ramas en admin-chart-area â€” canvas futurista
             const ramaCount = {};
             db.forEach(c => { const r = c.rama||'General'; ramaCount[r] = (ramaCount[r]||0)+1; });
             const ramaLabels = Object.keys(ramaCount);
@@ -2899,9 +2920,9 @@ async function loadRealData() {
             }
         }
 
-                // ══════════════════════════════════════════
-        // FONDO LOGIN — disruptivo futurista
-        // ══════════════════════════════════════════
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // FONDO LOGIN â€” disruptivo futurista
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         window.addEventListener('load', function() {
         (function initLoginBg() {
             const canvas = document.getElementById('login-bg-canvas');
@@ -2916,7 +2937,7 @@ async function loadRealData() {
             resize();
             window.addEventListener('resize', () => { resize(); });
 
-            // ── 1. ANILLOS CONCÉNTRICOS GIRATORIOS ──
+            // â”€â”€ 1. ANILLOS CONCÃ‰NTRICOS GIRATORIOS â”€â”€
             // Varios anillos hexagonales/circulares que rotan a distintas velocidades
             const rings = [
                 { r: 0.38, sides: 6, speed:  0.0004, width: 1.2, alpha: 0.18, phase: 0 },
@@ -2947,7 +2968,7 @@ async function loadRealData() {
                 });
             }
 
-            // ── 2. LÍNEAS DE ENERGÍA — rayos que emanan del centro ──
+            // â”€â”€ 2. LÃNEAS DE ENERGÃA â€” rayos que emanan del centro â”€â”€
             const RAYS = 12;
             const rays = Array.from({length: RAYS}, (_, i) => ({
                 angle:   (i / RAYS) * Math.PI * 2,
@@ -2985,7 +3006,7 @@ async function loadRealData() {
                 });
             }
 
-            // ── 3. NODOS ORBITANTES CON CONEXIONES ──
+            // â”€â”€ 3. NODOS ORBITANTES CON CONEXIONES â”€â”€
             const NODES = 7;
             const nodes = Array.from({length: NODES}, (_, i) => ({
                 angle:  (i / NODES) * Math.PI * 2,
@@ -3042,7 +3063,7 @@ async function loadRealData() {
                 });
             }
 
-            // ── 4. BALANZA ESPECTRAL CENTRAL ──
+            // â”€â”€ 4. BALANZA ESPECTRAL CENTRAL â”€â”€
             function drawScale() {
                 const cx = W * 0.5, cy = H * 0.5;
                 const arm = Math.min(W, H) * 0.2;
@@ -3086,7 +3107,7 @@ async function loadRealData() {
                 ctx.restore();
             }
 
-            // ── 5. ORBES ATMOSFÉRICOS ──
+            // â”€â”€ 5. ORBES ATMOSFÃ‰RICOS â”€â”€
             const orbs = [
                 { rx:0.12, ry:0.45, sz:0.45, r:201, g:168, b:76,  a:0.07, t:0,   sp:0.0007 },
                 { rx:0.88, ry:0.55, sz:0.40, r:20,  g:55,  b:160, a:0.09, t:2.1, sp:0.0005 },
@@ -3106,7 +3127,7 @@ async function loadRealData() {
                 });
             }
 
-            // ── 6. POLVO DE LUZ ──
+            // â”€â”€ 6. POLVO DE LUZ â”€â”€
             const dust = Array.from({length:55}, () => ({
                 x: Math.random(), y: Math.random(),
                 r: 0.4+Math.random()*1.4,
@@ -3149,9 +3170,9 @@ async function loadRealData() {
         })();
         }); // end window load
 
-                // ══════════════════════════════════════════
-        // DONUT CHART FUTURISTA — canvas nativo
-        // ══════════════════════════════════════════
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // DONUT CHART FUTURISTA â€” canvas nativo
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         function drawFuturisticDonut(container, labels, data) {
             container.innerHTML = '';
             const W = container.clientWidth || 380;
@@ -3178,7 +3199,7 @@ async function loadRealData() {
             const innerR = outerR * 0.58;
             const gapAngle = 0.035;
 
-            // ── Draw glow backdrop ──
+            // â”€â”€ Draw glow backdrop â”€â”€
             const glowGrad = ctx.createRadialGradient(cx, cy, innerR * 0.5, cx, cy, outerR * 1.3);
             glowGrad.addColorStop(0,   'rgba(201,168,76,0.07)');
             glowGrad.addColorStop(0.5, 'rgba(201,168,76,0.02)');
@@ -3188,7 +3209,7 @@ async function loadRealData() {
             ctx.arc(cx, cy, outerR * 1.3, 0, Math.PI * 2);
             ctx.fill();
 
-            // ── Draw segments ──
+            // â”€â”€ Draw segments â”€â”€
             let startAngle = -Math.PI / 2;
             const segments = [];
             data.forEach((val, i) => {
@@ -3226,14 +3247,14 @@ async function loadRealData() {
                 startAngle += sweep + gapAngle;
             });
 
-            // ── Inner ring (decorative) ──
+            // â”€â”€ Inner ring (decorative) â”€â”€
             ctx.beginPath();
             ctx.arc(cx, cy, innerR - 2, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(201,168,76,0.12)';
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            // ── Center text ──
+            // â”€â”€ Center text â”€â”€
             ctx.textAlign    = 'center';
             ctx.textBaseline = 'middle';
             ctx.font         = `800 ${Math.round(outerR * 0.38)}px "Plus Jakarta Sans", sans-serif`;
@@ -3246,7 +3267,7 @@ async function loadRealData() {
             ctx.fillStyle  = 'rgba(168,189,208,0.5)';
             ctx.fillText('CASOS', cx, cy + outerR * 0.18);
 
-            // ── Legend ──
+            // â”€â”€ Legend â”€â”€
             const legendY   = cy + outerR + 14;
             const itemW     = 100;
             const perRow    = Math.floor(W / itemW);
@@ -3256,7 +3277,7 @@ async function loadRealData() {
             if (legendY + legendH > H - 4) {
                 canvas.height = (legendY + legendH + 12) * window.devicePixelRatio;
                 canvas.style.height = (legendY + legendH + 12) + 'px';
-                // redraw needed — just draw legend after
+                // redraw needed â€” just draw legend after
             }
 
             ctx.textBaseline = 'middle';
@@ -3292,25 +3313,25 @@ async function loadRealData() {
                 const el = document.getElementById(id);
                 if (el) { el.textContent = txt; el.style.color = color; }
             };
-            ids.forEach(id => set(id, '⏳ Verificando...', 'var(--silver)'));
+            ids.forEach(id => set(id, 'â³ Verificando...', 'var(--silver)'));
             try {
                 const res = await authFetch(N8N_HEALTH_CHECK, { method: 'POST' });
                 if (res.ok) {
-                    // n8n responde 200 = el workflow y todos los servicios conectados están operativos
-                    ids.forEach(id => set(id, '● Activo', '#22c55e'));
-                    logError('✓ Health check: todos los servicios operativos');
+                    // n8n responde 200 = el workflow y todos los servicios conectados estÃ¡n operativos
+                    ids.forEach(id => set(id, 'â— Activo', '#22c55e'));
+                    logError('âœ“ Health check: todos los servicios operativos');
                 } else {
                     // Respuesta con error HTTP = n8n activo pero algo falla internamente
-                    set('admin-h-web',   '● Activo', '#22c55e');
-                    set('admin-h-gmail', '⚠ Revisar', '#f97316');
-                    set('admin-h-sheet', '⚠ Revisar', '#f97316');
-                    set('admin-h-ai',    '⚠ Revisar', '#f97316');
-                    logError(`⚠️ Health check respondió ${res.status} — revisar servicios en n8n`);
+                    set('admin-h-web',   'â— Activo', '#22c55e');
+                    set('admin-h-gmail', 'âš  Revisar', '#f97316');
+                    set('admin-h-sheet', 'âš  Revisar', '#f97316');
+                    set('admin-h-ai',    'âš  Revisar', '#f97316');
+                    logError(`âš ï¸ Health check respondiÃ³ ${res.status} â€” revisar servicios en n8n`);
                 }
             } catch(e) {
-                // Sin respuesta = n8n caído o sin conexión
-                ids.forEach(id => set(id, '✗ Sin conexión', '#ef4444'));
-                logError(`✗ Health check falló: ${e.message}`);
+                // Sin respuesta = n8n caÃ­do o sin conexiÃ³n
+                ids.forEach(id => set(id, 'âœ— Sin conexiÃ³n', '#ef4444'));
+                logError(`âœ— Health check fallÃ³: ${e.message}`);
             }
         }
 
@@ -3320,9 +3341,9 @@ async function loadRealData() {
             return l ? l.email : '';
         }
 
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // V8: OBSERVACIONES
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         async function loadObservaciones() {
             const WH = window.FLOOVU_CONFIG.WEBHOOKS;
@@ -3335,11 +3356,11 @@ async function loadRealData() {
                     const casos = Array.isArray(data) ? data : [];
                     const sel = document.getElementById('obs-token');
                     if (sel) {
-                        sel.innerHTML = '<option value="">— Seleccionar caso —</option>';
+                        sel.innerHTML = '<option value="">â€” Seleccionar caso â€”</option>';
                         casos.forEach(c => {
                             const tok = c.token || c.Token || '';
                             const partes = c.Partes || c.partes || '';
-                            if (tok) sel.innerHTML += `<option value="${esc(tok)}">${esc(tok)} — ${esc(partes).slice(0,50)}</option>`;
+                            if (tok) sel.innerHTML += `<option value="${esc(tok)}">${esc(tok)} â€” ${esc(partes).slice(0,50)}</option>`;
                         });
                     }
                 }
@@ -3364,8 +3385,8 @@ async function loadRealData() {
             }
             tbody.innerHTML = list.map(o => {
                 const vis = o.Visibilidad || o.visibilidad || 'Interno';
-                const isPublic = vis === 'Público' || vis === 'Publico';
-                const eyeIcon = isPublic ? '<span title="Visible por el cliente">👁️</span>' : '<span title="Nota Interna Privada">🔒</span>';
+                const isPublic = vis === 'PÃºblico' || vis === 'Publico';
+                const eyeIcon = isPublic ? '<span title="Visible por el cliente">ðŸ‘ï¸</span>' : '<span title="Nota Interna Privada">ðŸ”’</span>';
                 const obsId = o.ID || o.id || '';
                 const obsTok = o.Token || o.token || '';
                 return `<tr>
@@ -3376,7 +3397,7 @@ async function loadRealData() {
                     <div style="display:flex;align-items:flex-start;gap:8px;">
                         <div style="font-size:1.1rem;margin-top:2px;opacity:0.9;">${eyeIcon}</div>
                         <div>
-                            <div style="font-size:0.65rem;color:${isPublic ? '#22c55e' : 'var(--silver)'};font-weight:700;letter-spacing:1px;margin-bottom:2px;">${isPublic ? 'PÚBLICO' : 'INTERNO'}</div>
+                            <div style="font-size:0.65rem;color:${isPublic ? '#22c55e' : 'var(--silver)'};font-weight:700;letter-spacing:1px;margin-bottom:2px;">${isPublic ? 'PÃšBLICO' : 'INTERNO'}</div>
                             <span style="font-size:0.85rem;color:var(--white);">${esc(o.Texto || o.texto || o.Descripcion || o.descripcion || o.Observacion || '')}</span>
                         </div>
                     </div>
@@ -3386,7 +3407,7 @@ async function loadRealData() {
                         <span>${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser?.name || 'Sistema')}</span>
                         ${obsId ? `<button onclick="eliminarObsGlobal('${obsId}','${obsTok}')" title="Eliminar"
                             style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                   padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>` : ''}
+                                   padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">ðŸ—‘ï¸</button>` : ''}
                     </div>
                 </td>
             </tr>`;
@@ -3408,7 +3429,7 @@ async function loadRealData() {
             const tipo = document.getElementById('obs-tipo')?.value || 'NOTA';
             const texto = document.getElementById('obs-texto')?.value?.trim();
             const cb = document.getElementById('obs-visibilidad');
-            const visibilidad = (cb && cb.checked) ? 'Público' : 'Interno';
+            const visibilidad = (cb && cb.checked) ? 'PÃºblico' : 'Interno';
             if (!token) { showToast('Seleccione un caso', 'error'); return; }
             if (!texto) { showToast('Escriba una observacion', 'error'); return; }
             try {
@@ -3417,7 +3438,7 @@ async function loadRealData() {
                 if(event && event.target) {
                     btn = event.target;
                     oldText = btn.innerHTML;
-                    btn.innerHTML = '⏳ Guardando...';
+                    btn.innerHTML = 'â³ Guardando...';
                 }
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.SAVE_OBS || WH.CLIENT_SAVE.replace('guardar-cliente', 'guardar-observacion') || N8N_GET_DATA, {
@@ -3441,9 +3462,9 @@ async function loadRealData() {
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
         }
 
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // V8: BANDEJA GMAIL
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         async function loadBandejaGmail() {
             try {
@@ -3490,8 +3511,8 @@ async function loadRealData() {
                 const estado = r['Estado Alerta'] || r.estado_alerta || '';
                 const abogado = r['Abogado asignado'] || r.abogado_asignado || '';
                 const partes = r.Partes || r.partes || '';
-                // "Quien defender" — el cliente identificado por el sistema
-                const clienteDefender = r['Cliente a Defender'] || r.nombre_cliente || partes.split(' vs ')[1] || partes.split(' VS ')[1] || '—';
+                // "Quien defender" â€” el cliente identificado por el sistema
+                const clienteDefender = r['Cliente a Defender'] || r.nombre_cliente || partes.split(' vs ')[1] || partes.split(' VS ')[1] || 'â€”';
                 const prioColor = prioridad === 'ALTA' ? '#ef4444' : prioridad === 'MEDIA' ? '#f97316' : '#22c55e';
                 const estadoColor = estado === 'ASIGNADO' ? '#22c55e' : '#f97316';
                 return `<tr>
@@ -3524,14 +3545,14 @@ async function loadRealData() {
             renderBandeja(filtered);
         }
 
-                // ══════════════════════════════════════════
-        // REGISTRO LEGAL — agrupado por cliente + badge NUEVO
+                // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        // REGISTRO LEGAL â€” agrupado por cliente + badge NUEVO
         // FASE 3
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         let _expAllData = [];
         const _anotacionesCache = {};
-        // Set de tokens marcados como vistos en esta sesión
+        // Set de tokens marcados como vistos en esta sesiÃ³n
         const _casosVistos = new Set();
 
         function renderExpedientesCards(list) {
@@ -3539,7 +3560,7 @@ async function loadRealData() {
             const container = document.getElementById('exp-cards-container');
             if (!container) return;
             if (!list || list.length === 0) {
-                container.innerHTML = `<div class="empty-state-svg no-bg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg><span>No hay casos asignados aún.</span></div>`;
+                container.innerHTML = `<div class="empty-state-svg no-bg"><svg fill="none" stroke="var(--gold)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg><span>No hay casos asignados aÃºn.</span></div>`;
                 return;
             }
 
@@ -3549,7 +3570,7 @@ async function loadRealData() {
                 const nuevos = list.filter(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
                 if (nuevos.length > 0) {
                     badge.style.display = 'inline';
-                    badge.textContent = `⚡ ${nuevos.length} NUEVO${nuevos.length > 1 ? 'S' : ''}`;
+                    badge.textContent = `âš¡ ${nuevos.length} NUEVO${nuevos.length > 1 ? 'S' : ''}`;
                 } else {
                     badge.style.display = 'none';
                 }
@@ -3563,7 +3584,7 @@ async function loadRealData() {
                 grupos[key].push(c);
             });
 
-            // Ordenar grupos: primero los que tienen algún caso nuevo
+            // Ordenar grupos: primero los que tienen algÃºn caso nuevo
             const gruposOrdenados = Object.entries(grupos).sort(([, casosA], [, casosB]) => {
                 const tieneNuevoA = casosA.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token)) ? 1 : 0;
                 const tieneNuevoB = casosB.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token)) ? 1 : 0;
@@ -3573,13 +3594,13 @@ async function loadRealData() {
             container.innerHTML = gruposOrdenados.map(([clienteNombre, casos]) => {
                 const tieneNuevo = casos.some(c => c.es_nuevo_caso && !_casosVistos.has(c.token));
                 const badgeNuevo = tieneNuevo
-                    ? `<span style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;margin-left:8px;">⚡ NUEVO</span>`
+                    ? `<span style="background:#f97316;color:#fff;font-size:0.6rem;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;margin-left:8px;">âš¡ NUEVO</span>`
                     : '';
 
                 // V2: Obtener datos del cliente desde el directorio
                 const clientData = getClientDataFromDirectory(clienteNombre);
 
-                // Último vencimiento del grupo (más próximo con color)
+                // Ãšltimo vencimiento del grupo (mÃ¡s prÃ³ximo con color)
                 const vencimientos = casos
                     .map(c => c.venc)
                     .filter(v => v && v !== 'S/D' && v !== 'N/A');
@@ -3606,16 +3627,16 @@ async function loadRealData() {
                                 padding:12px 16px;cursor:pointer;user-select:none;
                                 transition:background 0.2s;">
                         <div style="display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap;">
-                            <span style="font-size:1.1rem;">👤</span>
+                            <span style="font-size:1.1rem;">ðŸ‘¤</span>
                             <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;">
                                 <span style="font-size:0.95rem;font-weight:700;color:var(--white);
                                              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                     ${esc(clienteNombre)}
                                 </span>
                                 <span style="font-size:0.65rem;color:rgba(226,232,240,0.7);display:flex;gap:12px;flex-wrap:wrap;">
-                                    <span title="NIT/Cédula">🔍 ${esc(clientData.nit)}</span>
-                                    <span title="Email">📧 ${esc(clientData.email)}</span>
-                                    <span title="Teléfono">📱 ${esc(clientData.telefono)}</span>
+                                    <span title="NIT/CÃ©dula">ðŸ” ${esc(clientData.nit)}</span>
+                                    <span title="Email">ðŸ“§ ${esc(clientData.email)}</span>
+                                    <span title="TelÃ©fono">ðŸ“± ${esc(clientData.telefono)}</span>
                                 </span>
                             </div>
                             <span style="font-size:0.75rem;color:var(--silver);background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;white-space:nowrap;">
@@ -3625,7 +3646,7 @@ async function loadRealData() {
                         </div>
                         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
                             <span style="font-size:0.72rem;color:var(--silver);">
-                                👨‍⚖️ ${esc(abogado)}
+                                ðŸ‘¨â€âš–ï¸ ${esc(abogado)}
                             </span>
                             <span style="font-size:0.72rem;color:rgba(201,168,76,0.7);
                                          background:rgba(201,168,76,0.1);padding:2px 10px;
@@ -3633,7 +3654,7 @@ async function loadRealData() {
                                 ${totalCasos} caso${totalCasos !== 1 ? 's' : ''}
                             </span>
                             <span id="chevron-${grupoId}"
-                                  style="color:var(--gold);font-size:0.8rem;transition:transform 0.2s;">▼</span>
+                                  style="color:var(--gold);font-size:0.8rem;transition:transform 0.2s;">â–¼</span>
                         </div>
                     </div>
 
@@ -3646,16 +3667,16 @@ async function loadRealData() {
                          onclick="event.stopPropagation()">
                         <button class="btn-outline" style="font-size:0.73rem;height:28px;padding:0 12px;"
                                 onclick="toggleGroupPanel('gseg-${grupoId}','${grupoId}'); event.stopPropagation()">
-                            📝 Seguimiento
+                            ðŸ“ Seguimiento
                         </button>
                         <button class="btn-outline" style="font-size:0.73rem;height:28px;padding:0 12px;"
                                 onclick="toggleGroupPanel('ghist-${grupoId}','${grupoId}'); event.stopPropagation()">
-                            📧 Historial Emails
+                            ðŸ“§ Historial Emails
                         </button>
                         <button class="btn-outline" style="font-size:0.73rem;height:28px;padding:0 12px;
                                        margin-left:auto;border-color:rgba(201,168,76,0.5);color:var(--gold);"
                                 onclick="exportarClientePDF('${grupoId}'); event.stopPropagation()">
-                            📥 Exportar PDF
+                            ðŸ“¥ Exportar PDF
                         </button>
                     </div>
 
@@ -3714,13 +3735,13 @@ async function loadRealData() {
 
                 return `
                     <div style="margin-bottom:15px;padding:10px;background:rgba(201,168,76,0.05);border-radius:8px;border:1px dashed rgba(201,168,76,0.2);">
-                        <p style="margin:0;font-size:0.75rem;color:var(--gold);"><strong>Abogado Responsable:</strong> ${esc(c.lawyer || 'PENDIENTE DE ASIGNACIÓN')}</p>
+                        <p style="margin:0;font-size:0.75rem;color:var(--gold);"><strong>Abogado Responsable:</strong> ${esc(c.lawyer || 'PENDIENTE DE ASIGNACIÃ“N')}</p>
                     </div>
-                    ${section('1. ANÁLISIS DEL DOCUMENTO', d.analisis_documento || {}, 'var(--gold)')}
+                    ${section('1. ANÃLISIS DEL DOCUMENTO', d.analisis_documento || {}, 'var(--gold)')}
                     ${section('2. NULIDADES Y EXCEPCIONES', d.nulidades_excepciones || {}, '#ef4444')}
-                    ${section('3. ANÁLISIS DEL CASO', d.analisis_caso || {}, '#22c55e')}
-                    ${section('4. ESTRATEGIA TÁCTICA', d.estrategia_tactica || {}, '#3b82f6')}
-                    ${section('5. ALERTA DE VACÍOS', d.alerta_vacios || {}, '#f39c12')}
+                    ${section('3. ANÃLISIS DEL CASO', d.analisis_caso || {}, '#22c55e')}
+                    ${section('4. ESTRATEGIA TÃCTICA', d.estrategia_tactica || {}, '#3b82f6')}
+                    ${section('5. ALERTA DE VACÃOS', d.alerta_vacios || {}, '#f39c12')}
                     ${section('6. VENCIMIENTO PROCESAL', d.calculo_vencimiento_procesal || {}, '#9b59b6')}
                 `;
             } catch (e) {
@@ -3731,7 +3752,7 @@ async function loadRealData() {
 
         function marcarComoVisto(tok, cardId) {
             _casosVistos.add(tok);
-            // Quitar badge de la tarjeta específica (usando cardId único)
+            // Quitar badge de la tarjeta especÃ­fica (usando cardId Ãºnico)
             const badge = document.getElementById(`nuevo-badge-${cardId || tok}`);
             if (badge) badge.style.display = 'none';
             // Recalcular badge global
@@ -3740,7 +3761,7 @@ async function loadRealData() {
             if (globalBadge) {
                 if (nuevosRestantes.length > 0) {
                     globalBadge.style.display = 'inline';
-                    globalBadge.textContent = `⚡ ${nuevosRestantes.length} NUEVO${nuevosRestantes.length > 1 ? 'S' : ''}`;
+                    globalBadge.textContent = `âš¡ ${nuevosRestantes.length} NUEVO${nuevosRestantes.length > 1 ? 'S' : ''}`;
                 } else {
                     globalBadge.style.display = 'none';
                 }
@@ -3749,7 +3770,7 @@ async function loadRealData() {
 
         function renderCasoCard(c, clienteNombre, idx) {
             const tok = esc(c.token);
-            // ID único por tarjeta (evita colisiones si dos casos tienen el mismo token)
+            // ID Ãºnico por tarjeta (evita colisiones si dos casos tienen el mismo token)
             const cardId = `${tok}_${idx}`;
             const esNuevo = c.es_nuevo_caso && !_casosVistos.has(c.token);
 
@@ -3766,7 +3787,7 @@ async function loadRealData() {
                 const m = c.venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                 if (!m) return esc(c.venc);
                 const diff = Math.ceil((new Date(parseInt(m[3]), parseInt(m[2])-1, parseInt(m[1])) - new Date()) / 86400000);
-                const suffix = diff < 0 ? `⚠ vencido` : diff === 0 ? `¡hoy!` : `en ${diff}d`;
+                const suffix = diff < 0 ? `âš  vencido` : diff === 0 ? `Â¡hoy!` : `en ${diff}d`;
                 return `${esc(c.venc)} <span style="font-size:0.7rem;opacity:0.8;">(${suffix})</span>`;
             })();
 
@@ -3774,7 +3795,7 @@ async function loadRealData() {
 
             const badgeNuevo = esNuevo
                 ? `<span id="nuevo-badge-${cardId}" style="background:#f97316;color:#fff;font-size:0.6rem;
-                            font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;">⚡ NUEVO</span>`
+                            font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:1px;">âš¡ NUEVO</span>`
                 : `<span id="nuevo-badge-${cardId}" style="display:none;"></span>`;
 
             return `
@@ -3787,11 +3808,11 @@ async function loadRealData() {
                             <!-- Tipo de documento (principal diferenciador) -->
                             <span style="font-size:1rem;font-weight:800;color:var(--white);
                                          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                📄 ${esc(c.tipo || c.rama || 'Documento legal')}
+                                ðŸ“„ ${esc(c.tipo || c.rama || 'Documento legal')}
                             </span>
                             ${badgeNuevo}
                         </div>
-                        <!-- Categoría y prioridad como chips secundarios -->
+                        <!-- CategorÃ­a y prioridad como chips secundarios -->
                         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
                             <span style="font-size:0.7rem;text-transform:uppercase;font-weight:700;
                                          letter-spacing:0.8px;color:rgba(201,168,76,0.7);
@@ -3799,48 +3820,48 @@ async function loadRealData() {
                                          border-radius:20px;">${esc(c.rama || 'General')}</span>
                             <span style="font-size:0.7rem;font-weight:700;color:${prioColor};
                                          background:${prioColor}18;padding:2px 8px;border-radius:20px;">
-                                ⚡ ${esc(c.priority || 'MEDIA')}
+                                âš¡ ${esc(c.priority || 'MEDIA')}
                             </span>
                         </div>
                         <!-- Partes -->
                         <p style="margin:0;font-size:0.78rem;color:var(--silver);line-height:1.4;">
-                            ${esc(c.partes || '—')}
+                            ${esc(c.partes || 'â€”')}
                         </p>
                     </div>
                     <!-- Fechas (columna derecha) -->
                     <div style="text-align:right;flex-shrink:0;min-width:110px;">
                         <div style="font-size:0.7rem;color:var(--silver);margin-bottom:4px;">
-                            🗓 ${esc(c.date || '—')}
+                            ðŸ—“ ${esc(c.date || 'â€”')}
                         </div>
                         <div style="font-size:0.76rem;font-weight:700;color:${vencColor};">
-                            📅 ${vencLabel}
+                            ðŸ“… ${vencLabel}
                         </div>
                     </div>
                 </div>
 
                 <!-- Meta chips inferiores -->
                 <div class="exp-card-meta" style="margin-top:8px;">
-                    <span class="exp-meta-chip">👨‍⚖️ ${esc(c.lawyer || 'Sin abogado')}</span>
-                    ${c.nit ? `<span class="exp-meta-chip">🪪 ${esc(c.nit)}</span>` : ''}
+                    <span class="exp-meta-chip">ðŸ‘¨â€âš–ï¸ ${esc(c.lawyer || 'Sin abogado')}</span>
+                    ${c.nit ? `<span class="exp-meta-chip">ðŸªª ${esc(c.nit)}</span>` : ''}
                 </div>
 
-                <!-- Botones de acción -->
+                <!-- Botones de acciÃ³n -->
                 <div class="exp-panel-btns">
                     <button class="btn-outline" style="font-size:0.76rem;height:32px;padding:0 12px;"
                             onclick="toggleExpPanel('res-${cardId}', '${cardId}'); marcarComoVisto('${tok}','${cardId}')">
-                        📊 Resumen IA
+                        ðŸ“Š Resumen IA
                     </button>
                     ${c.archivo_url ? `
                     <button class="btn-premium" style="font-size:0.76rem;height:32px;padding:0 12px;"
                             onclick="openPdfModal('${esc(c.archivo_url)}'); marcarComoVisto('${tok}','${cardId}')">
-                        📄 Ver Documento
+                        ðŸ“„ Ver Documento
                     </button>` : ''}
                 </div>
 
                 <!-- Panel Resumen IA -->
                 <div id="res-${cardId}" class="exp-panel">
                     <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
-                               letter-spacing:1px;margin:0 0 12px;">📊 Resumen Detallado (Dictamen IA)</p>
+                               letter-spacing:1px;margin:0 0 12px;">ðŸ“Š Resumen Detallado (Dictamen IA)</p>
                     <div style="line-height:1.6;">
                         ${getDictamenHTML(c)}
                     </div>
@@ -3866,7 +3887,7 @@ async function loadRealData() {
             const list = document.getElementById(`seg-list-${tok}`);
             if (!list) return;
             if (_anotacionesCache[tok]) { renderAnotaciones(tok, _anotacionesCache[tok]); return; }
-            list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>`;
+            list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">â³ Cargando...</p>`;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.GET_OBS, {
@@ -3881,10 +3902,10 @@ async function loadRealData() {
                     _anotacionesCache[tok] = relacionadas;
                     renderAnotaciones(tok, relacionadas);
                 } else {
-                    list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
+                    list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aÃºn.</p>`;
                 }
             } catch(e) {
-                list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún.</p>`;
+                list.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aÃºn.</p>`;
             }
         }
 
@@ -3892,16 +3913,16 @@ async function loadRealData() {
             const el = document.getElementById(`seg-list-${tok}`);
             if (!el) return;
             if (!list || !list.length) {
-                el.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aún. Agregá la primera.</p>`;
+                el.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Sin anotaciones aÃºn. AgregÃ¡ la primera.</p>`;
                 return;
             }
             el.innerHTML = list.map(a => {
                 const id = a.ID || a.id || '';
                 const vis = a.Visibilidad || a.visibilidad || 'Interno';
-                const isPublic = vis === 'Público' || vis === 'Publico';
+                const isPublic = vis === 'PÃºblico' || vis === 'Publico';
                 const visLabel = isPublic
-                    ? `<span style="font-size:0.65rem;font-weight:700;color:#22c55e;letter-spacing:0.5px;">👁️ Portal</span>`
-                    : `<span style="font-size:0.65rem;font-weight:700;color:var(--silver);letter-spacing:0.5px;">🔒 Interno</span>`;
+                    ? `<span style="font-size:0.65rem;font-weight:700;color:#22c55e;letter-spacing:0.5px;">ðŸ‘ï¸ Portal</span>`
+                    : `<span style="font-size:0.65rem;font-weight:700;color:var(--silver);letter-spacing:0.5px;">ðŸ”’ Interno</span>`;
                 const borderColor = isPublic ? 'rgba(34,197,94,0.4)' : 'rgba(201,168,76,0.3)';
                 return `
                 <div id="ant-${esc(id)}" style="padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:6px;
@@ -3918,10 +3939,10 @@ async function loadRealData() {
                             ${id ? `
                             <button onclick="abrirEditarAnotacion('${esc(id)}','${tok}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">âœï¸</button>
                             <button onclick="eliminarAnotacion('${esc(id)}','${tok}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">ðŸ—‘ï¸</button>
                             ` : ''}
                         </div>
                     </div>
@@ -3937,16 +3958,16 @@ async function loadRealData() {
             if (!anotacion) return;
             const textoActual = anotacion.Texto || anotacion.texto || '';
             const visActual = anotacion.Visibilidad || anotacion.visibilidad || 'Interno';
-            const isPublic = visActual === 'Público' || visActual === 'Publico';
+            const isPublic = visActual === 'PÃºblico' || visActual === 'Publico';
             const modal = document.createElement('div');
             modal.id = 'modal-editar-ant';
             modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;';
             modal.innerHTML = `
                 <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px;width:90%;max-width:480px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Anotación</span>
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">âœï¸ Editar AnotaciÃ³n</span>
                         <button onclick="document.getElementById('modal-editar-ant').remove()"
-                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">✕</button>
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">âœ•</button>
                     </div>
                     <textarea id="modal-ant-texto" rows="4"
                         style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
@@ -3956,7 +3977,7 @@ async function loadRealData() {
                         <input type="checkbox" id="modal-ant-vis" ${isPublic ? 'checked' : ''}
                             style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
                         <label for="modal-ant-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
-                            👁️ Visible en Portal del Cliente
+                            ðŸ‘ï¸ Visible en Portal del Cliente
                         </label>
                     </div>
                     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
@@ -3974,8 +3995,8 @@ async function loadRealData() {
         async function confirmarEditarAnotacion(id, tok) {
             const texto = document.getElementById('modal-ant-texto')?.value?.trim();
             const cb = document.getElementById('modal-ant-vis');
-            const visibilidad = cb?.checked ? 'Público' : 'Interno';
-            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            const visibilidad = cb?.checked ? 'PÃºblico' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacÃ­o.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.EDIT_OBS, {
@@ -3983,7 +4004,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Anotación actualizada.', 'ok');
+                    showToast('AnotaciÃ³n actualizada.', 'ok');
                     document.getElementById('modal-editar-ant')?.remove();
                     delete _anotacionesCache[tok];
                     cargarAnotaciones(tok);
@@ -3992,7 +4013,7 @@ async function loadRealData() {
         }
 
         async function eliminarObsGlobal(id, tok) {
-            if (!confirm('¿Eliminar esta observación? Esta acción no se puede deshacer.')) return;
+            if (!confirm('Â¿Eliminar esta observaciÃ³n? Esta acciÃ³n no se puede deshacer.')) return;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.DELETE_OBS, {
@@ -4000,7 +4021,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Observación eliminada.', 'ok');
+                    showToast('ObservaciÃ³n eliminada.', 'ok');
                     // Recargar lista global
                     observacionesData = observacionesData.filter(o => (o.ID || o.id) !== id);
                     renderObservaciones(observacionesData);
@@ -4009,7 +4030,7 @@ async function loadRealData() {
         }
 
         async function eliminarAnotacion(id, tok) {
-            if (!confirm('¿Eliminar esta anotación? Esta acción no se puede deshacer.')) return;
+            if (!confirm('Â¿Eliminar esta anotaciÃ³n? Esta acciÃ³n no se puede deshacer.')) return;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.DELETE_OBS, {
@@ -4017,7 +4038,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Anotación eliminada.', 'ok');
+                    showToast('AnotaciÃ³n eliminada.', 'ok');
                     delete _anotacionesCache[tok];
                     cargarAnotaciones(tok);
                 } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
@@ -4028,8 +4049,8 @@ async function loadRealData() {
             const input = document.getElementById(`seg-input-${tok}`);
             const texto = input?.value?.trim();
             const cb = document.getElementById(`seg-vis-${tok}`);
-            const visibilidad = cb?.checked ? 'Público' : 'Interno';
-            if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
+            const visibilidad = cb?.checked ? 'PÃºblico' : 'Interno';
+            if (!texto) { showToast('EscribÃ­ una anotaciÃ³n primero.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.SAVE_OBS, {
@@ -4045,7 +4066,7 @@ async function loadRealData() {
                     })
                 });
                 if (res.ok) {
-                    showToast('Anotación guardada.', 'ok');
+                    showToast('AnotaciÃ³n guardada.', 'ok');
                     input.value = '';
                     if (cb) cb.checked = false;
                     delete _anotacionesCache[tok];
@@ -4059,7 +4080,7 @@ async function loadRealData() {
         async function loadExpedienteEmails(tok, clienteNombre) {
             const container = document.getElementById(`hist-list-${tok}`);
             if (!container) return;
-            container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando historial...</p>`;
+            container.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">â³ Cargando historial...</p>`;
             try {
                 const mismasCausas = db.filter(c =>
                     (c.cliente_a_defender || c.partes || '').toLowerCase().trim() ===
@@ -4077,15 +4098,15 @@ async function loadRealData() {
                             <div style="min-width:0;flex:1;">
                                 <p style="margin:0;font-size:0.8rem;color:var(--white);font-weight:600;
                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    📄 ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` — ${esc(c.asunto)}` : ''}
+                                    ðŸ“„ ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` â€” ${esc(c.asunto)}` : ''}
                                 </p>
                                 <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">
-                                    📅 ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `• Vence: ${esc(c.venc)}` : ''}
+                                    ðŸ“… ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `â€¢ Vence: ${esc(c.venc)}` : ''}
                                 </p>
                                 ${c.messageId ? `
                                 <button class="btn-outline" style="font-size:0.65rem;height:24px;padding:0 8px;margin-top:6px;border-color:rgba(201,168,76,0.3);color:var(--gold);"
                                         onclick="window.open('https://mail.google.com/mail/u/0/#inbox/${esc(c.messageId)}', '_blank')">
-                                    📎 Ver Documento (Gmail)
+                                    ðŸ“Ž Ver Documento (Gmail)
                                 </button>` : ''}
                             </div>
                             <span style="font-family:monospace;font-size:0.7rem;color:var(--gold);
@@ -4098,9 +4119,9 @@ async function loadRealData() {
             }
         }
 
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // ACCIONES DE GRUPO (nivel cliente)
-        // ══════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         function toggleGroupPanel(panelId, grupoId) {
             const panel = document.getElementById(panelId);
@@ -4142,16 +4163,16 @@ async function loadRealData() {
 
             panel.innerHTML = `
                 <p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
-                           letter-spacing:1px;margin:0 0 10px;">📝 Seguimiento — ${esc(clienteNombre)}</p>
+                           letter-spacing:1px;margin:0 0 10px;">ðŸ“ Seguimiento â€” ${esc(clienteNombre)}</p>
                 ${tokenSelect}
                 <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
 
                     <!-- COLUMNA INTERNO -->
                     <div style="${colStyle}border-left:3px solid rgba(201,168,76,0.4);">
                         <p style="margin:0;font-size:0.7rem;font-weight:700;color:var(--gold);
-                                   text-transform:uppercase;letter-spacing:0.8px;">🔒 Notas Internas</p>
+                                   text-transform:uppercase;letter-spacing:0.8px;">ðŸ”’ Notas Internas</p>
                         <div id="${panelId}-list-interno" style="max-height:220px;overflow-y:auto;">
-                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">â³ Cargando...</p>
                         </div>
                         <textarea id="${panelId}-input-interno" rows="2" placeholder="Nueva nota interna..."
                                   style="padding:8px 10px;background:rgba(255,255,255,0.04);
@@ -4160,16 +4181,16 @@ async function loadRealData() {
                                          font-family:inherit;width:100%;box-sizing:border-box;"></textarea>
                         <button class="btn-premium" style="height:30px;font-size:0.75rem;padding:0 16px;align-self:flex-start;"
                                 onclick="guardarGroupSeguimiento('${panelId}','${grupoId}','Interno')">
-                            💾 Guardar interna
+                            ðŸ’¾ Guardar interna
                         </button>
                     </div>
 
                     <!-- COLUMNA PORTAL -->
                     <div style="${colStyle}border-left:3px solid rgba(34,197,94,0.4);">
                         <p style="margin:0;font-size:0.7rem;font-weight:700;color:#22c55e;
-                                   text-transform:uppercase;letter-spacing:0.8px;">👁️ Notas del Portal</p>
+                                   text-transform:uppercase;letter-spacing:0.8px;">ðŸ‘ï¸ Notas del Portal</p>
                         <div id="${panelId}-list-portal" style="max-height:220px;overflow-y:auto;">
-                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">⏳ Cargando...</p>
+                            <p style="font-size:0.78rem;color:var(--silver);font-style:italic;">â³ Cargando...</p>
                         </div>
                         <textarea id="${panelId}-input-portal" rows="2" placeholder="Nueva nota visible al cliente..."
                                   style="padding:8px 10px;background:rgba(255,255,255,0.04);
@@ -4178,8 +4199,8 @@ async function loadRealData() {
                                          font-family:inherit;width:100%;box-sizing:border-box;"></textarea>
                         <button class="btn-premium" style="height:30px;font-size:0.75rem;padding:0 16px;align-self:flex-start;
                                                            background:#22c55e;color:#000;"
-                                onclick="guardarGroupSeguimiento('${panelId}','${grupoId}','Público')">
-                            💾 Guardar en portal
+                                onclick="guardarGroupSeguimiento('${panelId}','${grupoId}','PÃºblico')">
+                            ðŸ’¾ Guardar en portal
                         </button>
                     </div>
                 </div>`;
@@ -4194,16 +4215,16 @@ async function loadRealData() {
                     const relacionadas = todas.filter(a => tokens.includes(a.Token || a.token));
                     const internas = relacionadas.filter(a => {
                         const v = a.Visibilidad || a.visibilidad || 'Interno';
-                        return v !== 'Público' && v !== 'Publico';
+                        return v !== 'PÃºblico' && v !== 'Publico';
                     });
                     const portal = relacionadas.filter(a => {
                         const v = a.Visibilidad || a.visibilidad || 'Interno';
-                        return v === 'Público' || v === 'Publico';
+                        return v === 'PÃºblico' || v === 'Publico';
                     });
                     const listInterno = document.getElementById(`${panelId}-list-interno`);
                     const listPortal  = document.getElementById(`${panelId}-list-portal`);
                     if (listInterno) renderGroupAnotaciones(listInterno, internas, panelId, grupoId, 'Interno');
-                    if (listPortal)  renderGroupAnotaciones(listPortal,  portal,   panelId, grupoId, 'Público');
+                    if (listPortal)  renderGroupAnotaciones(listPortal,  portal,   panelId, grupoId, 'PÃºblico');
                 }
             } catch(e) {
                 logError('Error cargando seguimiento grupo: ' + e.message);
@@ -4212,13 +4233,13 @@ async function loadRealData() {
 
         function renderGroupAnotaciones(listEl, list, panelId, grupoId, tipo) {
             if (!list || !list.length) {
-                const emptyMsg = tipo === 'Público'
-                    ? 'Sin notas de portal aún.'
-                    : 'Sin notas internas aún.';
+                const emptyMsg = tipo === 'PÃºblico'
+                    ? 'Sin notas de portal aÃºn.'
+                    : 'Sin notas internas aÃºn.';
                 listEl.innerHTML = `<p style="font-size:0.78rem;color:var(--silver);font-style:italic;">${emptyMsg}</p>`;
                 return;
             }
-            const borderColor = tipo === 'Público' ? 'rgba(34,197,94,0.3)' : 'rgba(201,168,76,0.3)';
+            const borderColor = tipo === 'PÃºblico' ? 'rgba(34,197,94,0.3)' : 'rgba(201,168,76,0.3)';
             listEl.innerHTML = list.map(a => {
                 const id = a.ID || a.id || '';
                 return `
@@ -4227,17 +4248,17 @@ async function loadRealData() {
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                         <span style="font-size:0.68rem;color:var(--gold);font-weight:700;">
                             ${esc(a.Autor || a.autor || a.Operador || a.operador || 'Operador')}
-                            <span style="opacity:0.55;font-weight:400;"> • ${esc(a.Token || a.token || '')}</span>
+                            <span style="opacity:0.55;font-weight:400;"> â€¢ ${esc(a.Token || a.token || '')}</span>
                         </span>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
                             ${id ? `
                             <button onclick="abrirEditarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">âœï¸</button>
                             <button onclick="eliminarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">ðŸ—‘ï¸</button>
                             ` : ''}
                         </div>
                     </div>
@@ -4261,9 +4282,9 @@ async function loadRealData() {
             modal.innerHTML = `
                 <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px;width:90%;max-width:480px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">✏️ Editar Anotación</span>
+                        <span style="color:var(--gold);font-weight:700;font-size:0.9rem;">âœï¸ Editar AnotaciÃ³n</span>
                         <button onclick="document.getElementById('modal-editar-gant').remove()"
-                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">✕</button>
+                            style="background:none;border:none;color:var(--silver);cursor:pointer;font-size:1.1rem;">âœ•</button>
                     </div>
                     <textarea id="modal-gant-texto" rows="4"
                         style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.3);
@@ -4273,7 +4294,7 @@ async function loadRealData() {
                         <input type="checkbox" id="modal-gant-vis" ${isPublic ? 'checked' : ''}
                                style="accent-color:var(--gold);width:14px;height:14px;cursor:pointer;">
                         <label for="modal-gant-vis" style="font-size:0.78rem;color:var(--silver);cursor:pointer;">
-                            👁️ Visible en Portal del Cliente
+                            ðŸ‘ï¸ Visible en Portal del Cliente
                         </label>
                     </div>
                     <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
@@ -4291,8 +4312,8 @@ async function loadRealData() {
         async function confirmarEditarGroupAnotacion(id, panelId, grupoId) {
             const texto = document.getElementById('modal-gant-texto')?.value?.trim();
             const cb = document.getElementById('modal-gant-vis');
-            const visibilidad = cb?.checked ? 'Público' : 'Interno';
-            if (!texto) { showToast('El texto no puede estar vacío.', 'error'); return; }
+            const visibilidad = cb?.checked ? 'PÃºblico' : 'Interno';
+            if (!texto) { showToast('El texto no puede estar vacÃ­o.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const meta = (window._grupoMeta || {})[grupoId] || {};
@@ -4302,7 +4323,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Anotación actualizada.', 'ok');
+                    showToast('AnotaciÃ³n actualizada.', 'ok');
                     document.getElementById('modal-editar-gant')?.remove();
                     loadGroupSeguimiento(panelId, grupoId);
                 } else { showToast(`Error al editar: ${res.status}`, 'error'); }
@@ -4310,7 +4331,7 @@ async function loadRealData() {
         }
 
         async function eliminarGroupAnotacion(id, panelId, grupoId) {
-            if (!confirm('¿Eliminar esta anotación? Esta acción no se puede deshacer.')) return;
+            if (!confirm('Â¿Eliminar esta anotaciÃ³n? Esta acciÃ³n no se puede deshacer.')) return;
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const meta = (window._grupoMeta || {})[grupoId] || {};
@@ -4320,7 +4341,7 @@ async function loadRealData() {
                     body: JSON.stringify({ id, token: tok, operador: currentUser?.name || 'Operador' })
                 });
                 if (res.ok) {
-                    showToast('Anotación eliminada.', 'ok');
+                    showToast('AnotaciÃ³n eliminada.', 'ok');
                     loadGroupSeguimiento(panelId, grupoId);
                 } else { showToast(`Error al eliminar: ${res.status}`, 'error'); }
             } catch(e) { showToast('Error: ' + e.message, 'error'); }
@@ -4328,11 +4349,11 @@ async function loadRealData() {
 
         async function guardarGroupSeguimiento(panelId, grupoId, visibilidad) {
             const tok = document.getElementById(`${panelId}-token`)?.value;
-            const inputId = visibilidad === 'Público' ? `${panelId}-input-portal` : `${panelId}-input-interno`;
+            const inputId = visibilidad === 'PÃºblico' ? `${panelId}-input-portal` : `${panelId}-input-interno`;
             const input = document.getElementById(inputId);
             const texto = input?.value?.trim();
             if (!tok) { showToast('Sin caso seleccionado', 'error'); return; }
-            if (!texto) { showToast('Escribí una anotación primero.', 'error'); return; }
+            if (!texto) { showToast('EscribÃ­ una anotaciÃ³n primero.', 'error'); return; }
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const res = await authFetch(WH.SAVE_OBS, {
@@ -4348,7 +4369,7 @@ async function loadRealData() {
                     })
                 });
                 if (res.ok) {
-                    showToast('Anotación guardada.', 'ok');
+                    showToast('AnotaciÃ³n guardada.', 'ok');
                     if (input) input.value = '';
                     loadGroupSeguimiento(panelId, grupoId);
                 } else {
@@ -4364,7 +4385,7 @@ async function loadRealData() {
             const clienteNombre = meta.clienteNombre || '';
 
             panel.innerHTML = `<p style="font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;
-                                          letter-spacing:1px;margin:0 0 10px;">📧 Historial de Emails — ${esc(clienteNombre)}</p>
+                                          letter-spacing:1px;margin:0 0 10px;">ðŸ“§ Historial de Emails â€” ${esc(clienteNombre)}</p>
                                <div id="${panelId}-list"><p style="font-size:0.78rem;color:var(--silver);font-style:italic;">Cargando...</p></div>`;
 
             const mismasCausas = _expAllData.filter(c =>
@@ -4383,14 +4404,14 @@ async function loadRealData() {
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">
                         <div style="min-width:0;flex:1;">
                             <p style="margin:0;font-size:0.82rem;color:var(--white);font-weight:600;">
-                                📄 ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` — ${esc(c.asunto)}` : ''}
+                                ðŸ“„ ${esc((c.tipo || c.rama || 'Documento legal').toUpperCase())}${c.asunto ? ` â€” ${esc(c.asunto)}` : ''}
                             </p>
                             <p style="margin:3px 0 0;font-size:0.72rem;color:var(--silver);">
-                                📅 ${esc(c.date)}${c.venc && c.venc !== 'S/D' ? ` &nbsp;•&nbsp; Vence: <strong style="color:#f97316;">${esc(c.venc)}</strong>` : ''}
+                                ðŸ“… ${esc(c.date)}${c.venc && c.venc !== 'S/D' ? ` &nbsp;â€¢&nbsp; Vence: <strong style="color:#f97316;">${esc(c.venc)}</strong>` : ''}
                             </p>
                             <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                                 ${c.archivo_url ? `<button class="btn-outline" style="font-size:0.7rem;height:26px;padding:0 10px;"
-                                    onclick="openPdfModal('${esc(c.archivo_url)}')">📄 Ver Documento</button>` : ''}
+                                    onclick="openPdfModal('${esc(c.archivo_url)}')">ðŸ“„ Ver Documento</button>` : ''}
                             </div>
                         </div>
                         <span style="font-family:monospace;font-size:0.72rem;color:var(--gold);
@@ -4444,7 +4465,7 @@ async function loadRealData() {
                     ${resumenHTML ? `
                     <div style="margin-top:12px;padding:12px;background:#fafaf7;border-radius:6px;border-left:4px solid #c9a84c;">
                         <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:0.85em;
-                                   text-transform:uppercase;">🤖 Análisis IA</p>
+                                   text-transform:uppercase;">ðŸ¤– AnÃ¡lisis IA</p>
                         <div style="font-size:0.83em;color:#444;">${resumenHTML}</div>
                     </div>` : ''}
                 </div>`;
@@ -4452,7 +4473,7 @@ async function loadRealData() {
 
             const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
-<title>Expediente Legal — ${clienteNombre}</title>
+<title>Expediente Legal â€” ${clienteNombre}</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Arial', sans-serif; color: #222; padding: 32px; max-width: 820px; margin: 0 auto; }
@@ -4467,7 +4488,7 @@ async function loadRealData() {
 </head><body>
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
     <div>
-        <h1>📋 Expediente Legal</h1>
+        <h1>ðŸ“‹ Expediente Legal</h1>
         <h2>${clienteNombre}</h2>
     </div>
     <div style="text-align:right;font-size:0.8em;color:#888;">
@@ -4489,7 +4510,7 @@ ${casosHTML}
                 win.document.close();
                 win.addEventListener('load', () => win.print());
             } else {
-                showToast('Habilitá las ventanas emergentes para exportar.', 'error');
+                showToast('HabilitÃ¡ las ventanas emergentes para exportar.', 'error');
             }
         }
 
@@ -4511,7 +4532,7 @@ ${casosHTML}
 
 
         function init() {
-            // Fase 1: abogados primero — los casos necesitan el array lawyers listo
+            // Fase 1: abogados primero â€” los casos necesitan el array lawyers listo
             loadLawyers().catch(e => logError('Error cargando abogados: ' + e)).finally(() => {
                 // Fase 2: cargar casos, bandeja y observaciones en paralelo
                 Promise.allSettled([
@@ -4524,7 +4545,7 @@ ${casosHTML}
                             logError(`Error en carga inicial [${ ['casos','bandeja','observaciones'][i]}]: ${r.reason}`);
                         }
                     });
-                    // Fase 3: clientes después de que db esté lleno
+                    // Fase 3: clientes despuÃ©s de que db estÃ© lleno
                     loadClients().catch(e => logError('Error cargando clientes: ' + e));
                     // Dashboard admin
                     if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'AGENCIA' || currentUser.role === 'agencia')) {
@@ -4544,7 +4565,7 @@ ${casosHTML}
             }, 60000);
         }
 
-        // ── Expose functions to global scope ──
+        // â”€â”€ Expose functions to global scope â”€â”€
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
         window.addLawyer = addLawyer;
@@ -4601,3 +4622,4 @@ ${casosHTML}
         window.abrirEditarObsClienteModal    = abrirEditarObsClienteModal;
         window.confirmarEditarObsClienteModal = confirmarEditarObsClienteModal;
         window.eliminarObsClienteModal       = eliminarObsClienteModal;
+
