@@ -90,7 +90,7 @@
                     showToast('Sesión cerrada — se inició sesión desde otro dispositivo', 'error');
             };
 
-            // -- Escucha en tiempo real  panel admin --
+            // -- Escucha en tiempo rea ? anel admin --
             window.fbWatchSessions = function() {
                 FB_DB.ref('sessions').on('value', function(snap) {
                     var sessions = snap.exists() ? snap.val() : {};
@@ -101,7 +101,7 @@
                 });
             };
 
-            console.log('[Floovu] Firebase  listo');
+            console.log('[Floovu] Firebas ? isto');
         } catch(e) {
             console.warn('[Floovu] Firebase no disponible:', e.message);
         }
@@ -351,7 +351,7 @@
         });
 
         // Verificar sesión guardada al cargar
-        // JWT vive en memoria — al refrescar se pierde  forzar re-login
+        // JWT vive en memoria — al refrescar se pierd ? orzar re-login
         window.addEventListener('load', () => {
             if (!_floovuJWT) {
                 localStorage.removeItem('floovu_user');
@@ -1858,7 +1858,7 @@ async function loadRealData() {
                 var total     = db.length;
                 var asignados = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
                 var scores    = db.filter(function(c){ return c.score > 0; }).map(function(c){ return c.score; });
-                var avgScore  = scores.length  (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
+                var avgScore  = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
                 var totalMin  = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); }, 0);
                 var hrsStr    = totalMin > 0 ? (totalMin/60).toFixed(1)+'h' : '0h';
                 var ramaCount = {};
@@ -1923,13 +1923,13 @@ async function loadRealData() {
 
                 // Resumen dashboard
                 var scores2   = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
-                var avgScore2 = scores2.length  (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
+                var avgScore2 = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
                 csv += '=== DASHBOARD — MIS MÉTRICAS ===' + NL;
                 csv += [q('Métrica'),q('Valor')].join(sep) + NL;
                 csv += [q('Casos asignados'), q(misCasos.length)].join(sep) + NL;
                 csv += [q('Score IA promedio'), q(avgScore2+'/10')].join(sep) + NL;
-                csv += [q('Horas ahorradas'), q(totalMin2>0(totalMin2/60).toFixed(1)+'h':'0h')].join(sep) + NL + NL;
+                csv += [q('Horas ahorradas'), q(totalMin2>0 ? (totalMin2/60).toFixed(1)+'h' : '0h')].join(sep) + NL + NL;
 
                 // Expedientes / Registro Legal
                 csv += '=== REGISTRO LEGAL — MIS CASOS ===' + NL;
@@ -1938,8 +1938,8 @@ async function loadRealData() {
                     csv += [
                         q(c.token||'—'), q(c.date||'—'), q(c.rama||'—'),
                         q(c.partes||'—'), q(c.tipo||'—'), q(c.venc||'—'),
-                        q(c.score>0c.score+'/10':'—'), q(c.status||'—'),
-                        q(c.ahorroMin>0Math.round(c.ahorroMin/60*10)/10+'h':'—')
+                        q(c.score>0 ? c.score+'/10' : '—'), q(c.status||'—'),
+                        q(c.ahorroMin>0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—')
                     ].join(sep) + NL;
                 });
                 csv += NL;
@@ -2017,9 +2017,9 @@ async function loadRealData() {
                 var total    = db.length;
                 var asig     = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
                 var scores   = db.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
-                var avg      = scores.length  (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
+                var avg      = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
                 var totalMin = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
-                var hrs      = totalMin>0(totalMin/60).toFixed(1)+'h':'0h';
+                var hrs      = totalMin>0 ? (totalMin/60).toFixed(1)+'h' : '0h';
                 var ramaCount = {};
                 db.forEach(function(c){ var r=c.rama||'General'; ramaCount[r]=(ramaCount[r]||0)+1; });
 
@@ -2047,8 +2047,8 @@ async function loadRealData() {
                     var badge = c.status==='ASIGNADO' ? 'badge-green' : 'badge-grey';
                     body += '<tr><td>' + (c.date||'—') + '</td><td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
                         '<td>' + (c.lawyer||'Pendiente') + '</td>' +
-                        '<td style="color:' + (c.venc&&c.venc!=='S/D''#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
-                        '<td style="font-weight:700;">' + (c.score>0c.score+'/10':'—') + '</td>' +
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D' ? '#c0392b' : '#555') + ';">' + (c.venc||'—') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0 ? c.score+'/10' : '—') + '</td>' +
                         '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
                 });
                 body += '</tbody></table>';
@@ -2070,7 +2070,7 @@ async function loadRealData() {
                 if (!misCasos.length) { showToast('No tenés casos asignados para exportar.', 'error'); return; }
 
                 var scores2  = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
-                var avg2     = scores2.length  (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
+                var avg2     = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
 
                 body += '<div class="cover"><h1> Floovu Legal AI PRO V8</h1>' +
@@ -2082,17 +2082,17 @@ async function loadRealData() {
                 body += '<div class="kpi-grid">' +
                     '<div class="kpi"><div class="kpi-val">' + misCasos.length + '</div><div class="kpi-lbl">Casos Asignados</div></div>' +
                     '<div class="kpi"><div class="kpi-val">' + avg2 + '/10</div><div class="kpi-lbl">Score IA Promedio</div></div>' +
-                    '<div class="kpi"><div class="kpi-val">' + (totalMin2>0(totalMin2/60).toFixed(1)+'h':'0h') + '</div><div class="kpi-lbl">Horas Ahorradas</div></div>' +
+                    '<div class="kpi"><div class="kpi-val">' + (totalMin2>0 ? (totalMin2/60).toFixed(1)+'h' : '0h') + '</div><div class="kpi-lbl">Horas Ahorradas</div></div>' +
                     '</div>';
 
                 body += '<div class="sec">Registro Legal — Mis Casos</div>';
                 body += '<table><thead><tr><th>Fecha</th><th>Partes</th><th>Rama</th><th>Tipo</th><th>Vencimiento</th><th>Score IA</th><th>Estado</th></tr></thead><tbody>';
                 misCasos.forEach(function(c) {
-                    var badge = c.status==='ASIGNADO''badge-green':'badge-grey';
+                    var badge = c.status==='ASIGNADO' ? 'badge-green' : 'badge-grey';
                     body += '<tr><td>' + (c.date||'—') + '</td><td style="font-weight:600;">' + (c.partes||'—') + '</td>' +
                         '<td>' + (c.rama||'—') + '</td><td>' + (c.tipo||'—') + '</td>' +
-                        '<td style="color:' + (c.venc&&c.venc!=='S/D''#c0392b':'#555') + ';">' + (c.venc||'—') + '</td>' +
-                        '<td style="font-weight:700;">' + (c.score>0c.score+'/10':'—') + '</td>' +
+                        '<td style="color:' + (c.venc&&c.venc!=='S/D' ? '#c0392b' : '#555') + ';">' + (c.venc||'—') + '</td>' +
+                        '<td style="font-weight:700;">' + (c.score>0 ? c.score+'/10' : '—') + '</td>' +
                         '<td><span class="' + badge + '">' + (c.status||'—') + '</span></td></tr>';
                 });
                 body += '</tbody></table>';
@@ -2108,7 +2108,7 @@ async function loadRealData() {
                         if (cl.nombre && c.partes && c.partes.toLowerCase().includes(cl.nombre.toLowerCase()) && !vistos[cl.nombre]) {
                             vistos[cl.nombre] = true;
                             hayClientes = true;
-                            var badge2 = cl.estado==='ASIGNADO''badge-green':'badge-gold';
+                            var badge2 = cl.estado==='ASIGNADO' ? 'badge-green' : 'badge-gold';
                             body += '<tr><td style="font-weight:600;">' + (cl.nombre||'—') + '</td><td>' + (cl.email||'—') + '</td>' +
                                 '<td>' + (cl.telefono||'—') + '</td><td>' + (cl.nit||'—') + '</td>' +
                                 '<td><span class="' + badge2 + '">' + (cl.estado||'—') + '</span></td>' +
@@ -2246,7 +2246,7 @@ async function loadRealData() {
                         </div>
                         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                             <span style="font-size:0.6rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
-                            ${id  `
+                            ${id ? `
                             <button onclick="abrirEditarObsClienteModal('${safeId}','${safeTok}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;
@@ -2625,7 +2625,7 @@ async function loadRealData() {
                         row_number:          caseItem.row_number || null,
                         nombre_cliente:      c.nombre,
                         abogado_responsable: lawyerName,
-                        email_abogado:       lawyerObj  lawyerObj.email : '',
+                        email_abogado:       lawyerObj ? lawyerObj.email : '',
                         'Estado Alerta':     'ASIGNADO',
                         rama:                caseItem.rama,
                         vencimiento:         caseItem.venc,
@@ -2902,8 +2902,8 @@ async function loadRealData() {
                         <td style="color:var(--silver);font-size:0.8rem;">${esc(c.date)}</td>
                         <td>${esc(c.rama)}</td>
                         <td style="color:var(--silver);font-size:0.8rem;">${esc(c.tipo||'—')}</td>
-                        <td style="color:${c.score>0'var(--gold)':'var(--silver)'};">${c.score > 0 ? c.score+'/10' : '—'}</td>
-                        <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:${c.status==='ASIGNADO''rgba(34,197,94,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='ASIGNADO''#22c55e':'var(--silver)'};">${esc(c.status||'—')}</span></td>
+                        <td style="color:${c.score>0 ? 'var(--gold)' : 'var(--silver)'};">${c.score > 0 ? c.score+'/10' : '—'}</td>
+                        <td><span style="font-size:0.72rem;padding:2px 8px;border-radius:12px;background:${c.status==='' ?'rgba(34,197,94,0.1)':'rgba(255,255,255,0.05)'};color:${c.status==='' ?'#22c55e':'var(--silver)'};">${esc(c.status||'—')}</span></td>
                         <td style="color:var(--silver);">${c.ahorroMin > 0 ? Math.round(c.ahorroMin/60*10)/10+'h' : '—'}</td>
                     </tr>`).join('');
                 }
@@ -3144,7 +3144,7 @@ async function loadRealData() {
                     if (d.y<-0.02){d.y=1.02;d.x=Math.random();}
                     const a = d.a*(0.45+0.55*Math.sin(d.ph));
                     ctx.beginPath(); ctx.arc(d.x*W,d.y*H,d.r,0,Math.PI*2);
-                    ctx.fillStyle = d.gold`rgba(201,168,76,${a})`:`rgba(120,160,210,${a*0.5})`;
+                    ctx.fillStyle = d.gold ? `rgba(201,168,76,${a})` : `rgba(120,160,210,${a*0.5})`;
                     ctx.fill();
                 });
             }
@@ -3405,7 +3405,7 @@ async function loadRealData() {
                 <td style="font-size:0.8rem;color:var(--silver);">
                     <div style="display:flex;align-items:center;gap:6px;">
                         <span>${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser.name || 'Sistema')}</span>
-                        ${obsId  `<button onclick="eliminarObsGlobal('${obsId}','${obsTok}')" title="Eliminar"
+                        ${obsId ? `<button onclick="eliminarObsGlobal('${obsId}','${obsTok}')" title="Eliminar"
                             style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
                                    padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;"></button>` : ''}
                     </div>
@@ -3851,7 +3851,7 @@ async function loadRealData() {
                             onclick="toggleExpPanel('res-${cardId}', '${cardId}'); marcarComoVisto('${tok}','${cardId}')">
                         Resumen IA
                     </button>
-                    ${c.archivo_url  `
+                    ${c.archivo_url ? `
                     <button class="btn-premium" style="font-size:0.76rem;height:32px;padding:0 12px;"
                             onclick="openPdfModal('${esc(c.archivo_url)}'); marcarComoVisto('${tok}','${cardId}')">
                         Ver Documento
@@ -3936,7 +3936,7 @@ async function loadRealData() {
                         </div>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
-                            ${id  `
+                            ${id ? `
                             <button onclick="abrirEditarAnotacion('${esc(id)}','${tok}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;"></button>
@@ -4103,7 +4103,7 @@ async function loadRealData() {
                                 <p style="margin:2px 0 0;font-size:0.72rem;color:var(--silver);">
                                      ${esc(c.date)} ${c.venc && c.venc !== 'S/D' ? `— Vence: ${esc(c.venc)}` : ''}
                                 </p>
-                                ${c.messageId  `
+                                ${c.messageId ? `
                                 <button class="btn-outline" style="font-size:0.65rem;height:24px;padding:0 8px;margin-top:6px;border-color:rgba(201,168,76,0.3);color:var(--gold);"
                                         onclick="window.open('https://mail.google.com/mail/u/0/#inbox/${esc(c.messageId)}', '_blank')">
                                     Ver Documento (Gmail)
@@ -4252,7 +4252,7 @@ async function loadRealData() {
                         </span>
                         <div style="display:flex;align-items:center;gap:6px;">
                             <span style="font-size:0.65rem;color:var(--silver);">${esc(a.Fecha || a.fecha || '')}</span>
-                            ${id  `
+                            ${id ? `
                             <button onclick="abrirEditarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;"></button>
@@ -4317,7 +4317,7 @@ async function loadRealData() {
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const meta = (window._grupoMeta || {})[grupoId] || {};
-                const tok = meta.tokens.[0] || '';
+                const tok = meta.tokens?.[0] || '';
                 const res = await authFetch(WH.EDIT_OBS, {
                     method: 'POST',
                     body: JSON.stringify({ id, token: tok, texto, visibilidad, operador: currentUser.name || 'Operador' })
@@ -4335,7 +4335,7 @@ async function loadRealData() {
             try {
                 const WH = window.FLOOVU_CONFIG.WEBHOOKS;
                 const meta = (window._grupoMeta || {})[grupoId] || {};
-                const tok = meta.tokens.[0] || '';
+                const tok = meta.tokens?.[0] || '';
                 const res = await authFetch(WH.DELETE_OBS, {
                     method: 'POST',
                     body: JSON.stringify({ id, token: tok, operador: currentUser.name || 'Operador' })
@@ -4462,7 +4462,7 @@ async function loadRealData() {
                     <p style="margin:5px 0;"><strong>Prioridad:</strong>
                         <span style="color:${prioColor};font-weight:700;">${c.priority || 'MEDIA'}</span>
                     </p>
-                    ${resumenHTML  `
+                    ${resumenHTML ? `
                     <div style="margin-top:12px;padding:12px;background:#fafaf7;border-radius:6px;border-left:4px solid #c9a84c;">
                         <p style="margin:0 0 8px;font-weight:700;color:#c9a84c;font-size:0.85em;
                                    text-transform:uppercase;"> Análisis IA</p>
