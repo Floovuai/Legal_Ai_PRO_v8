@@ -1,0 +1,65 @@
+name: Generate Config & Deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate config.js from template
+        env:
+          N8N_BASE: ${{ secrets.N8N_BASE }}
+          ACCOUNT_EMAIL: ${{ secrets.ACCOUNT_EMAIL }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          FIREBASE_SENDER_ID: ${{ secrets.FIREBASE_SENDER_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+        run: |
+          cat SISTEMA/config.template.js | \
+          sed "s|{{N8N_BASE}}|${N8N_BASE}|g" | \
+          sed "s|{{ACCOUNT_EMAIL}}|${ACCOUNT_EMAIL}|g" | \
+          sed "s|{{FIREBASE_API_KEY}}|${FIREBASE_API_KEY}|g" | \
+          sed "s|{{FIREBASE_AUTH_DOMAIN}}|${FIREBASE_AUTH_DOMAIN}|g" | \
+          sed "s|{{FIREBASE_DB_URL}}|${FIREBASE_DB_URL}|g" | \
+          sed "s|{{FIREBASE_PROJECT_ID}}|${FIREBASE_PROJECT_ID}|g" | \
+          sed "s|{{FIREBASE_STORAGE_BUCKET}}|${FIREBASE_STORAGE_BUCKET}|g" | \
+          sed "s|{{FIREBASE_SENDER_ID}}|${FIREBASE_SENDER_ID}|g" | \
+          sed "s|{{FIREBASE_APP_ID}}|${FIREBASE_APP_ID}|g" \
+          > SISTEMA/config.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: 'SISTEMA'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v3
