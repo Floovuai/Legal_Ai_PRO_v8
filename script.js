@@ -239,7 +239,9 @@
             }
 
             currentUser = user;
-            localStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email }));
+            const _sessionStart = Date.now();
+            localStorage.setItem('floovu_user', JSON.stringify({ username: user.username, role: user.role, name: user.name, email: user.email, sessionStart: _sessionStart, lastActivity: _sessionStart }));
+            startSessionWatcher();
 
             document.getElementById('login-overlay').classList.add('hidden');
             document.getElementById('app-shell').style.display = 'grid';
@@ -332,6 +334,49 @@
             }
         }
 
+        // ===== Session expiration =====
+        // Absoluto: 8 horas desde login. Idle: 30 min sin actividad.
+        const SESSION_MAX_MS = 8 * 60 * 60 * 1000;   // 8h
+        const SESSION_IDLE_MS = 30 * 60 * 1000;      // 30 min
+        let _sessionWatchInterval = null;
+
+        function touchSessionActivity() {
+            try {
+                const raw = localStorage.getItem('floovu_user');
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                s.lastActivity = Date.now();
+                localStorage.setItem('floovu_user', JSON.stringify(s));
+            } catch(_) {}
+        }
+
+        function checkSessionExpiration() {
+            try {
+                const raw = localStorage.getItem('floovu_user');
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                const now = Date.now();
+                const sinceStart = now - (s.sessionStart || now);
+                const sinceActivity = now - (s.lastActivity || now);
+                if (sinceStart > SESSION_MAX_MS) {
+                    alert('Sesion expirada (8h maximo). Por favor inicia sesion de nuevo.');
+                    doLogout();
+                } else if (sinceActivity > SESSION_IDLE_MS) {
+                    alert('Sesion expirada por inactividad (30 min). Por favor inicia sesion de nuevo.');
+                    doLogout();
+                }
+            } catch(_) {}
+        }
+
+        function startSessionWatcher() {
+            if (_sessionWatchInterval) clearInterval(_sessionWatchInterval);
+            _sessionWatchInterval = setInterval(checkSessionExpiration, 60 * 1000); // cada 1 min
+            // Eventos de actividad que resetean el idle timer
+            ['click','keydown','mousemove','scroll'].forEach(ev =>
+                document.addEventListener(ev, touchSessionActivity, { passive: true })
+            );
+        }
+
         function doLogout() {
             // Cerrar sesión en Firebase
             if (typeof window.firebaseCloseSession === 'function') {
@@ -340,6 +385,7 @@
             _floovuJWT = null;
             localStorage.removeItem('floovu_user');
             currentUser = null;
+            if (_sessionWatchInterval) { clearInterval(_sessionWatchInterval); _sessionWatchInterval = null; }
             document.getElementById('login-overlay').classList.remove('hidden');
             document.getElementById('app-shell').style.display = 'none';
             document.getElementById('login-user').value = '';
