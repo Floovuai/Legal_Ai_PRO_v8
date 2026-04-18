@@ -487,12 +487,25 @@
                         <input type="hidden" id="edit-client-idx">
                         <input type="hidden" id="edit-client-source">
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="edit-cli-token">Token del Cliente</label>
+                                <input type="text" id="edit-cli-token" readonly style="font-family:monospace;color:var(--gold);background:rgba(201,168,76,0.08);cursor:not-allowed;">
+                            </div>
                             <div class="form-group">
                                 <label for="edit-cli-nombre">Nombre Completo</label>
                                 <input type="text" id="edit-cli-nombre">
                             </div>
                             <div class="form-group">
-                                <label for="edit-cli-nit">NIT / RUT / Cédula</label>
+                                <label for="edit-cli-tipo-id">Tipo de Identificación</label>
+                                <select id="edit-cli-tipo-id"
+                                    style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);
+                                           border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                    <option value="CEDULA">Cédula (Persona Natural)</option>
+                                    <option value="NIT">NIT (Empresa)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cli-nit">Número de Identificación</label>
                                 <input type="text" id="edit-cli-nit">
                             </div>
                             <div class="form-group">

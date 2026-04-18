@@ -1562,11 +1562,15 @@ async function loadRealData() {
             }
 
             const clientFromDirectory = findClientRecord(clienteADefender, caseItem.token);
-            const resolvedTipoId = _selectedIdVal
-                ? _selectedIdTipo
-                : ((clientFromDirectory && clientFromDirectory.cedula && !clientFromDirectory.nit) ? 'CEDULA' : 'NIT');
-            const resolvedNit = clientNit || (clientFromDirectory ? (clientFromDirectory.nit || '') : '');
-            const resolvedCedula = clientCedula || (clientFromDirectory ? (clientFromDirectory.cedula || '') : '');
+            // FIX: priorizar SIEMPRE el tipo del radio (data-tipo) que ya sabe si la parte es empresa o persona.
+            // Antes: si la IA no extraía el número, se caía por defecto a 'NIT' y contaminaba personas con el NIT de la empresa.
+            const resolvedTipoId = _selectedIdTipo
+                || ((clientFromDirectory && clientFromDirectory.cedula && !clientFromDirectory.nit) ? 'CEDULA' : 'NIT');
+            // Fallback al directorio SOLO si coincide con el tipo elegido para la parte.
+            const dirNit    = (clientFromDirectory && clientFromDirectory.nit)    || '';
+            const dirCedula = (clientFromDirectory && clientFromDirectory.cedula) || '';
+            const resolvedNit    = resolvedTipoId === 'NIT'    ? (clientNit    || dirNit)    : '';
+            const resolvedCedula = resolvedTipoId === 'CEDULA' ? (clientCedula || dirCedula) : '';
             const resolvedEmail = caseItem.email_cliente || caseItem['email cliente'] || (clientFromDirectory ? (clientFromDirectory.email || '') : '');
             const resolvedTelefono = caseItem.telefono_cliente || caseItem.telefono || caseItem['Teléfono'] || (clientFromDirectory ? (clientFromDirectory.telefono || '') : '');
             const resolvedNotas = (clientFromDirectory && clientFromDirectory.notas) || '';
@@ -1973,6 +1977,7 @@ async function loadRealData() {
                 <div class="table-scroll"><table>
                     <thead><tr>
                         <th>CLIENTE</th>
+                        <th>TOKEN</th>
                         <th>NIT / CÉDULA</th>
                         <th>EMAIL</th>
                         <th>TELÉFONO</th>
@@ -1988,7 +1993,8 @@ async function loadRealData() {
                                 ${esc(c.nombre || '—')}
                                 ${c._incompleto ? '<div style="font-size:0.68rem;color:#f59e0b;margin-top:3px;"> Datos incompletos — actualizar</div>' : ''}
                             </td>
-                            <td style="color:${(!c.nit && !c.cedula) || (c.nit === '—' && !c.cedula) ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.nit || c.cedula || '—')}</td>
+                            <td style="color:${c.token ? 'var(--gold)' : 'var(--silver)'};font-size:0.75rem;font-family:monospace;font-weight:600;">${esc(c.token || '—')}</td>
+                            <td style="color:${(!c.nit && !c.cedula) || (c.nit === '—' && !c.cedula) ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${c.nit ? 'NIT: ' + esc(c.nit) : (c.cedula ? 'CC: ' + esc(c.cedula) : '—')}</td>
                             <td style="color:${!c.email || c.email === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.email || '—')}</td>
                             <td style="color:${!c.telefono || c.telefono === '—' ? '#f59e0b' : 'var(--silver)'};font-size:0.8rem;">${esc(c.telefono || '—')}</td>
                             <td>
@@ -2328,8 +2334,12 @@ async function loadRealData() {
             if (!c) return;
             document.getElementById('edit-client-idx').value    = idx;
             document.getElementById('edit-client-source').value = c._source || 'directorio';
+            const tokenInput = document.getElementById('edit-cli-token');
+            if (tokenInput) tokenInput.value = c.token || '—';
             document.getElementById('edit-cli-nombre').value    = c.nombre   || '';
             document.getElementById('edit-cli-nit').value       = c.nit || c.cedula || '';
+            const tipoSel = document.getElementById('edit-cli-tipo-id');
+            if (tipoSel) tipoSel.value = c.nit ? 'NIT' : 'CEDULA';
             document.getElementById('edit-cli-email').value     = c.email    || '';
             document.getElementById('edit-cli-telefono').value  = c.telefono || '';
             document.getElementById('edit-cli-notas').value     = c.notas    || '';
@@ -2540,7 +2550,11 @@ async function loadRealData() {
             const source   = document.getElementById('edit-client-source').value;
             const original = allClientRows[idx];
             const nombre   = document.getElementById('edit-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
-            const nit      = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
+            const idNum    = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
+            const tipoIdSel = document.getElementById('edit-cli-tipo-id');
+            const tipoId   = (tipoIdSel && tipoIdSel.value) || (original.nit ? 'NIT' : 'CEDULA');
+            const nitFinal    = tipoId === 'NIT'    ? idNum : '';
+            const cedulaFinal = tipoId === 'CEDULA' ? idNum : '';
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
@@ -2563,24 +2577,25 @@ async function loadRealData() {
                         logError(`Aviso: delete previo fallá (${delErr.message}), continuando con save...`);
                     }
                 }
-                
+
                 const estado = original.estado || original._status || 'DIRECTORIO';
                 const finalEstado = estado === 'NUEVO' ? 'CONFIRMADO' : estado;
-                
+
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST', body: JSON.stringify({
-                        nombre, 
-                        nit, 
-                        cedula: nit, // Mapeo dual para n8n
-                        email, 
+                        nombre,
+                        nit: nitFinal,
+                        cedula: cedulaFinal,
+                        tipo_identificacion: tipoId,
+                        email,
                         'Correo electrónico': email,
                         correo_electronico: email,
-                        telefono, 
-                        notas, 
+                        telefono,
+                        notas,
                         abogado,
                         estado: finalEstado,
                         _status: finalEstado,
-                        token, 
+                        token,
                         Token: token,
                         nit_original: original.nit || original.cedula || '',
                         nombre_original: original.nombre || ''
@@ -2592,8 +2607,8 @@ async function loadRealData() {
                 if (caseItem) {
                     caseItem.partes = nombre;
                     caseItem.cliente_a_defender = nombre;
-                    caseItem.nit = nit;
-                    caseItem.cedula = nit;
+                    caseItem.nit = nitFinal;
+                    caseItem.cedula = cedulaFinal;
                     caseItem.email_cliente = email;
                     caseItem.telefono_cliente = telefono;
                 }
@@ -2610,14 +2625,18 @@ async function loadRealData() {
             const idx      = parseInt(document.getElementById('edit-client-idx').value);
             const original = allClientRows[idx];
             const nombre   = document.getElementById('edit-cli-nombre').value.trim().replace(/[<>"'&]/g,'');
-            const nit      = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
+            const idNum    = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
+            const tipoIdSel = document.getElementById('edit-cli-tipo-id');
+            const tipoId   = (tipoIdSel && tipoIdSel.value) || (original.nit ? 'NIT' : 'CEDULA');
+            const nitFinal    = tipoId === 'NIT'    ? idNum : '';
+            const cedulaFinal = tipoId === 'CEDULA' ? idNum : '';
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
             const token    = original.token || '';
 
             // Validación de campos obligatorios
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
-            if (!nit) { showToast('El NIT/Cédula es obligatorio.', 'error'); return; }
+            if (!idNum) { showToast('El NIT/Cédula es obligatorio.', 'error'); return; }
             if (!email) { showToast('El email es obligatorio.', 'error'); return; }
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
 
@@ -2639,8 +2658,9 @@ async function loadRealData() {
                     method: 'POST',
                     body: JSON.stringify({
                         nombre,
-                        nit,
-                        cedula: nit, // Mapeo dual para n8n
+                        nit: nitFinal,
+                        cedula: cedulaFinal,
+                        tipo_identificacion: tipoId,
                         email,
                         'Correo electrónico': email,
                         correo_electronico: email,
@@ -2649,7 +2669,7 @@ async function loadRealData() {
                         abogado: original.abogado || '',
                         estado: 'CONFIRMADO',
                         _status: 'CONFIRMADO',
-                        token, 
+                        token,
                         Token: token,
                         nit_original: original.nit || original.cedula || '',
                         nombre_original: original.nombre || ''
