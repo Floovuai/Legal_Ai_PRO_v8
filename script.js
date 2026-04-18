@@ -6,15 +6,11 @@
     // Esperar a que Firebase compat cargue
     window.addEventListener('load', function() {
         try {
-            var FB_CONFIG = {
-                apiKey:            "AIzaSyBb3IubEjyVMNsl8S-98pzfV9H_LEGhvWM",
-                authDomain:        "legal-ai-pro-v8.firebaseapp.com",
-                databaseURL: "https://legal-ai-pro-v8-default-rtdb.firebaseio.com",
-                projectId:         "legal-ai-pro-v8",
-                storageBucket:     "legal-ai-pro-v8.firebasestorage.app",
-                messagingSenderId: "215298653639",
-                appId: "1:215298653639:web:db9b999d63bd20ce0c2de2"
-            };
+            if (!window.FLOOVU_ENV || !window.FLOOVU_ENV.FIREBASE) {
+                console.error('[Floovu] config.js no encontrado o FIREBASE ausente. Abortando Firebase.');
+                return;
+            }
+            var FB_CONFIG = window.FLOOVU_ENV.FIREBASE;
 
             if (!firebase.apps.length) { firebase.initializeApp(FB_CONFIG); }
             var FB_DB    = firebase.database();
@@ -109,14 +105,19 @@
 
 // --- Configuration ---
     // ----------------------------------------------------------
-    // FLOOVU Legal AI PRO V8 — Configuración integrada
-    // Para cambiar el servidor n8n: editar solo N8N_BASE
+    // FLOOVU Legal AI - Configuración cargada desde config.js
+    // config.js NO está en el repositorio (ver .gitignore)
+    // Para cambiar servidor/Firebase: editar config.js, no este archivo
     // ----------------------------------------------------------
-    const N8N_BASE = 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook';
+    if (!window.FLOOVU_ENV || !window.FLOOVU_ENV.N8N_BASE) {
+        alert('ERROR: config.js no cargó. Verificá que config.js exista y esté referenciado en index.html antes que script.js.');
+        throw new Error('FLOOVU_ENV no definido — config.js falta');
+    }
+    const N8N_BASE = window.FLOOVU_ENV.N8N_BASE;
 
     window.FLOOVU_CONFIG = {
 
-        ACCOUNT_EMAIL: 'floovuai@gmail.com',
+        ACCOUNT_EMAIL: window.FLOOVU_ENV.ACCOUNT_EMAIL || 'admin@localhost',
 
         // API_SECRET eliminado — auth via JWT
 
