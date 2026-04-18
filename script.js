@@ -422,6 +422,116 @@
         // para compatibilidad con CORS preflight. n8n usa el que esté disponible.
         // FIX-TIMEOUT: AbortController con 60s para evitar requests colgados
         // FIX-RETRY: reintenta una vez ante error de red/CORS
+        function normalizeFieldKey(key) {
+            return String(key || '')
+                .toLowerCase()
+                .replace(/Ã¡|á/g, 'a')
+                .replace(/Ã©|é/g, 'e')
+                .replace(/Ã­|í/g, 'i')
+                .replace(/Ã³|ó/g, 'o')
+                .replace(/Ãº|ú/g, 'u')
+                .replace(/Ã±|ñ/g, 'n')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+        }
+
+        function hasFieldValue(value) {
+            if (value === null || value === undefined) return false;
+            if (typeof value === 'number') return !Number.isNaN(value);
+            if (typeof value === 'boolean') return true;
+            if (typeof value === 'string') return value.trim() !== '';
+            if (Array.isArray(value)) return value.length > 0;
+            if (typeof value === 'object') return Object.keys(value).length > 0;
+            return String(value).trim() !== '';
+        }
+
+        function cleanScalar(value) {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'string') return value.trim();
+            if (typeof value === 'number') return Number.isNaN(value) ? '' : String(value);
+            if (typeof value === 'boolean') return value ? 'true' : 'false';
+            if (Array.isArray(value)) return value.map(cleanScalar).filter(Boolean).join(', ');
+            if (typeof value === 'object') {
+                if (value.value && Array.isArray(value.value) && value.value[0]) {
+                    return cleanScalar(value.value[0].address || value.value[0].name || value.value[0].text || value.value[0].value || '');
+                }
+                return cleanScalar(value.address || value.name || value.text || value.value || '');
+            }
+            return String(value).trim();
+        }
+
+        function getField(row, aliases, fallback = null) {
+            if (!row || typeof row !== 'object') return fallback;
+            const list = Array.isArray(aliases) ? aliases : [aliases];
+
+            for (const key of list) {
+                if (Object.prototype.hasOwnProperty.call(row, key) && hasFieldValue(row[key])) {
+                    return row[key];
+                }
+            }
+
+            const wanted = new Set(list.map(normalizeFieldKey).filter(Boolean));
+            for (const [key, value] of Object.entries(row)) {
+                if (wanted.has(normalizeFieldKey(key)) && hasFieldValue(value)) {
+                    return value;
+                }
+            }
+
+            return fallback;
+        }
+
+        function parseStoredScore(rawValue) {
+            if (!hasFieldValue(rawValue)) return null;
+
+            if (typeof rawValue === 'number') {
+                if (Number.isNaN(rawValue)) return null;
+                const normalized = rawValue > 10 ? rawValue / 10 : rawValue;
+                return parseFloat(Math.max(0, Math.min(normalized, 10)).toFixed(1));
+            }
+
+            const raw = cleanScalar(rawValue);
+            if (!raw) return null;
+
+            const match = raw.replace(/\s+/g, '').match(/-?\d+(?:[.,]\d+)?/);
+            if (!match) return null;
+
+            let parsed = parseFloat(match[0].replace(',', '.'));
+            if (Number.isNaN(parsed)) return null;
+            if (raw.includes('%') || parsed > 10) parsed = parsed / 10;
+            return parseFloat(Math.max(0, Math.min(parsed, 10)).toFixed(1));
+        }
+
+        function getScoreValue(row) {
+            const rawScore = getField(row, [
+                'Score Auto Evaluacion',
+                'Score Auto-Evaluacion',
+                'Score IA',
+                'Score_IA',
+                'score ia',
+                'score_ia',
+                'score',
+                'Score'
+            ], null);
+            return parseStoredScore(rawScore);
+        }
+
+        function getScoreSamples(cases) {
+            return (cases || [])
+                .map(c => (typeof c.score === 'number' && !Number.isNaN(c.score) ? c.score : null))
+                .filter(score => score !== null);
+        }
+
+        function findClientRecord(clienteNombre, token) {
+            const norm = (v) => String(v || '').toLowerCase().trim();
+            const tokenNorm = String(token || '').trim();
+            return (clients || []).find(c =>
+                (tokenNorm && String(c.token || '').trim() === tokenNorm) ||
+                (norm(c.nombre) && norm(c.nombre) === norm(clienteNombre))
+            ) || null;
+        }
+
         async function authFetch(url, options = {}, _retryCount = 0) {
             if (!_floovuJWT) {
                 doLogout();
@@ -578,8 +688,13 @@ async function loadRealData() {
                     const normalizedRows = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
                     db = normalizedRows.map(row => {
                         // FASE 2: leer fecha de vencimiento desde múltiples campos posibles
-                        const venc = row['Fecha de Vencimiento'] || row['vencimiento'] ||
-                                     row['vencimiento_explicito'] || row['Vencimiento'] || 'S/D';
+                        const venc = cleanScalar(getField(row, [
+                            'Fecha de Vencimiento',
+                            'Fecha Vencimiento',
+                            'vencimiento',
+                            'vencimiento_explicito',
+                            'Vencimiento'
+                        ], 'S/D')) || 'S/D';
 
                         // FASE 3: parser robusto de fechas — normaliza CUALQUIER formato a DD/MM/AAAA HH:mm
                         const fechaRaw = row.Fecha || row.fecha || '';
@@ -623,13 +738,7 @@ async function loadRealData() {
                         })();
 
                         // FASE 4: score robusto — acepta string, number, con o sin tilde
-                        const scoreRaw = row['Score Auto-Evaluación'] || row['Score Auto-Evaluacion'] ||
-                                         row['Score IA'] || row['Score_IA'] || row['score_ia'] ||
-                                         row['score'] || row['Score'] || row.score || '0';
-                        // Score viene del sheet como string 0-100 — normalizar a escala 0-10
-                        let scoreParsed = parseFloat(String(scoreRaw).replace(',', '.')) || 0;
-                        // Si viene en escala 0-100 (ej: 85), convertir a 0-10 (ej: 8.5)
-                        const score = scoreParsed > 10 ? parseFloat((scoreParsed / 10).toFixed(1)) : scoreParsed;
+                        const score = getScoreValue(row);
 
                         // FASE 7: limpiar el resumen — quitar el bloque DATA, quitar markdown **
                         let desc = row['Resumen del Documento'] || row['resumen'] || '';
@@ -662,7 +771,7 @@ async function loadRealData() {
                             desc,
                             token:        row.token || row.Token || (row.row_number ? `FLV-EX-${String(row.row_number).padStart(2,'0')}` : 'FLV-EX-00'),
                             row_number:   row.row_number || null,
-                            lawyer:       (() => { const raw = row['Abogado asignado'] || row['Abogado Asignado'] || row['abogado_asignado'] || row['abogado_responsable'] || null; if (raw && typeof raw === 'object') { if (raw.value && Array.isArray(raw.value) && raw.value[0]) return raw.value[0].name || raw.value[0].address || ''; return raw.name || raw.text || JSON.stringify(raw); } return raw; })(),
+                            lawyer:       cleanScalar(getField(row, ['Abogado asignado', 'Abogado Asignado', 'abogado_asignado', 'abogado_responsable'], '')),
                             priority:     row.Prioridad || row.prioridad || 'Media',
                             ahorroMin:    parseFloat(String(row['Ahorro Humano (min)'] || '0').replace(',','.')) || 0,
                             score,
@@ -690,10 +799,13 @@ async function loadRealData() {
                             })(),
                             messageId:            row['Email ID'] || row.messageId || row['messageId'] || '',
                             archivo_url:          row['Archivo URL'] || row.archivo_url || '',
-                            nit:                  row['NIT'] || row['nit'] || row['nit_cliente'] || '',
-                            cedula:               row['Cedula'] || row['cedula'] || '',
-                            cliente_a_defender:   row['Cliente a defender'] || row['cliente_a_defender'] || '',
-                            accion_requerida:     row['Acción Requerida'] || row['Accion Requerida'] || row['accion_requerida'] || '',
+                            nit:                  cleanScalar(getField(row, ['NIT', 'nit', 'nit_cliente'], '')),
+                            cedula:               cleanScalar(getField(row, ['Cedula', 'Cédula', 'cedula', 'cedula_cliente'], '')),
+                            cliente_a_defender:   cleanScalar(getField(row, ['Cliente a defender', 'Cliente a Defender', 'cliente_a_defender'], '')),
+                            email_cliente:        cleanScalar(getField(row, ['email cliente', 'Email Cliente', 'email_cliente', 'Correo electrónico', 'Correo electronico', 'correo_electronico'], '')),
+                            telefono_cliente:     cleanScalar(getField(row, ['Teléfono', 'Telefono', 'telefono_cliente', 'telefono'], '')),
+                            notas_cliente:        cleanScalar(getField(row, ['Observaciones', 'Notas', 'notas_cliente', 'notas'], '')),
+                            accion_requerida:     cleanScalar(getField(row, ['Acción Requerida', 'Accion Requerida', 'accion_requerida'], '')),
                             partes_array:         (() => {
                                 const p = row.Partes || row.partes || '';
                                 // Intentar parsear JSON (nuevo formato con identificación)
@@ -801,8 +913,8 @@ async function loadRealData() {
             const hoursTrend = pctChange(recentMin, prevMin);
 
             // Score IA promedio
-            const rScores = recent.filter(c => c.score > 0).map(c => c.score);
-            const pScores = previous.filter(c => c.score > 0).map(c => c.score);
+            const rScores = getScoreSamples(recent);
+            const pScores = getScoreSamples(previous);
             const rAvg = rScores.length ? rScores.reduce((a, b) => a + b, 0) / rScores.length : 0;
             const pAvg = pScores.length ? pScores.reduce((a, b) => a + b, 0) / pScores.length : 0;
             const scoreTrend = pctChange(rAvg, pAvg);
@@ -852,7 +964,7 @@ async function loadRealData() {
             // KPIs
             const totalMinutos = db.reduce((acc, c) => acc + (c.ahorroMin || 0), 0);
             const totalHours   = totalMinutos > 0 ? (totalMinutos / 60).toFixed(1) : '0';
-            const scores       = db.filter(c => c.score > 0).map(c => c.score);
+            const scores       = getScoreSamples(db);
             const avgScore     = scores.length ? (scores.reduce((a,b) => a+b, 0) / scores.length).toFixed(1) : null;
             const totalCases   = db.length;
             const pendingCases = db.filter(c => c.status === 'PENDIENTE').length;
@@ -878,7 +990,7 @@ async function loadRealData() {
             }
 
             animateKPINumber('kpi-hours', totalHours, 'h', true);
-            animateKPINumber('kpi-score', avgScore ? avgScore : 'N/A', '/10', true);
+            animateKPINumber('kpi-score', avgScore !== null ? avgScore : 'N/A', '/10', true);
             animateKPINumber('kpi-total', totalCases, '', false);
             animateKPINumber('kpi-pending', pendingCases, '', false);
 
@@ -886,7 +998,7 @@ async function loadRealData() {
             const scoreBar = document.getElementById('kpi-bar-score');
             const pendBar  = document.getElementById('kpi-bar-pending');
             const hoursBar = document.getElementById('kpi-bar-hours');
-            if (scoreBar) scoreBar.style.width = avgScore ? `${(parseFloat(avgScore)/10)*100}%` : '0%';
+            if (scoreBar) scoreBar.style.width = avgScore !== null ? `${(parseFloat(avgScore)/10)*100}%` : '0%';
             if (pendBar) pendBar.style.width  = totalCases ? `${(pendingCases/totalCases)*100}%` : '0%';
             if (hoursBar) hoursBar.style.width = totalHours > 0 ? `${Math.min(parseFloat(totalHours)/20*100, 100)}%` : '0%';
 
@@ -1402,6 +1514,16 @@ async function loadRealData() {
                 clienteADefender = (caseItem.partes || '').split(/[,;—\/]|vs\.|contra/i)[0].trim() || caseItem.partes || '';
             }
 
+            const clientFromDirectory = findClientRecord(clienteADefender, caseItem.token);
+            const resolvedTipoId = _selectedIdVal
+                ? _selectedIdTipo
+                : ((clientFromDirectory && clientFromDirectory.cedula && !clientFromDirectory.nit) ? 'CEDULA' : 'NIT');
+            const resolvedNit = clientNit || (clientFromDirectory ? (clientFromDirectory.nit || '') : '');
+            const resolvedCedula = clientCedula || (clientFromDirectory ? (clientFromDirectory.cedula || '') : '');
+            const resolvedEmail = caseItem.email_cliente || caseItem['email cliente'] || (clientFromDirectory ? (clientFromDirectory.email || '') : '');
+            const resolvedTelefono = caseItem.telefono_cliente || caseItem.telefono || caseItem['Teléfono'] || (clientFromDirectory ? (clientFromDirectory.telefono || '') : '');
+            const resolvedNotas = (clientFromDirectory && clientFromDirectory.notas) || '';
+
             if (!lawyerObj)     { showToast('Abogado no encontrado en el directorio.', 'error'); return; }
             // FIX: email del cliente es opcional; solo valida formato si se ingresó algo
             // V2: email del cliente ya no se captura aquí — se completa después en pestaña Clientes
@@ -1433,11 +1555,12 @@ async function loadRealData() {
                             nombre_cliente_identificado: clienteADefender,
                             cliente_a_defender:          clienteADefender,
                             'Cliente a defender':        clienteADefender,
-                            nit_cliente:                 clientNit,
-                            cedula_cliente:              clientCedula,
-                            tipo_identificacion:         _selectedIdTipo,
-                            email_cliente:               caseItem.email_cliente || caseItem['email cliente'] || '',
-                            telefono_cliente:            caseItem.telefono || caseItem['Teléfono'] || '',
+                            nit_cliente:                 resolvedNit,
+                            cedula_cliente:              resolvedCedula,
+                            tipo_identificacion:         resolvedTipoId,
+                            email_cliente:               resolvedEmail,
+                            telefono_cliente:            resolvedTelefono,
+                            notas_cliente:               resolvedNotas,
                             abogado_responsable:         lawyerName,
                             abogado_nombre:              lawyerName,
                             email_abogado:               lawyerObj.email,
@@ -1469,11 +1592,11 @@ async function loadRealData() {
                             method: 'POST',
                             body: JSON.stringify({
                                 nombre: clienteADefender,
-                                nit: clientNit,
-                                cedula: clientCedula,
-                                email: '',
-                                telefono: '',
-                                notas: `Creado automáticamente desde asignación del caso ${caseItem.token}`,
+                                nit: resolvedNit,
+                                cedula: resolvedCedula,
+                                email: resolvedEmail,
+                                telefono: resolvedTelefono,
+                                notas: resolvedNotas || `Creado automáticamente desde asignación del caso ${caseItem.token}`,
                                 abogado: lawyerName,
                                 token: caseItem.token,
                                 _status: 'NUEVO',
@@ -1549,7 +1672,7 @@ async function loadRealData() {
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:0.65rem;font-weight:700;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;${u.rol==='admin' ? 'background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);' : 'background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.25);'}">${u.rol==='admin' ? 'Admin' : 'Operador'}</span>
-                            <button onclick="eliminarUsuario('${u.username}')" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;font-size:0.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'"></button>
+                            <button onclick="eliminarUsuario('${u.username}')" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.2);padding:4px 10px;border-radius:6px;font-size:0.7rem;cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.08)'">🗑️</button>
                         </div>
                     </div>`).join('');
             } catch(e) {
@@ -1643,15 +1766,16 @@ async function loadRealData() {
                     try { const txt = await res.text(); raw = txt ? JSON.parse(txt) : []; } catch(e) {}
                     manualClients = (Array.isArray(raw) ? raw : (raw ? [raw] : []))
                         .map(c => ({
-                            nombre:   c.nombre   || c.Nombre   || c.NOMBRE   || '',
-                            nit:      c.nit      || c.NIT      || c.nit_cliente || '',
-                            cedula:   c.cedula   || c.Cedula   || '',
-                            email:    c.email    || c.Email    || c.EMAIL    || c['Correo electrunico'] || c['Correo electronico'] || c.correo_electronico || '',
-                            telefono: c.telefono || c.Telefono || c.TELEFONO || c.phone || c['Telefono'] || c['Telefono'] || '',
-                            notas:    c.notas    || c.Notas    || c.NOTAS    || c.Observaciones || c.observaciones || '',
-                            abogado:  c.abogado  || c.Abogado  || c['Abogado Asignado'] || c.abogado_asignado || '',
-                            estado:   c.estado   || c.Estado   || c._status || c.status || 'DIRECTORIO',
-                            _status:  c._status  || c.status   || c.Estado   || c.estado || 'DIRECTORIO',
+                            nombre:   cleanScalar(getField(c, ['nombre', 'Nombre', 'NOMBRE'], '')),
+                            token:    cleanScalar(getField(c, ['token', 'Token'], '')),
+                            nit:      cleanScalar(getField(c, ['nit', 'NIT', 'nit_cliente'], '')),
+                            cedula:   cleanScalar(getField(c, ['cedula', 'Cedula', 'Cédula'], '')),
+                            email:    cleanScalar(getField(c, ['email', 'Email', 'EMAIL', 'Correo electrónico', 'Correo electronico', 'correo_electronico', 'Correo electrunico'], '')),
+                            telefono: cleanScalar(getField(c, ['telefono', 'Teléfono', 'Telefono', 'TELEFONO', 'phone'], '')),
+                            notas:    cleanScalar(getField(c, ['notas', 'Notas', 'NOTAS', 'Observaciones', 'observaciones'], '')),
+                            abogado:  cleanScalar(getField(c, ['abogado', 'Abogado', 'Abogado Asignado', 'abogado_asignado'], '')),
+                            estado:   cleanScalar(getField(c, ['estado', 'Estado', '_status', 'status'], 'DIRECTORIO')) || 'DIRECTORIO',
+                            _status:  cleanScalar(getField(c, ['_status', 'status', 'Estado', 'estado'], 'DIRECTORIO')) || 'DIRECTORIO',
                             _source:  'directorio'
                         }))
                         .filter(c => c.nombre && c.nombre.trim() !== '');
@@ -1672,11 +1796,12 @@ async function loadRealData() {
                 const abogadoAsignado = c.lawyer && c.lawyer !== 'PENDIENTE' && c.lawyer !== 'Pendiente' ? c.lawyer : '';
                 return {
                     nombre:   clienteName,
+                    token:    c.token || '',
                     nit:      (c.nit && c.nit !== 'DESCONOCIDO') ? c.nit : '',
-                    email:    '',
-                    telefono: '',
+                    cedula:   (c.cedula && c.cedula !== 'DESCONOCIDO') ? c.cedula : '',
+                    email:    c.email_cliente || '',
+                    telefono: c.telefono_cliente || '',
                     notas: `Caso: ${c.rama || ''} | Token: ${c.token || ''}`,
-                    token:    c.token,
                     abogado:  abogadoAsignado,
                     venc:     c.venc     || 'S/D',
                     estado:   abogadoAsignado ? 'ASIGNADO' : (c.status || '—'),
@@ -1742,7 +1867,10 @@ async function loadRealData() {
             const newNorm = norm(newName);
 
             // 1. Obtener datos actualizados del cliente
-            const updatedClient = clients.find(c => norm(c.nombre) === newNorm) || null;
+            const updatedClient = clients.find(c =>
+                (token && String(c.token || '').trim() === token) ||
+                norm(c.nombre) === newNorm
+            ) || null;
 
             // 2. Sincronizar casos en memoria para que Registro/Bandeja reflejen el cambio
             db.forEach(c => {
@@ -1757,10 +1885,10 @@ async function loadRealData() {
                 if (!c.partes || partesCaso === oldNorm || partesCaso === newNorm) c.partes = newName;
 
                 if (updatedClient) {
-                    if (updatedClient.nit && updatedClient.nit !== '') c.nit = updatedClient.nit;
-                    if (updatedClient.cedula && updatedClient.cedula !== '') c.cedula = updatedClient.cedula;
-                    if (updatedClient.email && updatedClient.email !== '') c.email_cliente = updatedClient.email;
-                    if (updatedClient.telefono && updatedClient.telefono !== '') c.telefono_cliente = updatedClient.telefono;
+                    c.nit = updatedClient.nit || '';
+                    c.cedula = updatedClient.cedula || '';
+                    c.email_cliente = updatedClient.email || '';
+                    c.telefono_cliente = updatedClient.telefono || '';
                 }
             });
 
@@ -1829,8 +1957,8 @@ async function loadRealData() {
                             <td><span style="font-size:0.7rem;font-weight:700;color:${c.estado === 'ASIGNADO' ? '#22c55e' : c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${esc(c.estado || (c._source === 'directorio' ? 'DIRECTORIO' : '—'))}</span></td>
                             <td><span style="font-size:0.68rem;padding:2px 8px;border-radius:20px;background:${c._source === 'directorio' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.05)'};color:${c._source === 'directorio' ? 'var(--gold)' : 'var(--silver)'};">${c._source === 'directorio' ? 'Directorio' : 'Registro'}</span></td>
                             <td style="display:flex;gap:6px;align-items:center;">
-                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})" title="Editar"></button>
-                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})" title="Eliminar"></button>` : ''}
+                            <button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;" onclick="openClientModal(${allClientRows.indexOf(c)})" title="Editar">✏️</button>
+                            ${c._source === 'directorio' ? `<button class="btn-outline" style="font-size:0.72rem;padding:0 10px;height:28px;color:#ef4444;border-color:#ef4444;" onclick="deleteClient(${allClientRows.indexOf(c)})" title="Eliminar">🗑️</button>` : ''}
                         </td>
                         </tr>`).join('')}
                     </tbody>
@@ -1860,7 +1988,7 @@ async function loadRealData() {
 
                 var total     = db.length;
                 var asignados = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
-                var scores    = db.filter(function(c){ return c.score > 0; }).map(function(c){ return c.score; });
+                var scores    = getScoreSamples(db);
                 var avgScore  = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
                 var totalMin  = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); }, 0);
                 var hrsStr    = totalMin > 0 ? (totalMin/60).toFixed(1)+'h' : '0h';
@@ -1925,7 +2053,7 @@ async function loadRealData() {
                 csv += 'Generado el: ' + new Date().toLocaleString('es-CO') + NL + NL;
 
                 // Resumen dashboard
-                var scores2   = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var scores2   = getScoreSamples(misCasos);
                 var avgScore2 = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
                 csv += '=== DASHBOARD — MIS MÉTRICAS ===' + NL;
@@ -2019,7 +2147,7 @@ async function loadRealData() {
                 if (!db || !db.length) { showToast('Sin datos para exportar.', 'error'); return; }
                 var total    = db.length;
                 var asig     = db.filter(function(c){ return c.lawyer && c.lawyer !== 'Pendiente'; }).length;
-                var scores   = db.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var scores   = getScoreSamples(db);
                 var avg      = scores.length ? (scores.reduce(function(a,b){return a+b;},0)/scores.length).toFixed(1) : 'N/A';
                 var totalMin = db.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
                 var hrs      = totalMin>0 ? (totalMin/60).toFixed(1)+'h' : '0h';
@@ -2072,7 +2200,7 @@ async function loadRealData() {
                 var misCasos = db.filter(function(c){ return c.lawyer && c.lawyer === opName; });
                 if (!misCasos.length) { showToast('No tenés casos asignados para exportar.', 'error'); return; }
 
-                var scores2  = misCasos.filter(function(c){ return c.score>0; }).map(function(c){ return c.score; });
+                var scores2  = getScoreSamples(misCasos);
                 var avg2     = scores2.length ? (scores2.reduce(function(a,b){return a+b;},0)/scores2.length).toFixed(1) : 'N/A';
                 var totalMin2 = misCasos.reduce(function(acc,c){ return acc+(c.ahorroMin||0); },0);
 
@@ -2254,12 +2382,12 @@ async function loadRealData() {
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;
                                        transition:0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'"
-                                       onmouseout="this.style.background='none'"></button>
+                                       onmouseout="this.style.background='none'">✏️</button>
                             <button onclick="eliminarObsClienteModal('${safeId}','${safeTok}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
                                        padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;
                                        transition:0.15s;" onmouseover="this.style.background='rgba(239,68,68,0.1)'"
-                                       onmouseout="this.style.background='none'"></button>
+                                       onmouseout="this.style.background='none'">🗑️</button>
                             ` : ''}
                         </div>
                     </div>
@@ -2370,17 +2498,18 @@ async function loadRealData() {
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
             const abogado  = document.getElementById('edit-cli-abogado').value || '';
+            const token    = original.token || '';
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
             try {
-                // Unificar edición: primero eliminar el registro viejo, luego crear el nuevo
-                const deleteKey = original.nit || original.nombre;
-                if (deleteKey) {
+                // Solo usamos delete previo si no hay token estable para hacer upsert.
+                const shouldDeleteBeforeSave = !token && !!(original.nit || original.cedula);
+                if (shouldDeleteBeforeSave) {
                     try {
                         const delRes = await authFetch(N8N_CLIENT_DELETE, {
                             method: 'POST',
-                            body: JSON.stringify({ nit: original.nit || '', nombre: original.nombre || '' })
+                            body: JSON.stringify({ nit: original.nit || original.cedula || '', nombre: original.nombre || '' })
                         });
                         logError(`Delete previo: ${delRes.status}`);
                     } catch(delErr) {
@@ -2390,7 +2519,6 @@ async function loadRealData() {
                 
                 const estado = original.estado || original._status || 'DIRECTORIO';
                 const finalEstado = estado === 'NUEVO' ? 'CONFIRMADO' : estado;
-                const token = original.token || ''; // Extraer token p/ backend
                 
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST', body: JSON.stringify({
@@ -2407,15 +2535,20 @@ async function loadRealData() {
                         _status: finalEstado,
                         token, 
                         Token: token,
-                        nit_original: original.nit || '',
+                        nit_original: original.nit || original.cedula || '',
                         nombre_original: original.nombre || ''
                     })
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
-                if (source !== 'directorio') {
-                    const caseItem = db.find(c => c.token === original.token);
-                    if (caseItem) caseItem.partes = nombre;
+                const caseItem = db.find(c => c.token === (original.token || token));
+                if (caseItem) {
+                    caseItem.partes = nombre;
+                    caseItem.cliente_a_defender = nombre;
+                    caseItem.nit = nit;
+                    caseItem.cedula = nit;
+                    caseItem.email_cliente = email;
+                    caseItem.telefono_cliente = telefono;
                 }
                 await loadClients();
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
@@ -2433,6 +2566,7 @@ async function loadRealData() {
             const nit      = document.getElementById('edit-cli-nit').value.trim().replace(/[<>"'&]/g,'');
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
+            const token    = original.token || '';
 
             // Validación de campos obligatorios
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
@@ -2442,20 +2576,17 @@ async function loadRealData() {
 
             logError(`Confirmando información de cliente: ${nombre}...`);
             try {
-                // Eliminar registro viejo antes de guardar el actualizado
-                const deleteKey = original.nit || original.nombre;
-                if (deleteKey) {
+                const shouldDeleteBeforeSave = !token && !!(original.nit || original.cedula);
+                if (shouldDeleteBeforeSave) {
                     try {
                         await authFetch(N8N_CLIENT_DELETE, {
                             method: 'POST',
-                            body: JSON.stringify({ nit: original.nit || '', nombre: original.nombre || '' })
+                            body: JSON.stringify({ nit: original.nit || original.cedula || '', nombre: original.nombre || '' })
                         });
                     } catch(delErr) {
                         logError(`Aviso: delete previo fallá (${delErr.message}), continuando...`);
                     }
                 }
-
-                const token = original.token || ''; // Extraer token p/ backend
 
                 const res = await authFetch(N8N_CLIENT_SAVE, {
                     method: 'POST',
@@ -2473,7 +2604,7 @@ async function loadRealData() {
                         _status: 'CONFIRMADO',
                         token, 
                         Token: token,
-                        nit_original: original.nit || '',
+                        nit_original: original.nit || original.cedula || '',
                         nombre_original: original.nombre || ''
                     })
                 });
@@ -2504,7 +2635,7 @@ async function loadRealData() {
             logError(`Eliminando: ${c.nombre}...`);
             try {
                 const res = await authFetch(N8N_CLIENT_DELETE, {
-                    method: 'POST', body: JSON.stringify({ nit: c.nit })
+                    method: 'POST', body: JSON.stringify({ nit: c.nit || c.cedula || '' })
                 });
                 if (res.ok) {
                     await loadClients();
@@ -2627,6 +2758,14 @@ async function loadRealData() {
                         token:               c.token,
                         row_number:          caseItem.row_number || null,
                         nombre_cliente:      c.nombre,
+                        nombre_cliente_identificado: c.nombre,
+                        cliente_a_defender:  c.nombre,
+                        nit_cliente:         c.nit || '',
+                        cedula_cliente:      c.cedula || '',
+                        tipo_identificacion: c.nit ? 'NIT' : (c.cedula ? 'CEDULA' : ''),
+                        email_cliente:       c.email || '',
+                        telefono_cliente:    c.telefono || '',
+                        notas_cliente:       c.notas || '',
                         abogado_responsable: lawyerName,
                         email_abogado:       lawyerObj ? lawyerObj.email : '',
                         'Estado Alerta':     'ASIGNADO',
@@ -2643,6 +2782,7 @@ async function loadRealData() {
                     c.abogado = lawyerName;
                     showToast(`${lawyerName} asignado a ${c.nombre}.`, 'ok');
                     logError(` Asignación completada desde Directorio de Clientes.`);
+                    await loadRealData();
                     await loadClients();
                 } else {
                     showToast(`Error: ${esc(String(res.status))}`, 'error');
@@ -2820,7 +2960,7 @@ async function loadRealData() {
                         '</div>' +
                         '<p style="margin:1px 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(data.email || username) + ' — ' + devIcon + ' — ' + loginDate + '</p>' +
                     '</div>' +
-                    '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:0.62rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.06)\'"></button>' +
+                    '<button onclick="forceLogoutSession(\'' + esc(username) + '\')" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);color:#ef4444;border-radius:6px;padding:4px 8px;font-size:0.62rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseover="this.style.background=\'rgba(239,68,68,0.15)\'" onmouseout="this.style.background=\'rgba(239,68,68,0.06)\'">🚪</button>' +
                 '</div>';
             }).join('');
         }
@@ -2869,14 +3009,14 @@ async function loadRealData() {
             // KPIs desde db (datos ya cargados)
             const total     = db.length;
             const asignados = db.filter(c => c.lawyer && c.lawyer !== 'Pendiente').length;
-            const scores    = db.filter(c => c.score > 0).map(c => c.score);
+            const scores    = getScoreSamples(db);
             const avgScore  = scores.length ? (scores.reduce((a,b) => a+b,0) / scores.length).toFixed(1) : null;
             const totalMin  = db.reduce((acc,c) => acc + (c.ahorroMin || 0), 0);
             const totalHrs  = totalMin > 0 ? (totalMin / 60).toFixed(1) : '0';
 
             const set = id => v => { const el = document.getElementById(id); if (el) el.textContent = v; };
             set('admin-kpi-casos')(total || '0');
-            set('admin-kpi-score')(avgScore ? `${avgScore}/10` : 'N/A');
+            set('admin-kpi-score')(avgScore !== null ? `${avgScore}/10` : 'N/A');
             set('admin-kpi-hours')(`${totalHrs}h`);
             set('admin-kpi-asignados')(total ? `${asignados}/${total}` : '0/0');
 
@@ -2884,7 +3024,7 @@ async function loadRealData() {
             setTimeout(() => {
                 const scoreBar = document.getElementById('admin-bar-score');
                 const asigBar  = document.getElementById('admin-bar-asig');
-                if (scoreBar && avgScore) scoreBar.style.width = `${Math.min(parseFloat(avgScore)/10*100,100)}%`;
+                if (scoreBar && avgScore !== null) scoreBar.style.width = `${Math.min(parseFloat(avgScore)/10*100,100)}%`;
                 if (asigBar  && total)   asigBar.style.width  = `${Math.min(asignados/total*100,100)}%`;
             }, 100);
 
@@ -3410,7 +3550,7 @@ async function loadRealData() {
                         <span>${esc(o.Operador || o.operador || o.Autor || o.autor || currentUser.name || 'Sistema')}</span>
                         ${obsId ? `<button onclick="eliminarObsGlobal('${obsId}','${obsTok}')" title="Eliminar"
                             style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                   padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;"></button>` : ''}
+                                   padding:2px 5px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>` : ''}
                     </div>
                 </td>
             </tr>`;
@@ -3942,10 +4082,10 @@ async function loadRealData() {
                             ${id ? `
                             <button onclick="abrirEditarAnotacion('${esc(id)}','${tok}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;"></button>
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
                             <button onclick="eliminarAnotacion('${esc(id)}','${tok}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;"></button>
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
                             ` : ''}
                         </div>
                     </div>
@@ -4258,10 +4398,10 @@ async function loadRealData() {
                             ${id ? `
                             <button onclick="abrirEditarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Editar"
                                 style="background:none;border:1px solid rgba(201,168,76,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;"></button>
+                                       padding:2px 6px;cursor:pointer;color:var(--gold);font-size:0.7rem;line-height:1;">✏️</button>
                             <button onclick="eliminarGroupAnotacion('${esc(id)}','${esc(panelId)}','${esc(grupoId)}')" title="Eliminar"
                                 style="background:none;border:1px solid rgba(239,68,68,0.3);border-radius:4px;
-                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;"></button>
+                                       padding:2px 6px;cursor:pointer;color:#ef4444;font-size:0.7rem;line-height:1;">🗑️</button>
                             ` : ''}
                         </div>
                     </div>
