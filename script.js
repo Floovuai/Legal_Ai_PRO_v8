@@ -110,7 +110,10 @@
 // --- Configuration ---
     // ----------------------------------------------------------
     // FLOOVU Legal AI PRO V8 — Configuración integrada
+    // Para cambiar el servidor n8n: editar solo N8N_BASE
     // ----------------------------------------------------------
+    const N8N_BASE = 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook';
+
     window.FLOOVU_CONFIG = {
 
         ACCOUNT_EMAIL: 'floovuai@gmail.com',
@@ -122,26 +125,26 @@
 
         // -- Webhooks de n8n -----------------------------------
         WEBHOOKS: {
-            ASSIGN: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-asignar-caso',
-            LAWYER_SAVE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-abogado',
-            LAWYER_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-abogado',
-            FORCE_SYNC: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-force-sync',
-            GET_DATA: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-data',
-            HEALTH_CHECK: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-health-check',
-            GET_LAWYERS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-abogados',
-            GET_CLIENTS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-clientes',
-            CLIENT_SAVE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-cliente',
-            CLIENT_DELETE: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-cliente',
-            GET_CLIENT_MAILS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-client-mails',
-            GET_DEBUG_LOG: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-debug-log-v2',
-            SAVE_OBS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-observacion',
-            GET_OBS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-observaciones',
-            EDIT_OBS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-editar-anotacion',
-            DELETE_OBS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-anotacion',
-            GET_USUARIOS: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-get-usuarios',
-            SAVE_USUARIO: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-guardar-usuario-admin',
-            DEL_USUARIO: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-eliminar-usuario-admin',
-            LOGIN_SHEET: 'https://automatizaciones-vs1-n8n.h5jpeh.easypanel.host/webhook/floovu-login-sheet'
+            ASSIGN:           `${N8N_BASE}/floovu-asignar-caso`,
+            LAWYER_SAVE:      `${N8N_BASE}/floovu-guardar-abogado`,
+            LAWYER_DELETE:    `${N8N_BASE}/floovu-eliminar-abogado`,
+            FORCE_SYNC:       `${N8N_BASE}/floovu-force-sync`,
+            GET_DATA:         `${N8N_BASE}/floovu-get-data`,
+            HEALTH_CHECK:     `${N8N_BASE}/floovu-health-check`,
+            GET_LAWYERS:      `${N8N_BASE}/floovu-get-abogados`,
+            GET_CLIENTS:      `${N8N_BASE}/floovu-get-clientes`,
+            CLIENT_SAVE:      `${N8N_BASE}/floovu-guardar-cliente`,
+            CLIENT_DELETE:    `${N8N_BASE}/floovu-eliminar-cliente`,
+            GET_CLIENT_MAILS: `${N8N_BASE}/floovu-get-client-mails`,
+            GET_DEBUG_LOG:    `${N8N_BASE}/floovu-get-debug-log-v2`,
+            SAVE_OBS:         `${N8N_BASE}/floovu-guardar-observacion`,
+            GET_OBS:          `${N8N_BASE}/floovu-get-observaciones`,
+            EDIT_OBS:         `${N8N_BASE}/floovu-editar-anotacion`,
+            DELETE_OBS:       `${N8N_BASE}/floovu-eliminar-anotacion`,
+            GET_USUARIOS:     `${N8N_BASE}/floovu-get-usuarios`,
+            SAVE_USUARIO:     `${N8N_BASE}/floovu-guardar-usuario-admin`,
+            DEL_USUARIO:      `${N8N_BASE}/floovu-eliminar-usuario-admin`,
+            LOGIN_SHEET:      `${N8N_BASE}/floovu-login-sheet`
         }
     };
 
