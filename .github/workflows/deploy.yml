@@ -43,7 +43,7 @@ jobs:
           sed "s|{{FIREBASE_STORAGE_BUCKET}}|${FIREBASE_STORAGE_BUCKET}|g" | \
           sed "s|{{FIREBASE_SENDER_ID}}|${FIREBASE_SENDER_ID}|g" | \
           sed "s|{{FIREBASE_APP_ID}}|${FIREBASE_APP_ID}|g" \
-          > SISTEMA/config.js
+          > config.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -51,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '-'
+          path: '.'
 
   deploy:
     environment:
