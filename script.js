@@ -2614,6 +2614,9 @@ async function loadRealData() {
                     caseItem.telefono_cliente = telefono;
                 }
 
+                // Actualizar directamente en memoria usando el índice exacto del item editado.
+                // NO llamamos loadClients() aquí porque Google Sheets tarda en propagar
+                // y devuelve datos viejos, causando que la UI revierta los cambios.
                 const updatedObj = {
                     ...original,
                     nombre,
@@ -2626,25 +2629,9 @@ async function loadRealData() {
                     estado: finalEstado,
                     _status: finalEstado
                 };
-
-                await loadClients();
-                // Re-aplicar datos guardados después de loadClients, en caso de que GSheets
-                // no haya propagado aún (race condition entre escritura y lectura inmediata).
-                const reIdx = allClientRows.findIndex(c =>
-                    (token && c.token === token) ||
-                    (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim() ||
-                    (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim()
-                );
-                if (reIdx !== -1) {
-                    allClientRows[reIdx] = { ...allClientRows[reIdx], ...updatedObj };
-                    clients = clients.map(c =>
-                        ((token && c.token === token) ||
-                         (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim() ||
-                         (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim())
-                            ? allClientRows[reIdx] : c
-                    );
-                    renderClients(clients);
-                }
+                allClientRows[idx] = updatedObj;
+                clients = clients.map(c => c === original ? updatedObj : c);
+                renderClients(clients);
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
                 showToast(`${nombre} actualizado correctamente.`, 'ok');
@@ -2711,6 +2698,9 @@ async function loadRealData() {
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
+                // Actualizar directamente en memoria usando el índice exacto del item editado.
+                // NO llamamos loadClients() aquí porque Google Sheets tarda en propagar
+                // y devuelve datos viejos, causando que la UI revierta los cambios.
                 const updatedObj = {
                     ...original,
                     nombre,
@@ -2723,6 +2713,9 @@ async function loadRealData() {
                     estado: 'CONFIRMADO',
                     _status: 'CONFIRMADO'
                 };
+                allClientRows[idx] = updatedObj;
+                clients = clients.map(c => c === original ? updatedObj : c);
+                renderClients(clients);
 
                 // Actualizar el caso en memoria (db)
                 const caseItem = db.find(c => c.token === token);
@@ -2735,21 +2728,6 @@ async function loadRealData() {
                     caseItem.telefono_cliente = telefono;
                 }
 
-                await loadClients();
-                // Re-aplicar datos guardados después de loadClients, en caso de que GSheets
-                // no haya propagado aún (race condition entre escritura y lectura inmediata).
-                const reIdxC = allClientRows.findIndex(c =>
-                    (token && c.token === token) ||
-                    (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim()
-                );
-                if (reIdxC !== -1) {
-                    allClientRows[reIdxC] = { ...allClientRows[reIdxC], ...updatedObj };
-                    clients = clients.map(c =>
-                        ((token && c.token === token) || (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim())
-                            ? allClientRows[reIdxC] : c
-                    );
-                    renderClients(clients);
-                }
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
                 showToast(` ${nombre} confirmado exitosamente.`, 'ok');
