@@ -2632,12 +2632,15 @@ async function loadRealData() {
                 // no haya propagado aún (race condition entre escritura y lectura inmediata).
                 const reIdx = allClientRows.findIndex(c =>
                     (token && c.token === token) ||
-                    (!token && (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim())
+                    (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim() ||
+                    (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim()
                 );
                 if (reIdx !== -1) {
                     allClientRows[reIdx] = { ...allClientRows[reIdx], ...updatedObj };
                     clients = clients.map(c =>
-                        ((token && c.token === token) || (!token && (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim()))
+                        ((token && c.token === token) ||
+                         (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim() ||
+                         (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim())
                             ? allClientRows[reIdx] : c
                     );
                     renderClients(clients);
@@ -2708,9 +2711,6 @@ async function loadRealData() {
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
-                // FIX: Actualizar TODOS los campos en memoria, no solo el estado.
-                // Sin esto, la UI seguía mostrando datos viejos porque 'original'
-                // nunca recibía los valores nuevos del formulario.
                 const updatedObj = {
                     ...original,
                     nombre,
@@ -2723,13 +2723,8 @@ async function loadRealData() {
                     estado: 'CONFIRMADO',
                     _status: 'CONFIRMADO'
                 };
-                allClientRows[idx] = updatedObj;
-                clients = clients.map(c =>
-                    (c.nombre || '').toLowerCase().trim() === (original.nombre || '').toLowerCase().trim()
-                        ? updatedObj : c
-                );
 
-                // También actualizar el caso en memoria (db)
+                // Actualizar el caso en memoria (db)
                 const caseItem = db.find(c => c.token === token);
                 if (caseItem) {
                     caseItem.partes = nombre;
@@ -2741,6 +2736,20 @@ async function loadRealData() {
                 }
 
                 await loadClients();
+                // Re-aplicar datos guardados después de loadClients, en caso de que GSheets
+                // no haya propagado aún (race condition entre escritura y lectura inmediata).
+                const reIdxC = allClientRows.findIndex(c =>
+                    (token && c.token === token) ||
+                    (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim()
+                );
+                if (reIdxC !== -1) {
+                    allClientRows[reIdxC] = { ...allClientRows[reIdxC], ...updatedObj };
+                    clients = clients.map(c =>
+                        ((token && c.token === token) || (c.nombre||'').toLowerCase().trim() === (original.nombre||'').toLowerCase().trim())
+                            ? allClientRows[reIdxC] : c
+                    );
+                    renderClients(clients);
+                }
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
                 showToast(` ${nombre} confirmado exitosamente.`, 'ok');
