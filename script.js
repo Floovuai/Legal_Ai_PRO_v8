@@ -2603,6 +2603,7 @@ async function loadRealData() {
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
+                // Actualizar caso en memoria (db)
                 const caseItem = db.find(c => c.token === (original.token || token));
                 if (caseItem) {
                     caseItem.partes = nombre;
@@ -2612,6 +2613,28 @@ async function loadRealData() {
                     caseItem.email_cliente = email;
                     caseItem.telefono_cliente = telefono;
                 }
+
+                // FIX: Actualizar allClientRows y clients en memoria ANTES de recargar,
+                // para que la UI muestre los datos nuevos inmediatamente aunque
+                // la respuesta del sheet tarde.
+                const updatedObj = {
+                    ...original,
+                    nombre,
+                    nit: nitFinal,
+                    cedula: cedulaFinal,
+                    email,
+                    telefono,
+                    notas,
+                    abogado,
+                    estado: finalEstado,
+                    _status: finalEstado
+                };
+                allClientRows[idx] = updatedObj;
+                clients = clients.map(c =>
+                    (c.nombre || '').toLowerCase().trim() === (original.nombre || '').toLowerCase().trim()
+                        ? updatedObj : c
+                );
+
                 await loadClients();
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
@@ -2632,6 +2655,8 @@ async function loadRealData() {
             const cedulaFinal = tipoId === 'CEDULA' ? idNum : '';
             const email    = document.getElementById('edit-cli-email').value.trim();
             const telefono = document.getElementById('edit-cli-telefono').value.trim().replace(/[<>"'&]/g,'');
+            const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
+            const abogado  = document.getElementById('edit-cli-abogado').value || '';
             const token    = original.token || '';
 
             // Validación de campos obligatorios
@@ -2665,8 +2690,8 @@ async function loadRealData() {
                         'Correo electrónico': email,
                         correo_electronico: email,
                         telefono: telefono || '',
-                        notas: original.notas || '',
-                        abogado: original.abogado || '',
+                        notas,
+                        abogado,
                         estado: 'CONFIRMADO',
                         _status: 'CONFIRMADO',
                         token,
@@ -2677,11 +2702,37 @@ async function loadRealData() {
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
 
-                // Actualizar estado en memoria
-                original._status = 'CONFIRMADO';
-                original.estado = 'CONFIRMADO';
-                allClientRows[idx] = original;
-                clients = clients.map(c => c.nombre === nombre ? original : c);
+                // FIX: Actualizar TODOS los campos en memoria, no solo el estado.
+                // Sin esto, la UI seguía mostrando datos viejos porque 'original'
+                // nunca recibía los valores nuevos del formulario.
+                const updatedObj = {
+                    ...original,
+                    nombre,
+                    nit: nitFinal,
+                    cedula: cedulaFinal,
+                    email,
+                    telefono,
+                    notas,
+                    abogado,
+                    estado: 'CONFIRMADO',
+                    _status: 'CONFIRMADO'
+                };
+                allClientRows[idx] = updatedObj;
+                clients = clients.map(c =>
+                    (c.nombre || '').toLowerCase().trim() === (original.nombre || '').toLowerCase().trim()
+                        ? updatedObj : c
+                );
+
+                // También actualizar el caso en memoria (db)
+                const caseItem = db.find(c => c.token === token);
+                if (caseItem) {
+                    caseItem.partes = nombre;
+                    caseItem.cliente_a_defender = nombre;
+                    caseItem.nit = nitFinal;
+                    caseItem.cedula = cedulaFinal;
+                    caseItem.email_cliente = email;
+                    caseItem.telefono_cliente = telefono;
+                }
 
                 await loadClients();
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
