@@ -2614,9 +2614,6 @@ async function loadRealData() {
                     caseItem.telefono_cliente = telefono;
                 }
 
-                // FIX: Actualizar allClientRows y clients en memoria ANTES de recargar,
-                // para que la UI muestre los datos nuevos inmediatamente aunque
-                // la respuesta del sheet tarde.
                 const updatedObj = {
                     ...original,
                     nombre,
@@ -2629,13 +2626,22 @@ async function loadRealData() {
                     estado: finalEstado,
                     _status: finalEstado
                 };
-                allClientRows[idx] = updatedObj;
-                clients = clients.map(c =>
-                    (c.nombre || '').toLowerCase().trim() === (original.nombre || '').toLowerCase().trim()
-                        ? updatedObj : c
-                );
 
                 await loadClients();
+                // Re-aplicar datos guardados después de loadClients, en caso de que GSheets
+                // no haya propagado aún (race condition entre escritura y lectura inmediata).
+                const reIdx = allClientRows.findIndex(c =>
+                    (token && c.token === token) ||
+                    (!token && (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim())
+                );
+                if (reIdx !== -1) {
+                    allClientRows[reIdx] = { ...allClientRows[reIdx], ...updatedObj };
+                    clients = clients.map(c =>
+                        ((token && c.token === token) || (!token && (c.nombre||'').toLowerCase().trim() === (nombre||'').toLowerCase().trim()))
+                            ? allClientRows[reIdx] : c
+                    );
+                    renderClients(clients);
+                }
                 await syncClientDataToAllTabs({ oldName: original.nombre || '', newName: nombre, token: original.token || '' });
                 closeClientModal();
                 showToast(`${nombre} actualizado correctamente.`, 'ok');
