@@ -84,6 +84,12 @@
                     <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
                 </div>
 
+                <div id="nav-section-contable">
+                    <p style="font-size:0.55rem;color:var(--gold);opacity:0.8;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Módulo Contable</p>
+                    <div class="nav-item" data-tab="contabilidad">💰 Contabilidad</div>
+                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.05);margin:15px 12px;">
+                </div>
+
                 <p style="font-size:0.55rem;color:var(--silver);opacity:0.6;margin:0 12px 5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;">Sistema</p>
                 <div class="nav-item" data-tab="usuarios">👥 Gestión de Usuarios</div>
                 <div class="nav-item" data-tab="version">🚀 Funciones de Versión</div>
@@ -530,6 +536,64 @@
                             </div>
                         </div>
 
+                        <!-- ── Configuración Financiera ── -->
+                        <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(201,168,76,0.2);">
+                            <p style="margin:0 0 1rem;font-size:0.72rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">💰 Configuración Financiera</p>
+                            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+                                <div class="form-group">
+                                    <label for="edit-cli-tipo-cobro">Modalidad de Cobro</label>
+                                    <select id="edit-cli-tipo-cobro" onchange="toggleGhostTracking(this.value)"
+                                        style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                        <option value="">— Sin definir —</option>
+                                        <option value="MENSUAL">Mensual (Retainer)</option>
+                                        <option value="POR_HORAS">Por Horas</option>
+                                        <option value="PROYECTO_FIJO">Proyecto Fijo</option>
+                                        <option value="GHOST_TRACKING">Ghost Tracking</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-cli-tarifa">Tarifa</label>
+                                    <input type="number" id="edit-cli-tarifa" placeholder="Ej: 2500000" min="0" step="1000"
+                                        style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-cli-moneda">Moneda</label>
+                                    <select id="edit-cli-moneda"
+                                        style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                        <option value="COP">COP — Peso Colombiano</option>
+                                        <option value="USD">USD — Dólar</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-cli-dia-facturacion">Día de Facturación</label>
+                                    <input type="number" id="edit-cli-dia-facturacion" placeholder="1–28" min="1" max="28"
+                                        style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                </div>
+                            </div>
+
+                            <!-- Panel Ghost Tracking (visible solo cuando tipo = GHOST_TRACKING o MENSUAL) -->
+                            <div id="ghost-tracking-panel" style="display:none;margin-top:1rem;padding:1rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;">
+                                <p style="margin:0 0 0.75rem;font-size:0.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">👻 Ghost Tracking — Actividad Digital</p>
+                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">
+                                    <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
+                                        <div style="font-size:1.4rem;font-weight:800;color:var(--gold-bright);" id="gt-casos">0</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Casos / Emails</div>
+                                    </div>
+                                    <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
+                                        <div style="font-size:1.4rem;font-weight:800;color:#22c55e;" id="gt-horas">0h</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Horas Est.</div>
+                                    </div>
+                                    <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
+                                        <div style="font-size:1rem;font-weight:800;" id="gt-rentabilidad">—</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Rentabilidad</div>
+                                    </div>
+                                </div>
+                                <p style="margin:0.75rem 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;">
+                                    Basado en emails/docs procesados por el sistema. Rastreo Drive activo en Fase 3.
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Panel de observaciones del cliente -->
                         <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.06);">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -547,6 +611,86 @@
                             <button class="btn-premium" style="flex:1" id="btn-save-client" onclick="saveClientEdit()">💾 Guardar Cambios</button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- ═══ MÓDULO CONTABLE V9 ═══ -->
+            <section id="contabilidad" class="content-section">
+                <div class="header">
+                    <h1>Módulo Contable</h1>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-outline" onclick="loadContabilidad()">🔄 Actualizar</button>
+                    </div>
+                </div>
+
+                <!-- KPIs Contables -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem;">
+                    <div class="kpi-card-v2">
+                        <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,var(--gold),transparent);"></div>
+                        <div class="kpi-v2-label">Total Facturado</div>
+                        <div class="kpi-v2-value" id="cont-kpi-total" style="color:var(--gold);">$0</div>
+                    </div>
+                    <div class="kpi-card-v2">
+                        <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#22c55e,transparent);"></div>
+                        <div class="kpi-v2-label">Pagadas</div>
+                        <div class="kpi-v2-value" id="cont-kpi-pagadas" style="color:#22c55e;">0</div>
+                    </div>
+                    <div class="kpi-card-v2">
+                        <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#f97316,transparent);"></div>
+                        <div class="kpi-v2-label">Pendientes</div>
+                        <div class="kpi-v2-value" id="cont-kpi-pendientes" style="color:#f97316;">0</div>
+                    </div>
+                    <div class="kpi-card-v2">
+                        <div class="kpi-card-v2-accent" style="background:linear-gradient(180deg,#ef4444,transparent);"></div>
+                        <div class="kpi-v2-label">Vencidas</div>
+                        <div class="kpi-v2-value" id="cont-kpi-vencidas" style="color:#ef4444;">0</div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Facturas -->
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+                        <p class="card-title" style="margin-bottom:0;">Registro de Facturas</p>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="cont-search" placeholder="Buscar cliente, token..." oninput="filterContabilidad(this.value)"
+                                style="width:220px;height:34px;font-size:0.8rem;padding:0 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--white);">
+                            <select id="cont-filter-estado" onchange="filterContabilidad(document.getElementById('cont-search').value)"
+                                style="height:34px;font-size:0.78rem;padding:0 10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--white);">
+                                <option value="">Todos los estados</option>
+                                <option value="PENDIENTE">Pendientes</option>
+                                <option value="PAGADO">Pagadas</option>
+                                <option value="VENCIDO">Vencidas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Token</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Cliente</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Fecha</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Monto</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Tipo</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Estado</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Fecha Pago</th>
+                                    <th style="text-align:left;padding:8px 12px;color:var(--silver);font-weight:600;font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;">Doc.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cont-rows">
+                                <tr><td colspan="8" class="empty-state">Cargando facturas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Nota Fase 2 -->
+                <div class="card" style="margin-top:1.5rem;border-left:3px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.04);">
+                    <p class="card-title" style="color:var(--gold);font-size:0.78rem;">🚧 Próximas Funcionalidades</p>
+                    <p style="margin:0;font-size:0.75rem;color:var(--silver);line-height:1.7;">
+                        <strong style="color:var(--white);">Fase 2:</strong> Generación de facturas PDF desde Google Docs + envío automático por Email/WhatsApp.<br>
+                        <strong style="color:var(--white);">Fase 3:</strong> Conciliación bancaria (PDF/CSV) + Ghost Tracking completo con rastreo de Google Drive.
+                    </p>
                 </div>
             </section>
 

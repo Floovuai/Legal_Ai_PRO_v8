@@ -142,10 +142,12 @@
             GET_OBS:          `${N8N_BASE}/floovu-get-observaciones`,
             EDIT_OBS:         `${N8N_BASE}/floovu-editar-anotacion`,
             DELETE_OBS:       `${N8N_BASE}/floovu-eliminar-anotacion`,
-            GET_USUARIOS:     `${N8N_BASE}/floovu-get-usuarios`,
-            SAVE_USUARIO:     `${N8N_BASE}/floovu-guardar-usuario-admin`,
-            DEL_USUARIO:      `${N8N_BASE}/floovu-eliminar-usuario-admin`,
-            LOGIN_SHEET:      `${N8N_BASE}/floovu-login-sheet`
+            GET_USUARIOS:       `${N8N_BASE}/floovu-get-usuarios`,
+            SAVE_USUARIO:       `${N8N_BASE}/floovu-guardar-usuario-admin`,
+            DEL_USUARIO:        `${N8N_BASE}/floovu-eliminar-usuario-admin`,
+            LOGIN_SHEET:        `${N8N_BASE}/floovu-login-sheet`,
+            GET_CONTABILIDAD:   `${N8N_BASE}/floovu-get-contabilidad`,
+            GUARDAR_FACTURA:    `${N8N_BASE}/floovu-guardar-factura`
         }
     };
 
@@ -253,8 +255,8 @@
         }
 
         // Pestañas que ve cada rol
-        const OPERATOR_TABS = ['dashboard','asignaciones','expedientes','abogados','clientes','calendario','version'];
-        const ADMIN_TABS    = ['dashboard','usuarios','version'];
+        const OPERATOR_TABS = ['dashboard','asignaciones','expedientes','abogados','clientes','calendario','contabilidad','version'];
+        const ADMIN_TABS    = ['dashboard','usuarios','contabilidad','version'];
 
         function applyRoleUI(user) {
             // Mostrar nombre y rol en topnav
@@ -452,6 +454,7 @@
         const N8N_CLIENT_DELETE     = WEBHOOKS.CLIENT_DELETE;
         const N8N_GET_CLIENT_MAILS  = WEBHOOKS.GET_CLIENT_MAILS;
         const N8N_GET_DEBUG_LOG     = WEBHOOKS.GET_DEBUG_LOG;
+        const N8N_GET_CONTABILIDAD  = WEBHOOKS.GET_CONTABILIDAD;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -652,6 +655,8 @@
             } else if (tabId === 'dashboard' || tabId === 'expedientes' || tabId === 'asignaciones') {
                 loadRealData();
                 if (tabId === 'dashboard' && currentUser) showDashboardForRole(currentUser.role);
+            } else if (tabId === 'contabilidad') {
+                loadContabilidad();
             } else {
                 updateUI();
             }
@@ -2363,6 +2368,17 @@ async function loadRealData() {
                 if (btnConfirm) btnConfirm.style.display = 'none';
                 if (btnSave) btnSave.style.display = 'block';
             }
+            // Campos financieros
+            const tipoCobro = document.getElementById('edit-cli-tipo-cobro');
+            if (tipoCobro) { tipoCobro.value = c.tipo_cobro || ''; toggleGhostTracking(c.tipo_cobro || ''); }
+            const tarifa = document.getElementById('edit-cli-tarifa');
+            if (tarifa) tarifa.value = c.tarifa || '';
+            const diaFact = document.getElementById('edit-cli-dia-facturacion');
+            if (diaFact) diaFact.value = c.dia_facturacion || '';
+            const moneda = document.getElementById('edit-cli-moneda');
+            if (moneda) moneda.value = c.moneda || 'COP';
+            // Calcular Ghost Tracking con datos actuales del sistema
+            calcularGhostTracking(c);
             document.getElementById('client-edit-modal').classList.add('visible');
             // Guardar nombre globalmente y cargar observaciones relacionadas
             window._currentClientModalName = c.nombre || '';
@@ -2560,6 +2576,10 @@ async function loadRealData() {
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
             const abogado  = document.getElementById('edit-cli-abogado').value || '';
             const token    = original.token || '';
+            const tipo_cobro       = (document.getElementById('edit-cli-tipo-cobro')?.value || '').trim();
+            const tarifa           = (document.getElementById('edit-cli-tarifa')?.value || '').trim();
+            const dia_facturacion  = (document.getElementById('edit-cli-dia-facturacion')?.value || '').trim();
+            const moneda           = document.getElementById('edit-cli-moneda')?.value || 'COP';
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email inválido.', 'error'); return; }
             logError(`Actualizando: ${nombre}...`);
@@ -2598,7 +2618,11 @@ async function loadRealData() {
                         token,
                         Token: token,
                         nit_original: original.nit || original.cedula || '',
-                        nombre_original: original.nombre || ''
+                        nombre_original: original.nombre || '',
+                        tipo_cobro,
+                        tarifa,
+                        dia_facturacion,
+                        moneda
                     })
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
@@ -2627,7 +2651,11 @@ async function loadRealData() {
                     notas,
                     abogado,
                     estado: finalEstado,
-                    _status: finalEstado
+                    _status: finalEstado,
+                    tipo_cobro,
+                    tarifa,
+                    dia_facturacion,
+                    moneda
                 };
                 allClientRows[idx] = updatedObj;
                 clients = clients.map(c => c === original ? updatedObj : c);
@@ -2654,6 +2682,10 @@ async function loadRealData() {
             const notas    = document.getElementById('edit-cli-notas').value.trim().replace(/[<>"'&]/g,'');
             const abogado  = document.getElementById('edit-cli-abogado').value || '';
             const token    = original.token || '';
+            const tipo_cobro      = (document.getElementById('edit-cli-tipo-cobro')?.value || '').trim();
+            const tarifa          = (document.getElementById('edit-cli-tarifa')?.value || '').trim();
+            const dia_facturacion = (document.getElementById('edit-cli-dia-facturacion')?.value || '').trim();
+            const moneda          = document.getElementById('edit-cli-moneda')?.value || 'COP';
 
             // Validación de campos obligatorios
             if (!nombre) { showToast('El nombre es obligatorio.', 'error'); return; }
@@ -2693,7 +2725,11 @@ async function loadRealData() {
                         token,
                         Token: token,
                         nit_original: original.nit || original.cedula || '',
-                        nombre_original: original.nombre || ''
+                        nombre_original: original.nombre || '',
+                        tipo_cobro,
+                        tarifa,
+                        dia_facturacion,
+                        moneda
                     })
                 });
                 if (!res.ok) { showToast(`Error: ${esc(String(res.status))}`, 'error'); return; }
@@ -2711,7 +2747,11 @@ async function loadRealData() {
                     notas,
                     abogado,
                     estado: 'CONFIRMADO',
-                    _status: 'CONFIRMADO'
+                    _status: 'CONFIRMADO',
+                    tipo_cobro,
+                    tarifa,
+                    dia_facturacion,
+                    moneda
                 };
                 allClientRows[idx] = updatedObj;
                 clients = clients.map(c => c === original ? updatedObj : c);
@@ -4819,6 +4859,139 @@ ${casosHTML}
             }, 60000);
         }
 
+        // ═══════════════════════════════════════════════════════
+        // MÓDULO CONTABLE — Funciones
+        // ═══════════════════════════════════════════════════════
+
+        function toggleGhostTracking(tipoCobro) {
+            const panel = document.getElementById('ghost-tracking-panel');
+            if (!panel) return;
+            panel.style.display = (tipoCobro === 'GHOST_TRACKING' || tipoCobro === 'MENSUAL') ? 'block' : 'none';
+        }
+
+        function calcularGhostTracking(cliente) {
+            if (!cliente) return;
+            const tipoCobro = cliente.tipo_cobro || '';
+            if (tipoCobro !== 'GHOST_TRACKING' && tipoCobro !== 'MENSUAL') return;
+
+            const nombreCliente = (cliente.nombre || '').toLowerCase().trim();
+            const casosCliente = (db || []).filter(c =>
+                (c.cliente_a_defender || c.partes || '').toLowerCase().trim() === nombreCliente
+            );
+            const totalCasos = casosCliente.length;
+            // 2 horas estimadas por caso/email procesado
+            const horasEstimadas = totalCasos * 2;
+            const tarifa = parseFloat(cliente.tarifa) || 0;
+            const moneda = cliente.moneda || 'COP';
+
+            const elCasos = document.getElementById('gt-casos');
+            const elHoras = document.getElementById('gt-horas');
+            const elRent  = document.getElementById('gt-rentabilidad');
+            if (elCasos) elCasos.textContent = totalCasos;
+            if (elHoras) elHoras.textContent = `${horasEstimadas}h`;
+
+            if (elRent && tarifa > 0 && tipoCobro === 'MENSUAL') {
+                // Tarifa mensual vs valor estimado de horas (tarifa/hora referencial: tarifa / 40h)
+                const tarifaHora = tarifa / 40;
+                const valorTrabajo = horasEstimadas * tarifaHora;
+                const diff = tarifa - valorTrabajo;
+                const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: moneda, maximumFractionDigits: 0 }).format(Math.abs(n));
+                if (diff >= 0) {
+                    elRent.style.color = '#22c55e';
+                    elRent.textContent = `+${fmt(diff)}`;
+                } else {
+                    elRent.style.color = '#ef4444';
+                    elRent.textContent = `-${fmt(diff)}`;
+                }
+            } else if (elRent) {
+                elRent.style.color = 'var(--silver)';
+                elRent.textContent = tipoCobro === 'GHOST_TRACKING' ? `${horasEstimadas}h rastreadas` : '—';
+            }
+        }
+
+        let contabilidadData = [];
+
+        async function loadContabilidad() {
+            const tbody = document.getElementById('cont-rows');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando facturas...</td></tr>';
+
+            try {
+                const res = await authFetch(N8N_GET_CONTABILIDAD, { method: 'POST', body: '{}' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                contabilidadData = Array.isArray(data.facturas) ? data.facturas : [];
+                renderContabilidad(contabilidadData);
+            } catch(e) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#ef4444;">Error: ${esc(e.message)}</td></tr>`;
+            }
+        }
+
+        function renderContabilidad(facturas) {
+            // KPIs
+            const pagadas    = facturas.filter(f => f.estado_pago === 'PAGADO');
+            const pendientes = facturas.filter(f => f.estado_pago === 'PENDIENTE');
+            const vencidas   = facturas.filter(f => f.estado_pago === 'VENCIDO');
+            const totalMonto = pagadas.reduce((s, f) => s + (parseFloat(f.monto) || 0), 0);
+
+            const fmtMonto = (n, moneda) => {
+                try { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: moneda || 'COP', maximumFractionDigits: 0 }).format(n); }
+                catch(e) { return `$${n.toLocaleString('es-CO')}`; }
+            };
+
+            const elTotal = document.getElementById('cont-kpi-total');
+            if (elTotal) elTotal.textContent = totalMonto > 0 ? fmtMonto(totalMonto, facturas[0]?.moneda) : '$0';
+            const elPag = document.getElementById('cont-kpi-pagadas');
+            if (elPag) elPag.textContent = pagadas.length;
+            const elPend = document.getElementById('cont-kpi-pendientes');
+            if (elPend) elPend.textContent = pendientes.length;
+            const elVenc = document.getElementById('cont-kpi-vencidas');
+            if (elVenc) elVenc.textContent = vencidas.length;
+
+            // Tabla
+            const tbody = document.getElementById('cont-rows');
+            if (!tbody) return;
+            if (!facturas.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No hay facturas registradas.</td></tr>';
+                return;
+            }
+
+            const estadoColor = { PAGADO: '#22c55e', PENDIENTE: '#f97316', VENCIDO: '#ef4444' };
+            tbody.innerHTML = facturas.map(f => {
+                const color = estadoColor[f.estado_pago] || 'var(--silver)';
+                const linkDoc = f.link_factura
+                    ? `<a href="${esc(f.link_factura)}" target="_blank" style="color:var(--gold);font-size:0.72rem;">📄 Ver</a>`
+                    : '<span style="color:var(--silver);font-size:0.72rem;">—</span>';
+                const montoFmt = (() => {
+                    const n = parseFloat(f.monto) || 0;
+                    try { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: f.moneda || 'COP', maximumFractionDigits: 0 }).format(n); }
+                    catch(e) { return `$${n.toLocaleString('es-CO')}`; }
+                })();
+                return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <td style="padding:8px 12px;font-family:monospace;font-size:0.7rem;color:var(--gold);">${esc(f.token_factura)}</td>
+                    <td style="padding:8px 12px;font-size:0.8rem;color:var(--white);">${esc(f.nombre_cliente)}</td>
+                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(f.fecha_factura)}</td>
+                    <td style="padding:8px 12px;font-size:0.8rem;font-weight:700;color:var(--white);">${montoFmt}</td>
+                    <td style="padding:8px 12px;font-size:0.72rem;color:var(--silver);">${esc(f.tipo_cobro || '—')}</td>
+                    <td style="padding:8px 12px;"><span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${color}22;color:${color};">${esc(f.estado_pago)}</span></td>
+                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(f.fecha_pago || '—')}</td>
+                    <td style="padding:8px 12px;">${linkDoc}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filterContabilidad(query) {
+            const estadoFiltro = document.getElementById('cont-filter-estado')?.value || '';
+            const q = (query || '').toLowerCase();
+            const filtradas = contabilidadData.filter(f => {
+                const matchTexto = !q ||
+                    (f.nombre_cliente || '').toLowerCase().includes(q) ||
+                    (f.token_factura || '').toLowerCase().includes(q);
+                const matchEstado = !estadoFiltro || f.estado_pago === estadoFiltro;
+                return matchTexto && matchEstado;
+            });
+            renderContabilidad(filtradas);
+        }
+
         // -- Expose functions to global scope --
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
@@ -4876,4 +5049,8 @@ ${casosHTML}
         window.abrirEditarObsClienteModal    = abrirEditarObsClienteModal;
         window.confirmarEditarObsClienteModal = confirmarEditarObsClienteModal;
         window.eliminarObsClienteModal       = eliminarObsClienteModal;
+        // Módulo Contable
+        window.loadContabilidad    = loadContabilidad;
+        window.filterContabilidad  = filterContabilidad;
+        window.toggleGhostTracking = toggleGhostTracking;
 
