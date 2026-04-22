@@ -620,6 +620,58 @@
                     <h1>Módulo Contable</h1>
                     <div style="display:flex;gap:8px;">
                         <button class="btn-outline" onclick="loadContabilidad()">🔄 Actualizar</button>
+                        <button class="btn-premium" style="background:linear-gradient(135deg,#c9a84c,#a8892f);border-color:#c9a84c;" onclick="abrirModalGenerarFactura()">📄 Generar Factura</button>
+                    </div>
+                </div>
+
+                <!-- Modal Generar Factura -->
+                <div class="overlay" id="modal-generar-factura">
+                    <div style="background:#0c0f16;border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:2rem;max-width:540px;width:90%;max-height:90vh;overflow-y:auto;">
+                        <p style="font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:1.5rem;">📄 Generar Nueva Factura</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="fac-cliente">Cliente</label>
+                                <select id="fac-cliente" onchange="onFacturaClienteChange(this.value)"
+                                    style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                    <option value="">— Seleccionar cliente —</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="fac-email">Email del Cliente</label>
+                                <input type="email" id="fac-email" placeholder="cliente@email.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="fac-empresa">Empresa / Razón Social</label>
+                                <input type="text" id="fac-empresa" placeholder="Nombre empresa o persona">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="fac-direccion">Dirección</label>
+                                <input type="text" id="fac-direccion" placeholder="Dirección del cliente">
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="fac-servicio">Descripción del Servicio</label>
+                                <input type="text" id="fac-servicio" placeholder="Ej: Honorarios profesionales — Caso Civil" value="Honorarios profesionales">
+                            </div>
+                            <div class="form-group">
+                                <label for="fac-tarifa">Monto (sin puntos)</label>
+                                <input type="number" id="fac-tarifa" placeholder="Ej: 2500000" min="0" step="1000">
+                            </div>
+                            <div class="form-group">
+                                <label for="fac-moneda">Moneda</label>
+                                <select id="fac-moneda" style="background:rgba(255,255,255,0.05);color:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.85rem;width:100%;">
+                                    <option value="COP">COP — Peso Colombiano</option>
+                                    <option value="USD">USD — Dólar</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label for="fac-notas">Notas (opcional)</label>
+                                <input type="text" id="fac-notas" placeholder="Instrucciones de pago, aclaraciones...">
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                            <button class="btn-outline" style="flex:1" onclick="cerrarModalGenerarFactura()">Cancelar</button>
+                            <button class="btn-premium" style="flex:1" id="btn-generar-factura" onclick="generarFactura()">📤 Generar y Enviar</button>
+                        </div>
                     </div>
                 </div>
 

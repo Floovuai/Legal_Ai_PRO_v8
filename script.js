@@ -147,7 +147,8 @@
             DEL_USUARIO:        `${N8N_BASE}/floovu-eliminar-usuario-admin`,
             LOGIN_SHEET:        `${N8N_BASE}/floovu-login-sheet`,
             GET_CONTABILIDAD:   `${N8N_BASE}/floovu-get-contabilidad`,
-            GUARDAR_FACTURA:    `${N8N_BASE}/floovu-guardar-factura`
+            GUARDAR_FACTURA:    `${N8N_BASE}/floovu-guardar-factura`,
+            GENERAR_FACTURA:    `${N8N_BASE}/floovu-generar-factura`
         }
     };
 
@@ -455,6 +456,7 @@
         const N8N_GET_CLIENT_MAILS  = WEBHOOKS.GET_CLIENT_MAILS;
         const N8N_GET_DEBUG_LOG     = WEBHOOKS.GET_DEBUG_LOG;
         const N8N_GET_CONTABILIDAD  = WEBHOOKS.GET_CONTABILIDAD;
+        const N8N_GENERAR_FACTURA   = WEBHOOKS.GENERAR_FACTURA;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -4992,6 +4994,86 @@ ${casosHTML}
             renderContabilidad(filtradas);
         }
 
+        // ═══════════════════════════════════════════════════════
+        // MÓDULO CONTABLE — Generar Factura (Fase 2)
+        // ═══════════════════════════════════════════════════════
+
+        function abrirModalGenerarFactura() {
+            const sel = document.getElementById('fac-cliente');
+            if (sel) {
+                sel.innerHTML = '<option value="">— Seleccionar cliente —</option>' +
+                    (allClientRows || [])
+                        .filter(c => c.nombre)
+                        .map(c => `<option value="${esc(c.nombre)}" data-email="${esc(c.email||'')}" data-empresa="${esc(c.nombre)}" data-dir="${esc(c.notas||'')}" data-tarifa="${esc(c.tarifa||'')}" data-moneda="${esc(c.moneda||'COP')}">${esc(c.nombre)}</option>`)
+                        .join('');
+            }
+            document.getElementById('modal-generar-factura').classList.add('visible');
+        }
+
+        function cerrarModalGenerarFactura() {
+            document.getElementById('modal-generar-factura').classList.remove('visible');
+        }
+
+        function onFacturaClienteChange(nombre) {
+            const sel = document.getElementById('fac-cliente');
+            const opt = sel?.querySelector(`option[value="${CSS.escape(nombre)}"]`);
+            if (!opt) return;
+            const emailEl = document.getElementById('fac-email');
+            const empresaEl = document.getElementById('fac-empresa');
+            const tarifaEl = document.getElementById('fac-tarifa');
+            const monedaEl = document.getElementById('fac-moneda');
+            if (emailEl) emailEl.value = opt.dataset.email || '';
+            if (empresaEl) empresaEl.value = opt.dataset.empresa || nombre;
+            if (tarifaEl && opt.dataset.tarifa) tarifaEl.value = opt.dataset.tarifa;
+            if (monedaEl && opt.dataset.moneda) monedaEl.value = opt.dataset.moneda;
+        }
+
+        async function generarFactura() {
+            const nombre_cliente = document.getElementById('fac-cliente')?.value?.trim();
+            const email_cliente  = document.getElementById('fac-email')?.value?.trim();
+            const cliente_empresa = document.getElementById('fac-empresa')?.value?.trim() || nombre_cliente;
+            const cliente_direccion = document.getElementById('fac-direccion')?.value?.trim() || '';
+            const servicio_descripcion = document.getElementById('fac-servicio')?.value?.trim() || 'Honorarios profesionales';
+            const tarifa = parseFloat(document.getElementById('fac-tarifa')?.value || 0);
+            const moneda = document.getElementById('fac-moneda')?.value || 'COP';
+            const notas  = document.getElementById('fac-notas')?.value?.trim() || '';
+
+            if (!nombre_cliente) { showToast('Selecciona un cliente.', 'error'); return; }
+            if (!tarifa || tarifa <= 0) { showToast('El monto debe ser mayor a 0.', 'error'); return; }
+            if (!email_cliente) { showToast('El email del cliente es requerido para enviar la factura.', 'error'); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email_cliente)) { showToast('Email inválido.', 'error'); return; }
+
+            const cliente = allClientRows?.find(c => c.nombre === nombre_cliente);
+            const token_cliente = cliente?.token || '';
+
+            const btn = document.getElementById('btn-generar-factura');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Generando...'; }
+
+            try {
+                const res = await authFetch(N8N_GENERAR_FACTURA, {
+                    method: 'POST',
+                    body: JSON.stringify({ nombre_cliente, email_cliente, cliente_empresa, cliente_direccion, servicio_descripcion, tarifa, moneda, notas, token_cliente })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.ok === false) {
+                    showToast(`Error: ${esc(data.error || data.mensaje || String(res.status))}`, 'error');
+                    return;
+                }
+                cerrarModalGenerarFactura();
+                showToast(`✅ Factura ${esc(data.numero_factura || '')} generada y enviada a ${esc(email_cliente)}`, 'ok');
+                // Abrir link del PDF si está disponible
+                if (data.link_factura) {
+                    setTimeout(() => window.open(data.link_factura, '_blank'), 800);
+                }
+                // Refrescar tabla de contabilidad
+                setTimeout(() => loadContabilidad(), 2000);
+            } catch(e) {
+                showToast('Error de conexión con n8n.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '📤 Generar y Enviar'; }
+            }
+        }
+
         // -- Expose functions to global scope --
         window.abrirEditarAnotacion = abrirEditarAnotacion;
         window.abrirEditarGroupAnotacion = abrirEditarGroupAnotacion;
@@ -5050,7 +5132,11 @@ ${casosHTML}
         window.confirmarEditarObsClienteModal = confirmarEditarObsClienteModal;
         window.eliminarObsClienteModal       = eliminarObsClienteModal;
         // Módulo Contable
-        window.loadContabilidad    = loadContabilidad;
-        window.filterContabilidad  = filterContabilidad;
-        window.toggleGhostTracking = toggleGhostTracking;
+        window.loadContabilidad          = loadContabilidad;
+        window.filterContabilidad        = filterContabilidad;
+        window.toggleGhostTracking       = toggleGhostTracking;
+        window.abrirModalGenerarFactura  = abrirModalGenerarFactura;
+        window.cerrarModalGenerarFactura = cerrarModalGenerarFactura;
+        window.onFacturaClienteChange    = onFacturaClienteChange;
+        window.generarFactura            = generarFactura;
 
