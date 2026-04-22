@@ -20,6 +20,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 </head>
 <body>
@@ -574,22 +575,26 @@
                             <!-- Panel Ghost Tracking (visible solo cuando tipo = GHOST_TRACKING o MENSUAL) -->
                             <div id="ghost-tracking-panel" style="display:none;margin-top:1rem;padding:1rem;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;">
                                 <p style="margin:0 0 0.75rem;font-size:0.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;">👻 Ghost Tracking — Actividad Digital</p>
-                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;">
+                                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;">
                                     <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
                                         <div style="font-size:1.4rem;font-weight:800;color:var(--gold-bright);" id="gt-casos">0</div>
-                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Casos / Emails</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Documentos</div>
                                     </div>
                                     <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
                                         <div style="font-size:1.4rem;font-weight:800;color:#22c55e;" id="gt-horas">0h</div>
-                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Horas Est.</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Horas Reales</div>
+                                    </div>
+                                    <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
+                                        <div style="font-size:0.82rem;font-weight:800;color:var(--white);" id="gt-ultima">—</div>
+                                        <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Último Evento</div>
                                     </div>
                                     <div style="text-align:center;padding:0.75rem;background:rgba(255,255,255,0.04);border-radius:8px;">
                                         <div style="font-size:1rem;font-weight:800;" id="gt-rentabilidad">—</div>
                                         <div style="font-size:0.62rem;color:var(--silver);margin-top:2px;">Rentabilidad</div>
                                     </div>
                                 </div>
-                                <p style="margin:0.75rem 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;">
-                                    Basado en emails/docs procesados por el sistema. Rastreo Drive activo en Fase 3.
+                                <p id="gt-fuente" style="margin:0.75rem 0 0;font-size:0.62rem;color:var(--silver);opacity:0.7;">
+                                    Basado en actividad real registrada en Google Drive y consolidada por n8n.
                                 </p>
                             </div>
                         </div>
@@ -620,9 +625,11 @@
                     <h1>Módulo Contable</h1>
                     <div style="display:flex;gap:8px;">
                         <button class="btn-outline" onclick="loadContabilidad()">🔄 Actualizar</button>
+                        <button class="btn-outline" id="btn-cargar-extracto" style="color:#22c55e;border-color:rgba(34,197,94,0.35);" onclick="abrirCargaExtracto()">🏦 Cargar Extracto</button>
                         <button class="btn-premium" style="background:linear-gradient(135deg,#c9a84c,#a8892f);border-color:#c9a84c;" onclick="abrirModalGenerarFactura()">📄 Generar Factura</button>
                     </div>
                 </div>
+                <input type="file" id="extracto-file" accept=".pdf,.csv,text/csv,application/pdf" style="display:none;" onchange="onExtractoSeleccionado(event)">
 
                 <!-- Modal Generar Factura -->
                 <div class="overlay" id="modal-generar-factura">
@@ -699,6 +706,52 @@
                     </div>
                 </div>
 
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;margin-bottom:1.5rem;">
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:1rem;">
+                            <div>
+                                <p class="card-title" style="margin-bottom:0.55rem;">Conciliación Bancaria</p>
+                                <p style="margin:0;color:var(--silver);font-size:0.78rem;line-height:1.6;">Sube un PDF o CSV del banco. El sistema preprocesa el extracto y concilia automáticamente contra facturas pendientes.</p>
+                            </div>
+                            <button class="btn-outline" style="min-width:140px;justify-content:center;color:#22c55e;border-color:rgba(34,197,94,0.35);" onclick="abrirCargaExtracto()">Cargar Extracto</button>
+                        </div>
+                        <div id="cont-conciliacion-resumen" style="display:flex;flex-direction:column;gap:0.75rem;">
+                            <div style="padding:0.95rem 1rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.08);">
+                                <p style="margin:0 0 4px;color:var(--white);font-size:0.82rem;font-weight:700;">Sin conciliaciones en esta sesión</p>
+                                <p style="margin:0;color:var(--silver);font-size:0.74rem;line-height:1.6;">Cuando subas un extracto verás aquí el resumen conciliado, las facturas actualizadas y las transacciones pendientes de revisar.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:1rem;">
+                            <div>
+                                <p class="card-title" style="margin-bottom:0.55rem;">Ghost Tracking Live</p>
+                                <p style="margin:0;color:var(--silver);font-size:0.78rem;line-height:1.6;">Actividad real tomada desde Google Drive para medir producción, tiempo estimado y clientes en riesgo de rentabilidad.</p>
+                            </div>
+                            <span id="ghost-last-sync" style="font-size:0.68rem;color:var(--silver);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">Sin sync</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;">
+                            <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size:1.4rem;font-weight:800;color:var(--gold-bright);" id="ghost-kpi-documentos">0</div>
+                                <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Docs rastreados</div>
+                            </div>
+                            <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size:1.4rem;font-weight:800;color:#22c55e;" id="ghost-kpi-horas">0h</div>
+                                <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Horas reales</div>
+                            </div>
+                            <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size:1.4rem;font-weight:800;color:#ef4444;" id="ghost-kpi-riesgo">0</div>
+                                <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">No rentables</div>
+                            </div>
+                            <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size:1.4rem;font-weight:800;color:var(--white);" id="ghost-kpi-clientes">0</div>
+                                <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Clientes con tracking</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tabla de Facturas -->
                 <div class="card">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
@@ -736,12 +789,67 @@
                     </div>
                 </div>
 
-                <!-- Nota Fase 2 -->
+                <div class="card" style="margin-top:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:1rem;">
+                        <div>
+                            <p class="card-title" style="margin-bottom:0.45rem;">Actividad del Operador</p>
+                            <p style="margin:0;color:var(--silver);font-size:0.78rem;line-height:1.6;">Eventos registrados desde Google Drive: documentos creados, modificaciones, tiempo estimado y cliente asociado.</p>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>FECHA</th>
+                                <th>OPERADOR</th>
+                                <th>CLIENTE</th>
+                                <th>DOCUMENTO</th>
+                                <th>ACCIÓN</th>
+                                <th>TIEMPO EST.</th>
+                            </tr></thead>
+                            <tbody id="actividad-rows">
+                                <tr><td colspan="6" class="empty-state">Esperando actividad de Drive...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:1.5rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:1rem;">
+                        <div>
+                            <p class="card-title" style="margin-bottom:0.45rem;">Reporte de Rentabilidad</p>
+                            <p style="margin:0;color:var(--silver);font-size:0.78rem;line-height:1.6;">Comparativo por cliente entre cobro mensual, horas reales trabajadas y margen estimado.</p>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <span id="rent-period-label" style="font-size:0.7rem;color:var(--silver);padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);">Periodo actual</span>
+                            <button class="btn-outline" style="height:34px;font-size:0.74rem;padding:0 12px;color:#22c55e;border-color:rgba(34,197,94,0.35);" onclick="exportRentabilidadExcel()">📊 Excel</button>
+                            <button class="btn-outline" style="height:34px;font-size:0.74rem;padding:0 12px;" onclick="exportRentabilidadPDF()">📄 PDF</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr>
+                                <th>CLIENTE</th>
+                                <th>MODALIDAD</th>
+                                <th>COBRO MENSUAL</th>
+                                <th>HORAS REALES</th>
+                                <th>COSTO EST.</th>
+                                <th>MARGEN</th>
+                                <th>ESTADO</th>
+                            </tr></thead>
+                            <tbody id="rent-rows">
+                                <tr><td colspan="7" class="empty-state">Calculando rentabilidad...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Nota Fase 3 -->
                 <div class="card" style="margin-top:1.5rem;border-left:3px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.04);">
-                    <p class="card-title" style="color:var(--gold);font-size:0.78rem;">🚧 Próximas Funcionalidades</p>
+                    <p class="card-title" style="color:var(--gold);font-size:0.78rem;">🧩 Checklist de Activación</p>
                     <p style="margin:0;font-size:0.75rem;color:var(--silver);line-height:1.7;">
-                        <strong style="color:var(--white);">Fase 2:</strong> Generación de facturas PDF desde Google Docs + envío automático por Email/WhatsApp.<br>
-                        <strong style="color:var(--white);">Fase 3:</strong> Conciliación bancaria (PDF/CSV) + Ghost Tracking completo con rastreo de Google Drive.
+                        <strong style="color:var(--white);">Google Sheets:</strong> crea o verifica la pestaña <code>ACTIVIDAD_OPERADOR</code> para registrar eventos de Drive.<br>
+                        <strong style="color:var(--white);">n8n:</strong> activa el webhook <code>floovu-conciliar-extracto</code> y el trigger de Google Drive en la carpeta operativa definida.<br>
+                        <strong style="color:var(--white);">Frontend:</strong> el módulo ya muestra conciliación, rastreo real y reporte de rentabilidad exportable.
                     </p>
                 </div>
             </section>

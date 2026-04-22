@@ -148,9 +148,14 @@
             LOGIN_SHEET:        `${N8N_BASE}/floovu-login-sheet`,
             GET_CONTABILIDAD:   `${N8N_BASE}/floovu-get-contabilidad`,
             GUARDAR_FACTURA:    `${N8N_BASE}/floovu-guardar-factura`,
-            GENERAR_FACTURA:    `${N8N_BASE}/floovu-generar-factura`
+            GENERAR_FACTURA:    `${N8N_BASE}/floovu-generar-factura`,
+            CONCILIAR_EXTRACTO: `${N8N_BASE}/floovu-conciliar-extracto`
         }
     };
+
+    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
 
 // --- Main Application ---
         // ------------------------------------------
@@ -457,6 +462,7 @@
         const N8N_GET_DEBUG_LOG     = WEBHOOKS.GET_DEBUG_LOG;
         const N8N_GET_CONTABILIDAD  = WEBHOOKS.GET_CONTABILIDAD;
         const N8N_GENERAR_FACTURA   = WEBHOOKS.GENERAR_FACTURA;
+        const N8N_CONCILIAR_EXTRACTO = WEBHOOKS.CONCILIAR_EXTRACTO || `${N8N_BASE}/floovu-conciliar-extracto`;
 
         // Sanitizador contra XSS — escapa todos los datos antes de insertar en el DOM (F1-04)
         function esc(str) {
@@ -1832,6 +1838,10 @@ async function loadRealData() {
                             telefono: cleanScalar(getField(c, ['telefono', 'Teléfono', 'Telefono', 'TELEFONO', 'phone'], '')),
                             notas:    cleanScalar(getField(c, ['notas', 'Notas', 'NOTAS', 'Observaciones', 'observaciones'], '')),
                             abogado:  cleanScalar(getField(c, ['abogado', 'Abogado', 'Abogado Asignado', 'abogado_asignado'], '')),
+                            tipo_cobro: cleanScalar(getField(c, ['tipo_cobro', 'Tipo_Cobro', 'Tipo Cobro'], '')),
+                            tarifa: cleanScalar(getField(c, ['tarifa', 'Tarifa'], '')),
+                            dia_facturacion: cleanScalar(getField(c, ['dia_facturacion', 'Dia_Facturacion', 'Día de Facturación'], '')),
+                            moneda: cleanScalar(getField(c, ['moneda', 'Moneda'], '')) || 'COP',
                             estado:   cleanScalar(getField(c, ['estado', 'Estado', '_status', 'status'], 'DIRECTORIO')) || 'DIRECTORIO',
                             _status:  cleanScalar(getField(c, ['_status', 'status', 'Estado', 'estado'], 'DIRECTORIO')) || 'DIRECTORIO',
                             _source:  'directorio'
@@ -4865,6 +4875,277 @@ ${casosHTML}
         // MÓDULO CONTABLE — Funciones
         // ═══════════════════════════════════════════════════════
 
+        let contabilidadData = [];
+        let actividadOperadorData = [];
+        let rentabilidadData = [];
+        let ultimaConciliacionData = null;
+
+        function normalizeClientKey(value) {
+            return String(value || '').toLowerCase().trim();
+        }
+
+        function parseContabilidadNumber(value) {
+            if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+            const raw = cleanScalar(value);
+            if (!raw) return 0;
+            const cleaned = raw.replace(/[^\d,.-]/g, '');
+            if (!cleaned) return 0;
+            const lastComma = cleaned.lastIndexOf(',');
+            const lastDot = cleaned.lastIndexOf('.');
+            let normalized = cleaned;
+
+            if (lastComma > -1 && lastDot > -1) {
+                if (lastComma > lastDot) {
+                    normalized = cleaned.replace(/\./g, '').replace(',', '.');
+                } else {
+                    normalized = cleaned.replace(/,/g, '');
+                }
+            } else if ((cleaned.match(/\./g) || []).length > 1) {
+                normalized = cleaned.replace(/\./g, '');
+            } else if ((cleaned.match(/,/g) || []).length > 1) {
+                normalized = cleaned.replace(/,/g, '');
+            } else if (lastComma > -1 && lastDot === -1) {
+                normalized = cleaned.replace(',', '.');
+            }
+
+            const parsed = Number(normalized);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function fmtMontoContable(value, moneda = 'COP') {
+            try {
+                return new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: moneda || 'COP',
+                    maximumFractionDigits: 0
+                }).format(Number(value || 0));
+            } catch(_) {
+                return `$${Number(value || 0).toLocaleString('es-CO')}`;
+            }
+        }
+
+        function fmtHoras(hours) {
+            return `${Number(hours || 0).toFixed(1)}h`;
+        }
+
+        function parseFlexibleDate(value) {
+            if (!value) return null;
+            if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+            const raw = String(value).trim();
+            if (!raw) return null;
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                const parsedIso = new Date(raw.length <= 10 ? `${raw}T00:00:00` : raw);
+                return Number.isNaN(parsedIso.getTime()) ? null : parsedIso;
+            }
+            const match = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+            if (match) {
+                const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3]);
+                const parsedLocal = new Date(year, Number(match[2]) - 1, Number(match[1]), Number(match[4] || 0), Number(match[5] || 0));
+                return Number.isNaN(parsedLocal.getTime()) ? null : parsedLocal;
+            }
+            const parsed = new Date(raw);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+
+        function fmtFechaCorta(value, withTime = false) {
+            const parsed = parseFlexibleDate(value);
+            if (!parsed) return '—';
+            try {
+                return parsed.toLocaleString('es-CO', withTime
+                    ? { dateStyle: 'short', timeStyle: 'short' }
+                    : { dateStyle: 'short' }
+                );
+            } catch(_) {
+                return parsed.toISOString().slice(0, withTime ? 16 : 10).replace('T', ' ');
+            }
+        }
+
+        function getCurrentPeriodKey() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function isSameCurrentPeriod(value) {
+            const parsed = parseFlexibleDate(value);
+            if (!parsed) return false;
+            return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}` === getCurrentPeriodKey();
+        }
+
+        function humanizeCobro(tipoCobro) {
+            const map = {
+                MENSUAL: 'Mensual',
+                GHOST_TRACKING: 'Ghost Tracking',
+                POR_HORAS: 'Por Horas',
+                PROYECTO_FIJO: 'Proyecto Fijo'
+            };
+            return map[String(tipoCobro || '').toUpperCase()] || cleanScalar(tipoCobro) || '—';
+        }
+
+        function buildActividadDocumentoKey(item) {
+            return cleanScalar(item.documento_id || item.documento || item.ruta_drive || item.fecha_evento);
+        }
+
+        function normalizeFacturaContable(row) {
+            const monto = parseContabilidadNumber(getField(row, ['monto', 'Monto'], 0));
+            const estado = cleanScalar(getField(row, ['estado_pago', 'Estado_Pago', 'estado'], 'PENDIENTE')).toUpperCase() || 'PENDIENTE';
+            return {
+                token_factura: cleanScalar(getField(row, ['token_factura', 'Token_Factura'], '')),
+                token_cliente: cleanScalar(getField(row, ['token_cliente', 'Token_Cliente'], '')),
+                nombre_cliente: cleanScalar(getField(row, ['nombre_cliente', 'Nombre_Cliente', 'cliente'], '')),
+                fecha_factura: cleanScalar(getField(row, ['fecha_factura', 'Fecha_Factura'], '')),
+                monto,
+                moneda: cleanScalar(getField(row, ['moneda', 'Moneda'], '')) || 'COP',
+                tipo_cobro: cleanScalar(getField(row, ['tipo_cobro', 'Tipo_Cobro'], '')),
+                estado_pago: ['PAGADO', 'PENDIENTE', 'VENCIDO'].includes(estado) ? estado : 'PENDIENTE',
+                fecha_pago: cleanScalar(getField(row, ['fecha_pago', 'Fecha_Pago'], '')),
+                link_factura: cleanScalar(getField(row, ['link_factura', 'Link_Factura'], '')),
+                observaciones: cleanScalar(getField(row, ['observaciones', 'Observaciones'], ''))
+            };
+        }
+
+        function normalizeActividadOperador(row) {
+            const rawHours = parseContabilidadNumber(getField(row, ['tiempo_estimado_horas', 'Tiempo_Estimado_Horas', 'Horas_Reales', 'horas_reales'], 0));
+            const rawMinutes = parseContabilidadNumber(getField(row, ['tiempo_estimado_min', 'Tiempo_Estimado_Min', 'Minutos', 'minutos'], 0));
+            const tokenCliente = cleanScalar(getField(row, ['token_cliente', 'Token_Cliente'], ''));
+            const tokenCaso = cleanScalar(getField(row, ['token_caso', 'Token_Caso', 'token'], ''));
+            const clientByToken = findClientRecord('', tokenCliente) || findClientRecord('', tokenCaso);
+            const caseByToken = (db || []).find(c => String(c.token || '').trim() === String(tokenCaso || tokenCliente).trim());
+            const fechaEvento = cleanScalar(getField(row, ['fecha_evento', 'Fecha_Evento', 'fecha', 'Fecha'], ''));
+            return {
+                fecha_evento: fechaEvento,
+                fecha_obj: parseFlexibleDate(fechaEvento),
+                operador: cleanScalar(getField(row, ['operador', 'Operador', 'autor', 'Autor'], '')),
+                cliente: cleanScalar(getField(row, ['cliente', 'Cliente', 'nombre_cliente', 'Nombre_Cliente'], '')) || clientByToken?.nombre || caseByToken?.cliente_a_defender || caseByToken?.partes || '',
+                documento: cleanScalar(getField(row, ['documento', 'Documento', 'nombre_documento', 'Nombre_Documento'], '')),
+                documento_id: cleanScalar(getField(row, ['documento_id', 'Documento_ID', 'file_id', 'File_ID'], '')),
+                accion: cleanScalar(getField(row, ['accion', 'Accion', 'evento', 'Evento'], '')).toUpperCase() || 'MODIFICADO',
+                tiempo_estimado_min: rawMinutes > 0 ? rawMinutes : rawHours * 60,
+                tiempo_estimado_horas: rawMinutes > 0 ? rawMinutes / 60 : rawHours,
+                token_cliente: tokenCliente,
+                token_caso: tokenCaso,
+                ruta_drive: cleanScalar(getField(row, ['ruta_drive', 'Ruta_Drive', 'path', 'Path'], '')),
+                fuente: cleanScalar(getField(row, ['fuente', 'Fuente'], '')) || 'DRIVE'
+            };
+        }
+
+        function normalizeRentabilidadItem(row) {
+            const cobroMensual = parseContabilidadNumber(getField(row, ['cobro_mensual', 'Cobro_Mensual', 'tarifa'], 0));
+            const horasReales = parseContabilidadNumber(getField(row, ['horas_reales', 'Horas_Reales', 'tiempo_real_horas'], 0));
+            const costoEstimadoRaw = parseContabilidadNumber(getField(row, ['costo_estimado', 'Costo_Estimado'], 0));
+            const margenRaw = parseContabilidadNumber(getField(row, ['margen', 'Margen', 'rentabilidad_actual'], cobroMensual - costoEstimadoRaw));
+            const moneda = cleanScalar(getField(row, ['moneda', 'Moneda'], '')) || 'COP';
+            return {
+                cliente: cleanScalar(getField(row, ['cliente', 'Cliente', 'nombre_cliente', 'Nombre_Cliente'], '')),
+                token_cliente: cleanScalar(getField(row, ['token_cliente', 'Token_Cliente'], '')),
+                modalidad: cleanScalar(getField(row, ['modalidad', 'Modalidad', 'tipo_cobro', 'Tipo_Cobro'], '')),
+                cobro_mensual: cobroMensual,
+                horas_reales: horasReales,
+                costo_estimado: costoEstimadoRaw || (horasReales * (cobroMensual > 0 ? cobroMensual / 40 : 0)),
+                margen: margenRaw || (cobroMensual - costoEstimadoRaw),
+                estado: cleanScalar(getField(row, ['estado', 'Estado', 'estado_rentabilidad'], '')),
+                documentos: parseContabilidadNumber(getField(row, ['documentos', 'Documentos'], 0)),
+                ultima_actividad: cleanScalar(getField(row, ['ultima_actividad', 'Ultima_Actividad'], '')),
+                moneda
+            };
+        }
+
+        function getActividadCliente(cliente) {
+            const token = String(cliente?.token || '').trim();
+            const nombreCliente = normalizeClientKey(cliente?.nombre);
+            return actividadOperadorData.filter(item => {
+                const tokenMatch = token && [item.token_cliente, item.token_caso].some(t => String(t || '').trim() === token);
+                const clienteMatch = nombreCliente && normalizeClientKey(item.cliente) === nombreCliente;
+                return tokenMatch || clienteMatch;
+            });
+        }
+
+        function getGhostTrackingMetrics(cliente) {
+            const tarifa = parseContabilidadNumber(cliente?.tarifa);
+            const moneda = cliente?.moneda || 'COP';
+            const actividades = getActividadCliente(cliente);
+
+            if (actividades.length) {
+                const totalMinutes = actividades.reduce((sum, item) => sum + (item.tiempo_estimado_min || 0), 0);
+                const horasReales = totalMinutes / 60;
+                const documentos = new Set(actividades.map(buildActividadDocumentoKey).filter(Boolean)).size || actividades.length;
+                const ultimaActividad = actividades
+                    .map(item => item.fecha_obj || parseFlexibleDate(item.fecha_evento))
+                    .filter(Boolean)
+                    .sort((a, b) => b.getTime() - a.getTime())[0] || null;
+                const tarifaHora = tarifa > 0 ? tarifa / 40 : 0;
+                const margen = tarifa - (horasReales * tarifaHora);
+                return {
+                    documentos,
+                    horasReales,
+                    ultimaActividad,
+                    ultimaActividadTexto: ultimaActividad ? fmtFechaCorta(ultimaActividad, true) : '—',
+                    margen,
+                    moneda,
+                    origen: 'DRIVE'
+                };
+            }
+
+            const nombreCliente = normalizeClientKey(cliente?.nombre);
+            const casosCliente = (db || []).filter(c =>
+                normalizeClientKey(c.cliente_a_defender || c.partes || '') === nombreCliente
+            );
+            const horasEstimadas = casosCliente.length * 2;
+            const tarifaHora = tarifa > 0 ? tarifa / 40 : 0;
+            const margen = tarifa - (horasEstimadas * tarifaHora);
+            return {
+                documentos: casosCliente.length,
+                horasReales: horasEstimadas,
+                ultimaActividad: null,
+                ultimaActividadTexto: 'Sin Drive',
+                margen,
+                moneda,
+                origen: 'PROXY'
+            };
+        }
+
+        function buildRentabilidadLocal() {
+            const trackedClients = (allClientRows || [])
+                .filter(c => c?.nombre && ['MENSUAL', 'GHOST_TRACKING'].includes(String(c.tipo_cobro || '').toUpperCase()));
+            const seen = new Set();
+
+            return trackedClients
+                .map(cliente => {
+                    const uniqueKey = `${normalizeClientKey(cliente.nombre)}|${cliente.token || ''}`;
+                    if (seen.has(uniqueKey)) return null;
+                    seen.add(uniqueKey);
+
+                    const cobroMensual = parseContabilidadNumber(cliente.tarifa);
+                    const metrics = getGhostTrackingMetrics(cliente);
+                    const costoEstimado = cobroMensual > 0 ? metrics.horasReales * (cobroMensual / 40) : 0;
+                    const margen = cobroMensual - costoEstimado;
+                    const utilizacion = metrics.horasReales / 40;
+                    const estado = !cobroMensual
+                        ? 'SIN TARIFA'
+                        : margen < 0
+                            ? 'NO RENTABLE'
+                            : utilizacion >= 0.85
+                                ? 'RIESGO'
+                                : 'RENTABLE';
+
+                    return {
+                        cliente: cliente.nombre,
+                        token_cliente: cliente.token || '',
+                        modalidad: cliente.tipo_cobro || 'MENSUAL',
+                        cobro_mensual: cobroMensual,
+                        horas_reales: metrics.horasReales,
+                        costo_estimado: costoEstimado,
+                        margen,
+                        estado,
+                        documentos: metrics.documentos,
+                        ultima_actividad: metrics.ultimaActividadTexto,
+                        moneda: cliente.moneda || metrics.moneda || 'COP',
+                        origen: metrics.origen
+                    };
+                })
+                .filter(Boolean)
+                .sort((a, b) => (a.margen - b.margen) || (b.horas_reales - a.horas_reales));
+        }
+
         function toggleGhostTracking(tipoCobro) {
             const panel = document.getElementById('ghost-tracking-panel');
             if (!panel) return;
@@ -4873,75 +5154,284 @@ ${casosHTML}
 
         function calcularGhostTracking(cliente) {
             if (!cliente) return;
-            const tipoCobro = cliente.tipo_cobro || '';
+            const tipoCobro = String(cliente.tipo_cobro || '').toUpperCase();
             if (tipoCobro !== 'GHOST_TRACKING' && tipoCobro !== 'MENSUAL') return;
 
-            const nombreCliente = (cliente.nombre || '').toLowerCase().trim();
-            const casosCliente = (db || []).filter(c =>
-                (c.cliente_a_defender || c.partes || '').toLowerCase().trim() === nombreCliente
-            );
-            const totalCasos = casosCliente.length;
-            // 2 horas estimadas por caso/email procesado
-            const horasEstimadas = totalCasos * 2;
-            const tarifa = parseFloat(cliente.tarifa) || 0;
-            const moneda = cliente.moneda || 'COP';
-
-            const elCasos = document.getElementById('gt-casos');
+            const metrics = getGhostTrackingMetrics(cliente);
+            const elDocs = document.getElementById('gt-casos');
             const elHoras = document.getElementById('gt-horas');
-            const elRent  = document.getElementById('gt-rentabilidad');
-            if (elCasos) elCasos.textContent = totalCasos;
-            if (elHoras) elHoras.textContent = `${horasEstimadas}h`;
+            const elUltima = document.getElementById('gt-ultima');
+            const elRent = document.getElementById('gt-rentabilidad');
+            const elFuente = document.getElementById('gt-fuente');
 
-            if (elRent && tarifa > 0 && tipoCobro === 'MENSUAL') {
-                // Tarifa mensual vs valor estimado de horas (tarifa/hora referencial: tarifa / 40h)
-                const tarifaHora = tarifa / 40;
-                const valorTrabajo = horasEstimadas * tarifaHora;
-                const diff = tarifa - valorTrabajo;
-                const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: moneda, maximumFractionDigits: 0 }).format(Math.abs(n));
-                if (diff >= 0) {
-                    elRent.style.color = '#22c55e';
-                    elRent.textContent = `+${fmt(diff)}`;
-                } else {
-                    elRent.style.color = '#ef4444';
-                    elRent.textContent = `-${fmt(diff)}`;
-                }
-            } else if (elRent) {
-                elRent.style.color = 'var(--silver)';
-                elRent.textContent = tipoCobro === 'GHOST_TRACKING' ? `${horasEstimadas}h rastreadas` : '—';
+            if (elDocs) elDocs.textContent = metrics.documentos || 0;
+            if (elHoras) elHoras.textContent = fmtHoras(metrics.horasReales);
+            if (elUltima) elUltima.textContent = metrics.ultimaActividadTexto;
+
+            if (elRent) {
+                const margen = Number(metrics.margen || 0);
+                elRent.style.color = margen < 0 ? '#ef4444' : '#22c55e';
+                elRent.textContent = `${margen < 0 ? '-' : '+'}${fmtMontoContable(Math.abs(margen), metrics.moneda)}`;
+            }
+
+            if (elFuente) {
+                elFuente.textContent = metrics.origen === 'DRIVE'
+                    ? 'Basado en actividad real registrada en Google Drive y consolidada por n8n.'
+                    : 'Sin eventos reales de Drive para este cliente. Se muestra el proxy histórico por casos.';
             }
         }
 
-        let contabilidadData = [];
+        function renderConciliacionSummary(resumen) {
+            const container = document.getElementById('cont-conciliacion-resumen');
+            if (!container) return;
+
+            if (!resumen) {
+                container.innerHTML = `
+                    <div style="padding:0.95rem 1rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.08);">
+                        <p style="margin:0 0 4px;color:var(--white);font-size:0.82rem;font-weight:700;">Sin conciliaciones en esta sesión</p>
+                        <p style="margin:0;color:var(--silver);font-size:0.74rem;line-height:1.6;">Cuando subas un extracto verás aquí el resumen conciliado, las facturas actualizadas y las transacciones pendientes de revisar.</p>
+                    </div>`;
+                return;
+            }
+
+            if (resumen.procesando) {
+                container.innerHTML = `
+                    <div style="padding:0.95rem 1rem;border-radius:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.18);">
+                        <p style="margin:0 0 4px;color:#22c55e;font-size:0.82rem;font-weight:700;">Procesando extracto...</p>
+                        <p style="margin:0;color:var(--silver);font-size:0.74rem;line-height:1.6;">${esc(resumen.archivo_nombre || 'Analizando archivo')}</p>
+                    </div>`;
+                return;
+            }
+
+            if (resumen.error) {
+                container.innerHTML = `
+                    <div style="padding:0.95rem 1rem;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18);">
+                        <p style="margin:0 0 4px;color:#ef4444;font-size:0.82rem;font-weight:700;">No se pudo conciliar el extracto</p>
+                        <p style="margin:0;color:var(--silver);font-size:0.74rem;line-height:1.6;">${esc(resumen.error)}</p>
+                    </div>`;
+                return;
+            }
+
+            const conciliadas = Array.isArray(resumen.facturas_actualizadas)
+                ? resumen.facturas_actualizadas
+                : Array.isArray(resumen.conciliadas)
+                    ? resumen.conciliadas
+                    : [];
+            const pendientes = Array.isArray(resumen.pendientes_revision)
+                ? resumen.pendientes_revision
+                : Array.isArray(resumen.pendientes)
+                    ? resumen.pendientes
+                    : [];
+            const facturasConciliadas = parseContabilidadNumber(resumen.facturas_conciliadas || conciliadas.length);
+            const transacciones = parseContabilidadNumber(resumen.transacciones_detectadas || resumen.total_transacciones || 0);
+            const montoConciliado = parseContabilidadNumber(resumen.monto_conciliado || resumen.total_conciliado || 0);
+            const moneda = resumen.moneda || conciliadas[0]?.moneda || 'COP';
+
+            const renderLista = (items, emptyText, accentColor) => {
+                if (!items.length) {
+                    return `<p style="margin:0;font-size:0.72rem;color:var(--silver);">${esc(emptyText)}</p>`;
+                }
+                return items.slice(0, 4).map(item => {
+                    const cliente = cleanScalar(getField(item, ['nombre_cliente', 'cliente', 'Cliente'], ''));
+                    const token = cleanScalar(getField(item, ['token_factura', 'factura', 'Token_Factura'], ''));
+                    const monto = parseContabilidadNumber(getField(item, ['monto', 'Monto'], 0));
+                    return `<div style="padding:0.6rem 0.75rem;border-radius:10px;background:${accentColor}14;border:1px solid ${accentColor}30;">
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                            <div>
+                                <p style="margin:0;color:var(--white);font-size:0.76rem;font-weight:700;">${esc(cliente || token || 'Transacción')}</p>
+                                <p style="margin:2px 0 0;color:var(--silver);font-size:0.68rem;">${esc(token || 'Sin token')}</p>
+                            </div>
+                            <span style="font-size:0.7rem;color:${accentColor};font-weight:700;">${monto ? fmtMontoContable(monto, moneda) : 'Revisar'}</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            };
+
+            container.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:0.75rem;">
+                    <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:1.3rem;font-weight:800;color:var(--gold-bright);">${transacciones || 0}</div>
+                        <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Transacciones</div>
+                    </div>
+                    <div style="padding:0.9rem;border-radius:12px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.16);">
+                        <div style="font-size:1.3rem;font-weight:800;color:#22c55e;">${facturasConciliadas}</div>
+                        <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Facturas conciliadas</div>
+                    </div>
+                    <div style="padding:0.9rem;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.16);">
+                        <div style="font-size:1.3rem;font-weight:800;color:#ef4444;">${pendientes.length}</div>
+                        <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Pendientes</div>
+                    </div>
+                    <div style="padding:0.9rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                        <div style="font-size:1rem;font-weight:800;color:var(--white);">${montoConciliado ? fmtMontoContable(montoConciliado, moneda) : '—'}</div>
+                        <div style="font-size:0.68rem;color:var(--silver);margin-top:4px;">Monto conciliado</div>
+                    </div>
+                </div>
+                <div style="padding:0.9rem 1rem;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+                    <p style="margin:0 0 4px;color:var(--white);font-size:0.78rem;font-weight:700;">${esc(resumen.archivo_nombre || 'Extracto procesado')}</p>
+                    <p style="margin:0;color:var(--silver);font-size:0.72rem;line-height:1.6;">Procesado ${fmtFechaCorta(resumen.fecha_proceso || new Date(), true)}${resumen.notificacion_enviada ? ' • notificación enviada' : ''}</p>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <p style="margin:0;font-size:0.7rem;font-weight:700;color:#22c55e;text-transform:uppercase;letter-spacing:1px;">Conciliado</p>
+                        ${renderLista(conciliadas, 'No hubo facturas conciliadas en este archivo.', '#22c55e')}
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <p style="margin:0;font-size:0.7rem;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:1px;">Revisión manual</p>
+                        ${renderLista(pendientes, 'No quedaron transacciones pendientes.', '#ef4444')}
+                    </div>
+                </div>`;
+        }
+
+        function renderActividadOperador(actividad) {
+            const tbody = document.getElementById('actividad-rows');
+            if (!tbody) return;
+
+            const rows = [...(actividad || [])]
+                .sort((a, b) => {
+                    const left = a.fecha_obj ? a.fecha_obj.getTime() : 0;
+                    const right = b.fecha_obj ? b.fecha_obj.getTime() : 0;
+                    return right - left;
+                });
+
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Aún no hay eventos reales de Google Drive.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = rows.slice(0, 25).map(item => {
+                const actionColor = item.accion.includes('CRE') ? '#22c55e' : item.accion.includes('MOD') ? '#f97316' : 'var(--gold)';
+                const documento = item.documento && item.documento.length > 44 ? `${item.documento.slice(0, 41)}...` : (item.documento || '—');
+                return `<tr>
+                    <td>${esc(fmtFechaCorta(item.fecha_obj || item.fecha_evento, true))}</td>
+                    <td>${esc(item.operador || 'Sistema')}</td>
+                    <td>${esc(item.cliente || 'Sin match')}</td>
+                    <td title="${esc(item.documento || '')}">${esc(documento)}</td>
+                    <td><span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${actionColor}22;color:${actionColor};">${esc(item.accion)}</span></td>
+                    <td>${esc(fmtHoras(item.tiempo_estimado_horas || 0))}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderRentabilidad(rentabilidad) {
+            const tbody = document.getElementById('rent-rows');
+            if (!tbody) return;
+
+            if (!rentabilidad.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay clientes mensuales o Ghost Tracking con datos suficientes para calcular rentabilidad.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = rentabilidad.map(item => {
+                const estadoColor = item.estado === 'NO RENTABLE'
+                    ? '#ef4444'
+                    : item.estado === 'RIESGO'
+                        ? '#f97316'
+                        : item.estado === 'SIN TARIFA'
+                            ? 'var(--silver)'
+                            : '#22c55e';
+                const margenPrefix = item.margen < 0 ? '-' : '+';
+                return `<tr>
+                    <td>
+                        <div style="font-weight:700;color:var(--white);">${esc(item.cliente || '—')}</div>
+                        <div style="font-size:0.68rem;color:var(--silver);">${esc(item.ultima_actividad || 'Sin actividad')}</div>
+                    </td>
+                    <td>${esc(humanizeCobro(item.modalidad))}</td>
+                    <td>${esc(fmtMontoContable(item.cobro_mensual || 0, item.moneda || 'COP'))}</td>
+                    <td>${esc(fmtHoras(item.horas_reales || 0))}</td>
+                    <td>${esc(fmtMontoContable(item.costo_estimado || 0, item.moneda || 'COP'))}</td>
+                    <td style="font-weight:700;color:${estadoColor};">${margenPrefix}${esc(fmtMontoContable(Math.abs(item.margen || 0), item.moneda || 'COP'))}</td>
+                    <td><span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${estadoColor}22;color:${estadoColor};">${esc(item.estado)}</span></td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderGhostTrackingOverview() {
+            const periodActivities = actividadOperadorData.filter(item => isSameCurrentPeriod(item.fecha_obj || item.fecha_evento));
+            const documentos = new Set(periodActivities.map(buildActividadDocumentoKey).filter(Boolean)).size;
+            const horas = periodActivities.reduce((sum, item) => sum + (item.tiempo_estimado_horas || 0), 0);
+            const clientesConTracking = rentabilidadData.filter(item => item.documentos > 0 || item.horas_reales > 0).length;
+            const noRentables = rentabilidadData.filter(item => item.estado === 'NO RENTABLE').length;
+            const ultimaActividad = periodActivities
+                .map(item => item.fecha_obj || parseFlexibleDate(item.fecha_evento))
+                .filter(Boolean)
+                .sort((a, b) => b.getTime() - a.getTime())[0] || null;
+
+            const elDocs = document.getElementById('ghost-kpi-documentos');
+            const elHoras = document.getElementById('ghost-kpi-horas');
+            const elRiesgo = document.getElementById('ghost-kpi-riesgo');
+            const elClientes = document.getElementById('ghost-kpi-clientes');
+            const elSync = document.getElementById('ghost-last-sync');
+            const elPeriod = document.getElementById('rent-period-label');
+
+            if (elDocs) elDocs.textContent = documentos || 0;
+            if (elHoras) elHoras.textContent = fmtHoras(horas);
+            if (elRiesgo) elRiesgo.textContent = noRentables;
+            if (elClientes) elClientes.textContent = clientesConTracking;
+            if (elSync) elSync.textContent = ultimaActividad ? `Último sync ${fmtFechaCorta(ultimaActividad, true)}` : 'Sin sync';
+            if (elPeriod) {
+                try {
+                    elPeriod.textContent = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' }).format(new Date());
+                } catch(_) {
+                    elPeriod.textContent = getCurrentPeriodKey();
+                }
+            }
+        }
 
         async function loadContabilidad() {
-            const tbody = document.getElementById('cont-rows');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando facturas...</td></tr>';
+            const facturasBody = document.getElementById('cont-rows');
+            const actividadBody = document.getElementById('actividad-rows');
+            const rentabilidadBody = document.getElementById('rent-rows');
+            if (facturasBody) facturasBody.innerHTML = '<tr><td colspan="8" class="empty-state">Cargando facturas...</td></tr>';
+            if (actividadBody) actividadBody.innerHTML = '<tr><td colspan="6" class="empty-state">Cargando actividad...</td></tr>';
+            if (rentabilidadBody) rentabilidadBody.innerHTML = '<tr><td colspan="7" class="empty-state">Calculando rentabilidad...</td></tr>';
 
             try {
+                if (!allClientRows.length) {
+                    await loadClients().catch(() => null);
+                }
+
                 const res = await authFetch(N8N_GET_CONTABILIDAD, { method: 'POST', body: '{}' });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
-                contabilidadData = Array.isArray(data.facturas) ? data.facturas : [];
+
+                contabilidadData = Array.isArray(data.facturas)
+                    ? data.facturas.map(normalizeFacturaContable)
+                    : [];
+                actividadOperadorData = Array.isArray(data.actividad_operador)
+                    ? data.actividad_operador.map(normalizeActividadOperador)
+                    : [];
+                const backendRentabilidad = Array.isArray(data.rentabilidad)
+                    ? data.rentabilidad.map(normalizeRentabilidadItem).filter(item => item.cliente)
+                    : [];
+                rentabilidadData = backendRentabilidad.length ? backendRentabilidad : buildRentabilidadLocal();
+                ultimaConciliacionData = data.ultima_conciliacion || data.conciliacion || ultimaConciliacionData;
+
                 renderContabilidad(contabilidadData);
+                renderActividadOperador(actividadOperadorData);
+                renderRentabilidad(rentabilidadData);
+                renderGhostTrackingOverview();
+                renderConciliacionSummary(ultimaConciliacionData);
+
+                if (document.getElementById('client-edit-modal')?.classList.contains('visible') && Number.isInteger(window._currentClientIdx)) {
+                    const currentClient = allClientRows[window._currentClientIdx];
+                    if (currentClient) calcularGhostTracking(currentClient);
+                }
             } catch(e) {
-                if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="color:#ef4444;">Error: ${esc(e.message)}</td></tr>`;
+                const errorHtml = `<tr><td colspan="8" class="empty-state" style="color:#ef4444;">Error: ${esc(e.message)}</td></tr>`;
+                if (facturasBody) facturasBody.innerHTML = errorHtml;
+                if (actividadBody) actividadBody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:#ef4444;">${esc(e.message)}</td></tr>`;
+                if (rentabilidadBody) rentabilidadBody.innerHTML = `<tr><td colspan="7" class="empty-state" style="color:#ef4444;">${esc(e.message)}</td></tr>`;
             }
         }
 
         function renderContabilidad(facturas) {
-            // KPIs
-            const pagadas    = facturas.filter(f => f.estado_pago === 'PAGADO');
+            const pagadas = facturas.filter(f => f.estado_pago === 'PAGADO');
             const pendientes = facturas.filter(f => f.estado_pago === 'PENDIENTE');
-            const vencidas   = facturas.filter(f => f.estado_pago === 'VENCIDO');
-            const totalMonto = pagadas.reduce((s, f) => s + (parseFloat(f.monto) || 0), 0);
-
-            const fmtMonto = (n, moneda) => {
-                try { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: moneda || 'COP', maximumFractionDigits: 0 }).format(n); }
-                catch(e) { return `$${n.toLocaleString('es-CO')}`; }
-            };
+            const vencidas = facturas.filter(f => f.estado_pago === 'VENCIDO');
+            const totalMonto = facturas.reduce((sum, f) => sum + (f.monto || 0), 0);
 
             const elTotal = document.getElementById('cont-kpi-total');
-            if (elTotal) elTotal.textContent = totalMonto > 0 ? fmtMonto(totalMonto, facturas[0]?.moneda) : '$0';
+            if (elTotal) elTotal.textContent = totalMonto > 0 ? fmtMontoContable(totalMonto, facturas[0]?.moneda || 'COP') : '$0';
             const elPag = document.getElementById('cont-kpi-pagadas');
             if (elPag) elPag.textContent = pagadas.length;
             const elPend = document.getElementById('cont-kpi-pendientes');
@@ -4949,7 +5439,6 @@ ${casosHTML}
             const elVenc = document.getElementById('cont-kpi-vencidas');
             if (elVenc) elVenc.textContent = vencidas.length;
 
-            // Tabla
             const tbody = document.getElementById('cont-rows');
             if (!tbody) return;
             if (!facturas.length) {
@@ -4958,24 +5447,29 @@ ${casosHTML}
             }
 
             const estadoColor = { PAGADO: '#22c55e', PENDIENTE: '#f97316', VENCIDO: '#ef4444' };
-            tbody.innerHTML = facturas.map(f => {
+            const sorted = [...facturas].sort((a, b) => {
+                const left = parseFlexibleDate(a.fecha_factura)?.getTime() || 0;
+                const right = parseFlexibleDate(b.fecha_factura)?.getTime() || 0;
+                return right - left;
+            });
+
+            tbody.innerHTML = sorted.map(f => {
                 const color = estadoColor[f.estado_pago] || 'var(--silver)';
+                const conciliada = /conciliad/i.test(f.observaciones || '');
                 const linkDoc = f.link_factura
                     ? `<a href="${esc(f.link_factura)}" target="_blank" style="color:var(--gold);font-size:0.72rem;">📄 Ver</a>`
                     : '<span style="color:var(--silver);font-size:0.72rem;">—</span>';
-                const montoFmt = (() => {
-                    const n = parseFloat(f.monto) || 0;
-                    try { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: f.moneda || 'COP', maximumFractionDigits: 0 }).format(n); }
-                    catch(e) { return `$${n.toLocaleString('es-CO')}`; }
-                })();
-                return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                    <td style="padding:8px 12px;font-family:monospace;font-size:0.7rem;color:var(--gold);">${esc(f.token_factura)}</td>
-                    <td style="padding:8px 12px;font-size:0.8rem;color:var(--white);">${esc(f.nombre_cliente)}</td>
-                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(f.fecha_factura)}</td>
-                    <td style="padding:8px 12px;font-size:0.8rem;font-weight:700;color:var(--white);">${montoFmt}</td>
-                    <td style="padding:8px 12px;font-size:0.72rem;color:var(--silver);">${esc(f.tipo_cobro || '—')}</td>
+                return `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);${conciliada ? 'box-shadow:inset 3px 0 0 rgba(34,197,94,0.55);' : ''}">
+                    <td style="padding:8px 12px;font-family:monospace;font-size:0.7rem;color:var(--gold);">${esc(f.token_factura || '—')}</td>
+                    <td style="padding:8px 12px;font-size:0.8rem;color:var(--white);">
+                        <div>${esc(f.nombre_cliente || '—')}</div>
+                        ${conciliada ? '<div style="font-size:0.64rem;color:#22c55e;margin-top:2px;">Conciliada automáticamente</div>' : ''}
+                    </td>
+                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(fmtFechaCorta(f.fecha_factura))}</td>
+                    <td style="padding:8px 12px;font-size:0.8rem;font-weight:700;color:var(--white);">${esc(fmtMontoContable(f.monto || 0, f.moneda || 'COP'))}</td>
+                    <td style="padding:8px 12px;font-size:0.72rem;color:var(--silver);">${esc(humanizeCobro(f.tipo_cobro))}</td>
                     <td style="padding:8px 12px;"><span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;background:${color}22;color:${color};">${esc(f.estado_pago)}</span></td>
-                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(f.fecha_pago || '—')}</td>
+                    <td style="padding:8px 12px;font-size:0.75rem;color:var(--silver);">${esc(f.fecha_pago ? fmtFechaCorta(f.fecha_pago) : '—')}</td>
                     <td style="padding:8px 12px;">${linkDoc}</td>
                 </tr>`;
             }).join('');
@@ -4987,11 +5481,183 @@ ${casosHTML}
             const filtradas = contabilidadData.filter(f => {
                 const matchTexto = !q ||
                     (f.nombre_cliente || '').toLowerCase().includes(q) ||
-                    (f.token_factura || '').toLowerCase().includes(q);
+                    (f.token_factura || '').toLowerCase().includes(q) ||
+                    (f.observaciones || '').toLowerCase().includes(q);
                 const matchEstado = !estadoFiltro || f.estado_pago === estadoFiltro;
                 return matchTexto && matchEstado;
             });
             renderContabilidad(filtradas);
+        }
+
+        function abrirCargaExtracto() {
+            document.getElementById('extracto-file')?.click();
+        }
+
+        async function extractTextFromStatementFile(file) {
+            const fileName = String(file?.name || '').toLowerCase();
+            if (fileName.endsWith('.csv') || String(file?.type || '').includes('csv') || String(file?.type || '').startsWith('text/')) {
+                return file.text();
+            }
+
+            if (fileName.endsWith('.pdf') || file?.type === 'application/pdf') {
+                if (!window.pdfjsLib) {
+                    throw new Error('El lector PDF no cargó. Intenta de nuevo o usa el CSV del banco.');
+                }
+                const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                const pages = [];
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const text = await page.getTextContent();
+                    pages.push(text.items.map(item => ('str' in item ? item.str : '')).join(' '));
+                }
+                return pages.join('\n');
+            }
+
+            throw new Error('Formato no soportado. Usa PDF o CSV.');
+        }
+
+        async function onExtractoSeleccionado(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+
+            const btn = document.getElementById('btn-cargar-extracto');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ Procesando...';
+            }
+
+            try {
+                renderConciliacionSummary({ procesando: true, archivo_nombre: file.name });
+                const extractoTexto = await extractTextFromStatementFile(file);
+                if (!extractoTexto || extractoTexto.trim().length < 20) {
+                    throw new Error('No se pudo extraer texto suficiente del extracto.');
+                }
+
+                const res = await authFetch(N8N_CONCILIAR_EXTRACTO, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        archivo_nombre: file.name,
+                        archivo_tipo: file.type || '',
+                        extracto_texto: extractoTexto,
+                        abogado_email: currentUser?.email || ''
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.ok === false) {
+                    throw new Error(data.error || data.mensaje || `HTTP ${res.status}`);
+                }
+
+                ultimaConciliacionData = data.conciliacion || data;
+                renderConciliacionSummary(ultimaConciliacionData);
+                showToast(`Conciliación completada: ${parseContabilidadNumber(ultimaConciliacionData.facturas_conciliadas || 0)} facturas actualizadas.`, 'ok');
+                await loadContabilidad();
+            } catch(e) {
+                renderConciliacionSummary({ error: e.message, archivo_nombre: file.name });
+                showToast(`No se pudo conciliar el extracto: ${e.message}`, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🏦 Cargar Extracto';
+                }
+                if (event?.target) event.target.value = '';
+            }
+        }
+
+        function exportRentabilidadExcel() {
+            if (!rentabilidadData.length) {
+                showToast('No hay datos de rentabilidad para exportar.', 'error');
+                return;
+            }
+
+            const sep = ',';
+            const q = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+            let csv = '\uFEFF';
+            csv += [q('Cliente'), q('Modalidad'), q('Cobro Mensual'), q('Horas Reales'), q('Costo Estimado'), q('Margen'), q('Estado'), q('Última Actividad')].join(sep) + '\n';
+
+            rentabilidadData.forEach(item => {
+                csv += [
+                    q(item.cliente || ''),
+                    q(humanizeCobro(item.modalidad)),
+                    q(fmtMontoContable(item.cobro_mensual || 0, item.moneda || 'COP')),
+                    q(fmtHoras(item.horas_reales || 0)),
+                    q(fmtMontoContable(item.costo_estimado || 0, item.moneda || 'COP')),
+                    q(`${item.margen < 0 ? '-' : '+'}${fmtMontoContable(Math.abs(item.margen || 0), item.moneda || 'COP')}`),
+                    q(item.estado || ''),
+                    q(item.ultima_actividad || 'Sin actividad')
+                ].join(sep) + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `Rentabilidad_${getCurrentPeriodKey()}.csv`;
+            anchor.click();
+            URL.revokeObjectURL(url);
+            showToast('Reporte de rentabilidad exportado.', 'ok');
+        }
+
+        function exportRentabilidadPDF() {
+            if (!rentabilidadData.length) {
+                showToast('No hay datos de rentabilidad para exportar.', 'error');
+                return;
+            }
+
+            const title = `Reporte de Rentabilidad — ${document.getElementById('rent-period-label')?.textContent || getCurrentPeriodKey()}`;
+            const rows = rentabilidadData.map(item => `
+                <tr>
+                    <td>${esc(item.cliente || '—')}</td>
+                    <td>${esc(humanizeCobro(item.modalidad))}</td>
+                    <td>${esc(fmtMontoContable(item.cobro_mensual || 0, item.moneda || 'COP'))}</td>
+                    <td>${esc(fmtHoras(item.horas_reales || 0))}</td>
+                    <td>${esc(fmtMontoContable(item.costo_estimado || 0, item.moneda || 'COP'))}</td>
+                    <td>${esc(`${item.margen < 0 ? '-' : '+'}${fmtMontoContable(Math.abs(item.margen || 0), item.moneda || 'COP')}`)}</td>
+                    <td>${esc(item.estado || '—')}</td>
+                </tr>`).join('');
+
+            const html = `<!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${esc(title)}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; color: #111827; margin: 32px; }
+                        h1 { margin: 0 0 8px; color: #111827; font-size: 24px; }
+                        p { margin: 0 0 18px; color: #6b7280; font-size: 12px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+                        th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+                        th { background: #f3f4f6; text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+                    </style>
+                </head>
+                <body>
+                    <h1>${esc(title)}</h1>
+                    <p>Generado el ${esc(new Date().toLocaleString('es-CO'))}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Modalidad</th>
+                                <th>Cobro Mensual</th>
+                                <th>Horas Reales</th>
+                                <th>Costo Estimado</th>
+                                <th>Margen</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </body>
+                </html>`;
+
+            const win = window.open('', '_blank');
+            if (!win) {
+                showToast('Habilita las ventanas emergentes para exportar PDF.', 'error');
+                return;
+            }
+            win.document.write(html);
+            win.document.close();
+            win.onload = function() { win.focus(); win.print(); };
+            showToast('Reporte PDF listo para imprimir o guardar.', 'ok');
         }
 
         // ═══════════════════════════════════════════════════════
@@ -5135,8 +5801,12 @@ ${casosHTML}
         window.loadContabilidad          = loadContabilidad;
         window.filterContabilidad        = filterContabilidad;
         window.toggleGhostTracking       = toggleGhostTracking;
+        window.abrirCargaExtracto        = abrirCargaExtracto;
+        window.onExtractoSeleccionado    = onExtractoSeleccionado;
         window.abrirModalGenerarFactura  = abrirModalGenerarFactura;
         window.cerrarModalGenerarFactura = cerrarModalGenerarFactura;
         window.onFacturaClienteChange    = onFacturaClienteChange;
         window.generarFactura            = generarFactura;
+        window.exportRentabilidadExcel   = exportRentabilidadExcel;
+        window.exportRentabilidadPDF     = exportRentabilidadPDF;
 
